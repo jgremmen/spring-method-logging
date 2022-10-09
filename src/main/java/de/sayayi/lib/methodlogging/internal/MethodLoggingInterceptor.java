@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.util.StringJoiner;
 
 import static de.sayayi.lib.message.MessageFactory.NO_CACHE_INSTANCE;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
@@ -63,36 +64,34 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
     val _this = requireNonNull(invocation.getThis());
-    val _class = ultimateTargetClass(_this);
 
     //noinspection OptionalGetWithoutIsPresent
-    val methodLoggingDef =
-        annotationMethodLoggingSource.getMethodLoggingDefinition(invocation.getMethod(), _class).get();
+    val methodLoggingDef = annotationMethodLoggingSource
+        .getMethodLoggingDefinition(invocation.getMethod(), ultimateTargetClass(_this)).get();
 
     val loggerAccessor = methodLoggerFactory.from(methodLoggingDef.loggerField, _this);
-    val startTime = System.currentTimeMillis();
+    val startTime = currentTimeMillis();
     Throwable throwable = null;
 
-    logMethodEntry(_class, methodLoggingDef, invocation.getArguments(), loggerAccessor);
+    logMethodEntry(methodLoggingDef, invocation.getArguments(), loggerAccessor);
     try {
-      return logResult(_class, methodLoggingDef, loggerAccessor, invocation.proceed());
+      return logResult(methodLoggingDef, loggerAccessor, invocation.proceed());
     } catch(Throwable ex) {
-      throwable = ex;
-      throw ex;
+      throw throwable = ex;
     } finally {
-      logMethodExit(_class, methodLoggingDef, loggerAccessor, startTime, throwable);
+      logMethodExit(methodLoggingDef, loggerAccessor, startTime, throwable);
     }
   }
 
 
-  private void logMethodEntry(@NotNull Class<?> _class, @NotNull MethodLoggingDef methodLoggingDef,
-                              @NotNull Object[] arguments, @NotNull MethodLogger methodLogger)
+  private void logMethodEntry(@NotNull MethodLoggingDef methodLoggingDef, @NotNull Object[] arguments,
+                              @NotNull MethodLogger methodLogger)
   {
-    if (methodLogger.isLogEnabled(_class, methodLoggingDef.entryExitLevel))
+    if (methodLogger.isLogEnabled(methodLoggingDef.entryExitLevel))
     {
       val parameters = messageContext.parameters();
       val method = new StringBuilder("> ").append(methodLoggingDef.methodName);
-      val printParameters = methodLogger.isLogEnabled(_class, methodLoggingDef.parameterLevel);
+      val printParameters = methodLogger.isLogEnabled(methodLoggingDef.parameterLevel);
 
       if (printParameters && !methodLoggingDef.inlineParameters.isEmpty())
       {
@@ -106,12 +105,12 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
       if (methodLoggingDef.line > 0)
         method.append(':').append(methodLoggingDef.line);
 
-      methodLogger.log(_class, methodLoggingDef.entryExitLevel, method.toString());
+      methodLogger.log(methodLoggingDef.entryExitLevel, method.toString());
 
       if (printParameters && !methodLoggingDef.inMethodParameters.isEmpty())
         for(val pd: methodLoggingDef.inMethodParameters)
         {
-          methodLogger.log(_class, methodLoggingDef.parameterLevel,
+          methodLogger.log(methodLoggingDef.parameterLevel,
               logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
         }
     }
@@ -129,10 +128,10 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
   }
 
 
-  private void logMethodExit(@NotNull Class<?> _class, @NotNull MethodLoggingDef methodLoggingDef,
-                             @NotNull MethodLogger methodLogger, long startTime, Throwable throwable)
+  private void logMethodExit(@NotNull MethodLoggingDef methodLoggingDef, @NotNull MethodLogger methodLogger,
+                             long startTime, Throwable throwable)
   {
-    if (methodLogger.isLogEnabled(_class, methodLoggingDef.entryExitLevel))
+    if (methodLogger.isLogEnabled(methodLoggingDef.entryExitLevel))
     {
       val exit = new StringBuilder("< ")
           .append(methodLoggingDef.methodName);
@@ -141,17 +140,7 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
         exit.append('#').append(methodLoggingDef.line);
 
       if (methodLoggingDef.showElapsedTime)
-      {
-        exit.append(" (elapsed ");
-
-        val elapsed = System.currentTimeMillis() - startTime;
-        if (elapsed < 1100)
-          exit.append(elapsed).append(" msec");
-        else
-          exit.append(String.format("%.1f", elapsed / 1000.0)).append(" sec");
-
-        exit.append(')');
-      }
+        exit.append(" (elapsed ").append(logMethodExit_elapsed(currentTimeMillis() - startTime)).append(')');
 
       if (throwable != null)
       {
@@ -163,20 +152,67 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
           exit.append('(').append(msg).append(')');
       }
 
-      methodLogger.log(_class, methodLoggingDef.entryExitLevel, exit.toString());
+      methodLogger.log(methodLoggingDef.entryExitLevel, exit.toString());
     }
   }
 
 
-  @Contract(value = "_, _, _, _ -> param4")
-  private Object logResult(@NotNull Class<?> _class, @NotNull MethodLoggingDef methodLoggingDef,
-                           @NotNull MethodLogger methodLogger, Object result)
+  private @NotNull String logMethodExit_elapsed(long millis)
+  {
+    val s = new StringBuilder();
+
+/*
+    h|m|s|ms
+    0|0|0|0 -> ms
+    0|0|0|1 -> ms
+    0|0|1|0 -> s
+    0|0|1|1 -> s,ms
+    0|1|0|0 -> m
+    0|1|0|1 -> m,s
+    0|1|1|0 -> m,s
+    0|1|1|1 -> m,s
+    1|0|0|0 -> h,m
+    1|0|0|1 -> h,m
+    1|0|1|0 -> h,m
+    1|0|1|1 -> h,m
+    1|1|0|0 -> h,m
+    1|1|0|1 -> h,m
+    1|1|1|0 -> h,m
+    1|1|1|1 -> h,m
+ */
+
+    val hour = (millis / 360000L) % 60;
+    val min = (millis / 60000L) % 60;
+
+    if (hour > 0)
+      s.append(hour).append('h').append(min).append('m');
+    else
+    {
+      if (min > 0)
+        s.append(min).append('m');
+
+      val sec = (millis / 1000L) % 60;
+      val msec = millis % 1000;
+
+      if (sec > 0 || (min > 0 && msec > 0))
+        s.append(sec).append('s');
+      if (min == 0 && (sec == 0 || msec > 0))
+        s.append(msec).append("ms");
+    }
+
+    return s.toString();
+  }
+
+
+  @Contract("_, _, _ -> param3")
+  private Object logResult(@NotNull MethodLoggingDef methodLoggingDef, @NotNull MethodLogger methodLogger,
+                           Object result)
   {
     val resultLevel = methodLoggingDef.resultLevel;
 
-    if (methodLogger.isLogEnabled(_class, resultLevel))
+    if (methodLogger.isLogEnabled(resultLevel))
     {
-      methodLogger.log(_class, resultLevel, methodLoggingDef
+      methodLogger.log(resultLevel, methodLoggingDef
           .getResultMessage(messageContext)
           .format(messageContext, singletonMap("result", result)));
     }

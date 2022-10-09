@@ -30,13 +30,13 @@ public final class Log4J2MethodLogger implements MethodLogger
 
 
   @Override
-  public void log(@NotNull Class<?> clazz, @NotNull Level level, String message) {
+  public void log(@NotNull Level level, String message) {
     logger.log(LEVELS[level.ordinal()], message);
   }
 
 
   @Override
-  public boolean isLogEnabled(@NotNull Class<?> clazz, @NotNull Level level) {
+  public boolean isLogEnabled(@NotNull Level level) {
     return logger.isEnabled(LEVELS[level.ordinal()]);
   }
 

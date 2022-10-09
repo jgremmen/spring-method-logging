@@ -23,7 +23,7 @@ public final class Slf4JMethodLogger implements MethodLogger
 
 
   @Override
-  public void log(@NotNull Class<?> clazz, @NotNull Level level, String message)
+  public void log(@NotNull Level level, String message)
   {
     switch(level)
     {
@@ -43,7 +43,7 @@ public final class Slf4JMethodLogger implements MethodLogger
 
 
   @Override
-  public boolean isLogEnabled(@NotNull Class<?> clazz, @NotNull Level level)
+  public boolean isLogEnabled(@NotNull Level level)
   {
     switch(level)
     {

@@ -20,7 +20,7 @@ public @interface MethodLogging
 
   String resultFormat() default "";  // result = %{result}
 
-  boolean showElapsedTime() default false;
+  boolean showElapsedTime() default false;  // 12s34ms
 
   Level entryExitLevel() default Level.INFO;
 

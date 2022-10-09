@@ -8,14 +8,14 @@ import org.jetbrains.annotations.NotNull;
 public interface MethodLogger
 {
   @NotNull MethodLogger NO_OP = new MethodLogger() {
-    @Override public void log(@NotNull Class<?> clazz, @NotNull Level level, String message) {}
-    @Override public boolean isLogEnabled(@NotNull Class<?> clazz, @NotNull Level level) { return false; }
+    @Override public void log(@NotNull Level level, String message) {}
+    @Override public boolean isLogEnabled(@NotNull Level level) { return false; }
   };
 
 
-  void log(@NotNull Class<?> clazz, @NotNull Level level, String message);
+  void log(@NotNull Level level, String message);
 
 
   @Contract(pure = true)
-  boolean isLogEnabled(@NotNull Class<?> clazz, @NotNull Level level);
+  boolean isLogEnabled(@NotNull Level level);
 }
