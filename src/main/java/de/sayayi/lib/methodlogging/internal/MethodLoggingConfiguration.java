@@ -15,20 +15,9 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 @Configuration
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")
-public class ProxyMethodLoggingConfiguration implements ImportAware
+public class MethodLoggingConfiguration implements ImportAware
 {
   private AnnotationAttributes enableMethodLogging;
-
-
-  @Bean @Role(ROLE_INFRASTRUCTURE)
-  public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor()
-  {
-    val advisor = new BeanFactoryMethodLoggingAdvisor(annotationMethodLoggingSource());
-
-    advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
-
-    return advisor;
-  }
 
 
   @Override
@@ -45,14 +34,25 @@ public class ProxyMethodLoggingConfiguration implements ImportAware
   }
 
 
-  @Bean @Role(ROLE_INFRASTRUCTURE)
-  public AnnotationMethodLoggingSource annotationMethodLoggingSource() {
+  @Bean(autowireCandidate = false) @Role(ROLE_INFRASTRUCTURE)
+  public AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource() {
     return new AnnotationMethodLoggingSource();
   }
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  public MethodLoggingInterceptor methodLoggingInterceptor() {
-    return new MethodLoggingInterceptor(annotationMethodLoggingSource());
+  public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor()
+  {
+    val advisor = new BeanFactoryMethodLoggingAdvisor(internalAnnotationMethodLoggingSource());
+
+    advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
+
+    return advisor;
+  }
+
+
+  @Bean @Role(ROLE_INFRASTRUCTURE)
+  public MethodLoggingInterceptor internalMethodLoggingInterceptor() {
+    return new MethodLoggingInterceptor(internalAnnotationMethodLoggingSource());
   }
 }

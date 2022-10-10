@@ -25,7 +25,7 @@ import static org.springframework.core.annotation.AnnotatedElementUtils.getMerge
 import static org.springframework.util.StringUtils.hasLength;
 
 
-class AnnotationMethodLoggingSource
+final class AnnotationMethodLoggingSource
 {
   private final Map<MethodClassKey,MethodLoggingDef> methodLoggingDefinitionCache;
   private final LocalVariableTableParameterNameDiscoverer nameDiscoverer;
@@ -85,7 +85,8 @@ class AnnotationMethodLoggingSource
         parameterDefs.trimToSize();
 
         return new MethodLoggingDef(parameterDefs, methodLogging, method,
-            findMethodLineNumber(method), findLoggerAccessor(method.getDeclaringClass(), methodLogging));
+            methodLogging.withLineNumber() ? findMethodLineNumber(method) : -1,
+            findLoggerAccessor(method.getDeclaringClass(), methodLogging));
       }
     }
 

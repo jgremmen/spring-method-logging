@@ -13,7 +13,7 @@ public final class EnableMethodLoggingSelector implements ImportSelector
   {
     return new String[] {
       AutoProxyRegistrar.class.getName(),
-      ProxyMethodLoggingConfiguration.class.getName()
+      MethodLoggingConfiguration.class.getName()
     };
   }
 }

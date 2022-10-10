@@ -16,6 +16,8 @@ public @interface MethodLogging
 
   boolean withParameters() default true;
 
+  boolean withLineNumber() default true;
+
   String parameterFormat() default "";  // %{parameter}=%{value}
 
   String resultFormat() default "";  // result = %{result}
