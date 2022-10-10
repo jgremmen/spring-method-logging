@@ -3,6 +3,8 @@ package de.sayayi.lib.methodlogging;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
+import lombok.extern.java.Log;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -11,12 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -28,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class MethodLoggingTest
 {
   @Autowired private MyBean myBean;
+  @Autowired private JULLoggerBean julLoggerBean;
   @Autowired @Qualifier("log") private List<String> log;
 
 
@@ -43,8 +49,18 @@ public class MethodLoggingTest
   }
 
 
+  @Test
+  void testJULLogger()
+  {
+    julLoggerBean.test();
+  }
+
+
+
+
   @Configuration
   @EnableMethodLogging
+  @Import({ MyBean.class, JULLoggerBean.class })
   public static class MyConfiguration implements MethodLoggingConfigurer
   {
     @Override
@@ -70,20 +86,15 @@ public class MethodLoggingTest
     public List<String> log() {
       return new ArrayList<>();
     }
-
-
-    @Bean
-    public MyBean myBean() {
-      return new MyBean();
-    }
   }
 
 
 
 
+  @Component
   public static class MyBean
   {
-    @MethodLogging(withLineNumber = false, resultFormat = "name = %{result}")
+    @MethodLogging(lineNumber = HIDE, resultFormat = "name = %{result}")
     public String getName() {
       return "Mr. Bean";
     }
@@ -91,6 +102,19 @@ public class MethodLoggingTest
 
     @MethodLogging
     public void setName(String name) {
+    }
+  }
+
+
+
+
+  @Component
+  @Log
+  @MethodLoggingConfig(loggerFieldName = "log")
+  public static class JULLoggerBean
+  {
+    @MethodLogging(lineNumber = HIDE)
+    public void test() {
     }
   }
 }

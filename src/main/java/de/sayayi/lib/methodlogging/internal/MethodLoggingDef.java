@@ -4,6 +4,7 @@ import de.sayayi.lib.message.Message;
 import de.sayayi.lib.message.MessageContext;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import lombok.Synchronized;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -14,9 +15,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+
 
 final class MethodLoggingDef implements Serializable
 {
+  final String methodEntryPrefix;
+  final String methodExitPrefix;
   final List<ParameterDef> inlineParameters;
   final List<ParameterDef> inMethodParameters;
   final String parameterFormat;
@@ -24,6 +29,7 @@ final class MethodLoggingDef implements Serializable
   final String methodName;
   final int line;
   final boolean showElapsedTime;
+  final boolean showResult;
   final Field loggerField;
   final Level entryExitLevel;
   final Level parameterLevel;
@@ -33,9 +39,13 @@ final class MethodLoggingDef implements Serializable
   Message resultMessage;
 
 
-  MethodLoggingDef(@NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging,
+  MethodLoggingDef(@NotNull MethodLoggingConfig methodLoggingConfig,
+                   @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging,
                    @NotNull Method method, int line, Field loggerField)
   {
+    methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
+    methodExitPrefix = methodLoggingConfig.methodExitPrefix();
+
     inlineParameters = new ArrayList<>();
     inMethodParameters = new ArrayList<>();
 
@@ -55,7 +65,8 @@ final class MethodLoggingDef implements Serializable
     methodName = method.getName();
     parameterFormat = notEmpty(methodLogging.parameterFormat(), "%{parameter}=%{value}");
     resultFormat = notEmpty(methodLogging.resultFormat(), "result = %{result}");
-    showElapsedTime = methodLogging.showElapsedTime();
+    showElapsedTime = methodLogging.elapsedTime() == SHOW;
+    showResult = method.getReturnType() != void.class && methodLogging.result() == SHOW;
     entryExitLevel = methodLogging.entryExitLevel();
     parameterLevel = methodLogging.parameterLevel();
     resultLevel = methodLogging.resultLevel();

@@ -1,6 +1,9 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
+import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import lombok.val;
 import lombok.var;
@@ -8,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.asm.*;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.MethodClassKey;
+import org.springframework.core.annotation.AnnotationAttributes;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -18,10 +22,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
+import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotationAttributes;
+import static org.springframework.core.annotation.AnnotationUtils.synthesizeAnnotation;
 import static org.springframework.util.StringUtils.hasLength;
 
 
@@ -55,11 +62,13 @@ final class AnnotationMethodLoggingSource
   {
     if (method.isAnnotationPresent(MethodLogging.class))
     {
-      val methodLogging = requireNonNull(getMergedAnnotation(method, MethodLogging.class));
+      val classType = method.getDeclaringClass();
+      val methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(classType);
+      val methodLogging = findMethodLogging(methodLoggingConfigAttributes, method);
       val parameterNames = nameDiscoverer.getParameterNames(method);
       val parameterDefs = new ArrayList<ParameterDef>(8);
 
-      if (parameterNames != null && methodLogging.withParameters())
+      if (parameterNames != null && methodLogging.parameters() == SHOW)
       {
         val parameters = method.getParameters();
 
@@ -84,13 +93,61 @@ final class AnnotationMethodLoggingSource
 
         parameterDefs.trimToSize();
 
-        return new MethodLoggingDef(parameterDefs, methodLogging, method,
-            methodLogging.withLineNumber() ? findMethodLineNumber(method) : -1,
+        return new MethodLoggingDef(
+            synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, classType),
+            parameterDefs, methodLogging, method,
+            methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
             findLoggerAccessor(method.getDeclaringClass(), methodLogging));
       }
     }
 
     return null;
+  }
+
+
+  private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Class<?> classType)
+  {
+    var attributes = getMergedAnnotationAttributes(classType, MethodLoggingConfig.class);
+    if (attributes == null)
+      attributes = new AnnotationAttributes(MethodLoggingConfig.class);
+
+    for(val m: MethodLoggingConfig.class.getDeclaredMethods())
+    {
+      val attributeType = m.getReturnType();
+
+      if (attributeType != void.class && m.getParameterCount() == 0)
+      {
+        val name = m.getName();
+
+        if (!attributes.containsKey(name) ||
+            (attributeType == Visibility.class && attributes.getEnum(name) == Visibility.DEFAULT) ||
+            (attributeType == Level.class && attributes.getEnum(name) == Level.DEFAULT) ||
+            (attributeType == String.class && "<DEFAULT>".equals(attributes.getString(name))))
+          attributes.put(name, m.getDefaultValue());
+      }
+    }
+
+    return attributes;
+  }
+
+
+  private @NotNull MethodLogging findMethodLogging(@NotNull AnnotationAttributes methodLoggingConfigAttributes,
+                                                   @NotNull Method method)
+  {
+    val methodAttributes = requireNonNull(getMergedAnnotationAttributes(method, MethodLogging.class));
+
+    for(val methodAttribute: methodAttributes.entrySet())
+    {
+      val name = methodAttribute.getKey();
+      val value = methodAttribute.getValue();
+
+      if (value == Visibility.DEFAULT || value == Level.DEFAULT)
+        methodAttributes.put(name, methodLoggingConfigAttributes.getEnum(name));
+      else if ("<DEFAULT>".equals(value))
+        methodAttributes.put(name, methodLoggingConfigAttributes.getString(name));
+    }
+
+    return synthesizeAnnotation(methodAttributes, MethodLogging.class, method);
   }
 
 
@@ -123,7 +180,7 @@ final class AnnotationMethodLoggingSource
   }
 
 
-  private Field findLoggerAccessor(Class<?> clazz, MethodLogging methodLogging)
+  private Field findLoggerAccessor(Class<?> clazz, @NotNull MethodLogging methodLogging)
   {
     val loggerFieldName = methodLogging.loggerFieldName();
 

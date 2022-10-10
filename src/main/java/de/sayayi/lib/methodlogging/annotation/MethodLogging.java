@@ -4,39 +4,44 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 
-@Target({METHOD, TYPE})
+@Target(METHOD)
 @Retention(RUNTIME)
 public @interface MethodLogging
 {
-  String loggerFieldName() default "";  // logger
+  String loggerFieldName() default "<DEFAULT>";
 
-  boolean withParameters() default true;
+  Visibility lineNumber() default Visibility.DEFAULT;
 
-  boolean withLineNumber() default true;
+  Visibility elapsedTime() default Visibility.DEFAULT;
 
-  String parameterFormat() default "";  // %{parameter}=%{value}
+  Visibility parameters() default Visibility.DEFAULT;
 
-  String resultFormat() default "";  // result = %{result}
+  Visibility result() default Visibility.DEFAULT;
 
-  boolean showElapsedTime() default false;  // 12s34ms
+  String parameterFormat() default "<DEFAULT>";
 
-  Level entryExitLevel() default Level.INFO;
+  String resultFormat() default "<DEFAULT>";
 
-  Level parameterLevel() default Level.DEBUG;
+  Level entryExitLevel() default Level.DEFAULT;
 
-  Level resultLevel() default Level.DEBUG;
+  Level parameterLevel() default Level.DEFAULT;
+
+  Level resultLevel() default Level.DEFAULT;
 
 
 
 
-  enum Level
-  {
-    TRACE,
-    DEBUG,
-    INFO
+  enum Visibility {
+    DEFAULT, SHOW, HIDE;
+  }
+
+
+
+
+  enum Level {
+    DEFAULT, TRACE, DEBUG, INFO
   }
 }

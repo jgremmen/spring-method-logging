@@ -33,6 +33,7 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
   @Autowired(required = false)
+  @SuppressWarnings("SpringJavaAutowiredMembersInspection")
   private MethodLoggingConfigurer methodLoggingConfigurer;
 
   private MessageContext messageContext;
@@ -65,51 +66,56 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
     val methodLoggingDef = annotationMethodLoggingSource
         .getMethodLoggingDefinition(invocation.getMethod(), ultimateTargetClass(_this)).get();
 
-    val loggerAccessor = methodLoggerFactory.from(methodLoggingDef.loggerField, _this);
-    val startTime = currentTimeMillis();
-    Throwable throwable = null;
+    val methodLogger = methodLoggerFactory.from(methodLoggingDef.loggerField, _this);
+    if (methodLogger.isLogEnabled(methodLoggingDef.entryExitLevel))
+    {
+      val startTime = currentTimeMillis();
+      Throwable throwable = null;
 
-    logMethodEntry(methodLoggingDef, invocation.getArguments(), loggerAccessor);
-    try {
-      return logResult(methodLoggingDef, loggerAccessor, invocation.proceed());
-    } catch(Throwable ex) {
-      throw throwable = ex;
-    } finally {
-      logMethodExit(methodLoggingDef, loggerAccessor, startTime, throwable);
+      logMethodEntry(methodLoggingDef, invocation.getArguments(), methodLogger);
+      try {
+        return methodLoggingDef.showResult
+            ? logResult(methodLoggingDef, methodLogger, invocation.proceed())
+            : invocation.proceed();
+      } catch(Throwable ex) {
+        throw throwable = ex;
+      } finally {
+        logMethodExit(methodLoggingDef, methodLogger, startTime, throwable);
+      }
     }
+    else
+      return invocation.proceed();
   }
 
 
   private void logMethodEntry(@NotNull MethodLoggingDef methodLoggingDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
-    if (methodLogger.isLogEnabled(methodLoggingDef.entryExitLevel))
+    val parameters = messageContext.parameters();
+    val method = new StringBuilder(methodLoggingDef.methodEntryPrefix)
+        .append(methodLoggingDef.methodName);
+    val printParameters = methodLogger.isLogEnabled(methodLoggingDef.parameterLevel);
+
+    if (printParameters && !methodLoggingDef.inlineParameters.isEmpty())
     {
-      val parameters = messageContext.parameters();
-      val method = new StringBuilder("> ").append(methodLoggingDef.methodName);
-      val printParameters = methodLogger.isLogEnabled(methodLoggingDef.parameterLevel);
+      val parameterList = new StringJoiner(",", "(", ")");
+      for(val pd: methodLoggingDef.inlineParameters)
+        parameterList.add(logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
 
-      if (printParameters && !methodLoggingDef.inlineParameters.isEmpty())
-      {
-        val parameterList = new StringJoiner(",", "(", ")");
-        for(val pd: methodLoggingDef.inlineParameters)
-          parameterList.add(logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
-
-        method.append(parameterList);
-      }
-
-      if (methodLoggingDef.line > 0)
-        method.append(':').append(methodLoggingDef.line);
-
-      methodLogger.log(methodLoggingDef.entryExitLevel, method.toString());
-
-      if (printParameters && !methodLoggingDef.inMethodParameters.isEmpty())
-        for(val pd: methodLoggingDef.inMethodParameters)
-        {
-          methodLogger.log(methodLoggingDef.parameterLevel,
-              logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
-        }
+      method.append(parameterList);
     }
+
+    if (methodLoggingDef.line > 0)
+      method.append(':').append(methodLoggingDef.line);
+
+    methodLogger.log(methodLoggingDef.entryExitLevel, method.toString());
+
+    if (printParameters && !methodLoggingDef.inMethodParameters.isEmpty())
+      for(val pd: methodLoggingDef.inMethodParameters)
+      {
+        methodLogger.log(methodLoggingDef.parameterLevel,
+            logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
+      }
   }
 
 
@@ -127,29 +133,26 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
   private void logMethodExit(@NotNull MethodLoggingDef methodLoggingDef, @NotNull MethodLogger methodLogger,
                              long startTime, Throwable throwable)
   {
-    if (methodLogger.isLogEnabled(methodLoggingDef.entryExitLevel))
+    val exit = new StringBuilder(methodLoggingDef.methodExitPrefix)
+        .append(methodLoggingDef.methodName);
+
+    if (methodLoggingDef.line > 0)
+      exit.append(':').append(methodLoggingDef.line);
+
+    if (methodLoggingDef.showElapsedTime)
+      exit.append(" (elapsed ").append(logMethodExit_elapsed(currentTimeMillis() - startTime)).append(')');
+
+    if (throwable != null)
     {
-      val exit = new StringBuilder("< ")
-          .append(methodLoggingDef.methodName);
+      exit.append(" -> ").append(throwable.getClass().getSimpleName());
 
-      if (methodLoggingDef.line > 0)
-        exit.append(':').append(methodLoggingDef.line);
+      val msg = throwable.getLocalizedMessage();
 
-      if (methodLoggingDef.showElapsedTime)
-        exit.append(" (elapsed ").append(logMethodExit_elapsed(currentTimeMillis() - startTime)).append(')');
-
-      if (throwable != null)
-      {
-        exit.append(" -> ").append(throwable.getClass().getSimpleName());
-
-        val msg = throwable.getLocalizedMessage();
-
-        if (hasLength(msg))
-          exit.append('(').append(msg).append(')');
-      }
-
-      methodLogger.log(methodLoggingDef.entryExitLevel, exit.toString());
+      if (hasLength(msg))
+        exit.append('(').append(msg).append(')');
     }
+
+    methodLogger.log(methodLoggingDef.entryExitLevel, exit.toString());
   }
 
 
