@@ -29,7 +29,7 @@ java {
 }
 
 
-compileJava {
+compileTestJava {
   options.debugOptions.debugLevel = 'lines,vars,source'
   options.compilerArgs = [ "-parameters" ]
 }
@@ -40,9 +40,9 @@ test {
 }
 
 
-//apply from: file('gradle/javadoc.gradle')
-//apply from: file('gradle/quality.gradle')
-//apply from: file('gradle/publishing.gradle')
+apply from: file('gradle/javadoc.gradle')
+apply from: file('gradle/quality.gradle')
+apply from: file('gradle/publishing.gradle')
 
 
 repositories {
