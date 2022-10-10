@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging;
 
+import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,11 +23,31 @@ import java.lang.reflect.Field;
 
 
 /**
+ * A method logger factory is responsible for creating a {@link MethodLogger} for a given object.
+ *
  * @author Jeroen Gremmen
  * @version 0.1.0
+ *
+ * @see GenericMethodLoggerFactory
  */
 public interface MethodLoggerFactory
 {
+  /**
+   * <p>
+   *   Creates a new method logger instance based on the given object {@code obj} and optional {@code loggerField}.
+   * </p>
+   * <p>
+   *   This method is invoked every time a method requires logging. In order to reduce performance overhead,
+   *   the factory may return cached method loggers.
+   * </p>
+   *
+   * @param loggerField  logger field or {@code null} if no logger field was found
+   * @param obj          spring bean to create a method logger for, not {@code null}
+   *
+   * @return  method logger instance, never {@code null}
+   *
+   * @see MethodLogger#NO_OP
+   */
   @Contract(pure = true)
-  @NotNull MethodLogger from(Field loggerField, Object obj);
+  @NotNull MethodLogger from(Field loggerField, @NotNull Object obj);
 }

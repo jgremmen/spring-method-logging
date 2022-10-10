@@ -145,7 +145,7 @@ public class MethodLoggingTest
 
 
     @Override
-    public @NotNull MethodLogger from(Field loggerField, Object obj)
+    public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj)
     {
       return new MethodLogger() {
         @Override

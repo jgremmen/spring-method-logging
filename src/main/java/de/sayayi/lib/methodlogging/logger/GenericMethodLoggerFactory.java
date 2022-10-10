@@ -37,7 +37,7 @@ public final class GenericMethodLoggerFactory implements MethodLoggerFactory
 
 
   @Override
-  public @NotNull MethodLogger from(Field loggerField, Object obj)
+  public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj)
   {
     switch(fieldLoggerTypeMap.computeIfAbsent(requireNonNull(loggerField), this::from_type))
     {
