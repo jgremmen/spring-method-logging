@@ -21,6 +21,7 @@ public final class Log4J2MethodLogger implements MethodLogger
 
 
   private static final org.apache.logging.log4j.Level[] LEVELS = new org.apache.logging.log4j.Level[] {
+      null,
       org.apache.logging.log4j.Level.TRACE,
       org.apache.logging.log4j.Level.DEBUG,
       org.apache.logging.log4j.Level.INFO

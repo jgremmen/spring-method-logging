@@ -18,10 +18,10 @@ import static lombok.AccessLevel.PRIVATE;
 @SuppressWarnings("DuplicatedCode")
 public final class JULMethodLogger implements MethodLogger
 {
-  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Log4J2MethodLogger::from;
+  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = JULMethodLogger::from;
 
   private static final java.util.logging.Level[] LEVELS = new java.util.logging.Level[] {
-      FINEST, FINE, INFO
+      null, FINEST, FINE, INFO
   };
 
   private final Logger logger;

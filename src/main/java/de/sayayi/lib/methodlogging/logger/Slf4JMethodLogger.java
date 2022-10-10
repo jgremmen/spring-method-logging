@@ -17,7 +17,7 @@ import static lombok.AccessLevel.PRIVATE;
 @SuppressWarnings("DuplicatedCode")
 public final class Slf4JMethodLogger implements MethodLogger
 {
-  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Log4J2MethodLogger::from;
+  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Slf4JMethodLogger::from;
 
   private final Logger logger;
 
