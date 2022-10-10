@@ -159,29 +159,19 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
 
   private @NotNull String logMethodExit_elapsed(long millis)
   {
-    val s = new StringBuilder();
-
 /*
-    h|m|s|ms
-    0|0|0|0 -> ms
-    0|0|0|1 -> ms
-    0|0|1|0 -> s
-    0|0|1|1 -> s,ms
-    0|1|0|0 -> m
-    0|1|0|1 -> m,s
-    0|1|1|0 -> m,s
-    0|1|1|1 -> m,s
-    1|0|0|0 -> h,m
-    1|0|0|1 -> h,m
-    1|0|1|0 -> h,m
-    1|0|1|1 -> h,m
-    1|1|0|0 -> h,m
-    1|1|0|1 -> h,m
-    1|1|1|0 -> h,m
-    1|1|1|1 -> h,m
+    h|m|s|ms           h|m|s|ms
+    0|0|0|0 -> ms      1|0|0|0 -> h,m
+    0|0|0|1 -> ms      1|0|0|1 -> h,m
+    0|0|1|0 -> s       1|0|1|0 -> h,m
+    0|0|1|1 -> s,ms    1|0|1|1 -> h,m
+    0|1|0|0 -> m       1|1|0|0 -> h,m
+    0|1|0|1 -> m,s     1|1|0|1 -> h,m
+    0|1|1|0 -> m,s     1|1|1|0 -> h,m
+    0|1|1|1 -> m,s     1|1|1|1 -> h,m
  */
-
-    val hour = (millis / 360000L) % 60;
+    val s = new StringBuilder();
+    val hour = (millis / 3600000L) % 60;
     val min = (millis / 60000L) % 60;
 
     if (hour > 0)

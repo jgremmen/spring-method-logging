@@ -38,7 +38,9 @@ public class ProxyMethodLoggingConfiguration implements ImportAware
         importMetadata.getAnnotationAttributes(EnableMethodLogging.class.getName(), false));
 
     if (enableMethodLogging == null)
+    {
       throw new IllegalArgumentException("@EnableMethodLogging is not present on importing class " +
           importMetadata.getClassName());
+    }
   }
 }

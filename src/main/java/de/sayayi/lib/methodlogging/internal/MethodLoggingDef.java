@@ -46,6 +46,9 @@ final class MethodLoggingDef implements Serializable
         inlineParameters.add(pd);
     });
 
+    ((ArrayList<ParameterDef>)inlineParameters).trimToSize();
+    ((ArrayList<ParameterDef>)inMethodParameters).trimToSize();
+
     this.loggerField = loggerField;
     this.line = line;
 
@@ -79,8 +82,8 @@ final class MethodLoggingDef implements Serializable
   }
 
 
-  @Contract(value = "null, _ -> param2", pure = true)
-  private @NotNull String notEmpty(String s, @NotNull String defaultValue) {
-    return s == null || s.isEmpty() ? defaultValue : s;
+  @Contract(pure = true)
+  private @NotNull String notEmpty(@NotNull String s, @NotNull String defaultValue) {
+    return s.isEmpty() ? defaultValue : s;
   }
 }
