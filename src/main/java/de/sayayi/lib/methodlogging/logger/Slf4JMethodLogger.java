@@ -28,6 +28,10 @@ import java.lang.reflect.Field;
 import static lombok.AccessLevel.PRIVATE;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @RequiredArgsConstructor(access = PRIVATE)
 @SuppressWarnings("DuplicatedCode")
 public final class Slf4JMethodLogger implements MethodLogger

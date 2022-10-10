@@ -19,6 +19,10 @@ import de.sayayi.lib.message.MessageContext;
 import org.jetbrains.annotations.Contract;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 public interface MethodLoggingConfigurer
 {
   @Contract(pure = true)

@@ -21,6 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 final class MethodLoggerFactoryDelegate implements MethodLoggerFactory
 {
   @Setter

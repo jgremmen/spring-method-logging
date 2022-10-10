@@ -29,6 +29,10 @@ import static org.springframework.context.annotation.AdviceMode.PROXY;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @Target(TYPE)
 @Retention(RUNTIME)
 @Documented

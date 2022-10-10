@@ -42,6 +42,10 @@ import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClas
 import static org.springframework.util.StringUtils.hasLength;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @RequiredArgsConstructor(access = PROTECTED)
 class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
 {

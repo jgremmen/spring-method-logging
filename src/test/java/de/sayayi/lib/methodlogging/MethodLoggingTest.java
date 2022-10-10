@@ -42,6 +42,10 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HI
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
     MethodLoggingTest.MyConfiguration.class,

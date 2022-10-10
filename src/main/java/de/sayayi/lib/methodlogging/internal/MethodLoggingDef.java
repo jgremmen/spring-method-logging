@@ -33,6 +33,10 @@ import java.util.List;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 final class MethodLoggingDef implements Serializable
 {
   final String methodEntryPrefix;

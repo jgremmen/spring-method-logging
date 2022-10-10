@@ -27,6 +27,10 @@ import org.springframework.core.type.AnnotationMetadata;
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @Configuration
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")

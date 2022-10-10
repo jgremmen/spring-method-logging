@@ -26,6 +26,10 @@ import java.io.Serializable;
 import static lombok.AccessLevel.PACKAGE;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @NoArgsConstructor(access = PACKAGE)
 final class ParameterDef implements Serializable
 {

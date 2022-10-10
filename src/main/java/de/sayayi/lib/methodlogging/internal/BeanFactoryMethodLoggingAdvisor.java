@@ -27,6 +27,10 @@ import java.lang.reflect.Method;
 import static lombok.AccessLevel.PROTECTED;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 @RequiredArgsConstructor(access = PROTECTED)
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
 public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor

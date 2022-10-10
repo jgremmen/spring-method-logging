@@ -20,6 +20,10 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 public interface MethodLogger
 {
   @NotNull MethodLogger NO_OP = new MethodLogger() {

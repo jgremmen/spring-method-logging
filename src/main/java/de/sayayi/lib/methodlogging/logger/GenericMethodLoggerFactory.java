@@ -27,6 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Objects.requireNonNull;
 
 
+/**
+ * @author Jeroen Gremmen
+ * @version 0.1.0
+ */
 public final class GenericMethodLoggerFactory implements MethodLoggerFactory
 {
   private final Map<Field,LoggerType> fieldLoggerTypeMap = new ConcurrentHashMap<>();
