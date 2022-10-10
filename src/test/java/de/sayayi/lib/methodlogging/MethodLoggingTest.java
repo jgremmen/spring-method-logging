@@ -21,6 +21,8 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import de.sayayi.lib.methodlogging.logger.JULMethodLogger;
+import lombok.Setter;
+import lombok.experimental.Delegate;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
@@ -125,6 +127,13 @@ public class MethodLoggingTest
     public MethodLoggerFactoryDelegate methodLoggerFactory() {
       return new MethodLoggerFactoryDelegate();
     }
+  }
+
+
+
+
+  static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
+    @Setter @Delegate private MethodLoggerFactory factory;
   }
 
 
