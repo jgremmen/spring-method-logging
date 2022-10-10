@@ -7,6 +7,7 @@ import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
+import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -14,8 +15,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Role;
-import org.springframework.stereotype.Component;
 
 import java.util.StringJoiner;
 
@@ -23,18 +22,15 @@ import static de.sayayi.lib.message.MessageFactory.NO_CACHE_INSTANCE;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
+import static lombok.AccessLevel.PROTECTED;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
-import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
 import static org.springframework.util.StringUtils.hasLength;
 
 
-@Component
-@Role(ROLE_INFRASTRUCTURE)
-@SuppressWarnings("SpringJavaAutowiredFieldsWarningInspection")
-public class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
+@RequiredArgsConstructor(access = PROTECTED)
+class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
 {
-  @Autowired
-  private AnnotationMethodLoggingSource annotationMethodLoggingSource;
+  private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
   @Autowired(required = false)
   private MethodLoggingConfigurer methodLoggingConfigurer;
@@ -137,7 +133,7 @@ public class MethodLoggingInterceptor implements MethodInterceptor, Initializing
           .append(methodLoggingDef.methodName);
 
       if (methodLoggingDef.line > 0)
-        exit.append('#').append(methodLoggingDef.line);
+        exit.append(':').append(methodLoggingDef.line);
 
       if (methodLoggingDef.showElapsedTime)
         exit.append(" (elapsed ").append(logMethodExit_elapsed(currentTimeMillis() - startTime)).append(')');

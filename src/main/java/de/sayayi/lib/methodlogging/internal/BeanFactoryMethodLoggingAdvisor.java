@@ -1,5 +1,6 @@
 package de.sayayi.lib.methodlogging.internal;
 
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
@@ -8,17 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Method;
 
+import static lombok.AccessLevel.PROTECTED;
 
+
+@RequiredArgsConstructor(access = PROTECTED)
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
 public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
 {
-  private AnnotationMethodLoggingSource annotationMethodLoggingSource;
-
-
-  @Autowired
-  public void setAnnotationMethodLoggingSource(AnnotationMethodLoggingSource annotationMethodLoggingSource) {
-    this.annotationMethodLoggingSource = annotationMethodLoggingSource;
-  }
+  private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
 
   @Autowired

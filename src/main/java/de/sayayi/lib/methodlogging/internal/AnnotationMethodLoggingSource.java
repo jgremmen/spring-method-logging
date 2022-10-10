@@ -6,10 +6,8 @@ import lombok.val;
 import lombok.var;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.asm.*;
-import org.springframework.context.annotation.Role;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.MethodClassKey;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -23,20 +21,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
-import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.util.StringUtils.hasLength;
 
 
-@Component
-@Role(ROLE_INFRASTRUCTURE)
-public class AnnotationMethodLoggingSource
+class AnnotationMethodLoggingSource
 {
   private final Map<MethodClassKey,MethodLoggingDef> methodLoggingDefinitionCache;
   private final LocalVariableTableParameterNameDiscoverer nameDiscoverer;
 
 
-  public AnnotationMethodLoggingSource()
+  AnnotationMethodLoggingSource()
   {
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
@@ -131,16 +126,17 @@ public class AnnotationMethodLoggingSource
   {
     val loggerFieldName = methodLogging.loggerFieldName();
 
-    for(; clazz != Object.class && clazz != null; clazz = clazz.getSuperclass())
-    {
-      try {
-        val field = clazz.getDeclaredField(loggerFieldName);
-        field.setAccessible(true);
+    if (!loggerFieldName.isEmpty())
+      for(; clazz != Object.class && clazz != null; clazz = clazz.getSuperclass())
+      {
+        try {
+          val field = clazz.getDeclaredField(loggerFieldName);
+          field.setAccessible(true);
 
-        return field;
-      } catch(Exception ignored) {
+          return field;
+        } catch(Exception ignored) {
+        }
       }
-    }
 
     return null;
   }

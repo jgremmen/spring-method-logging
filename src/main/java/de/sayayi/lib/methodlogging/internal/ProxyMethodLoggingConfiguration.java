@@ -23,7 +23,7 @@ public class ProxyMethodLoggingConfiguration implements ImportAware
   @Bean @Role(ROLE_INFRASTRUCTURE)
   public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor()
   {
-    val advisor = new BeanFactoryMethodLoggingAdvisor();
+    val advisor = new BeanFactoryMethodLoggingAdvisor(annotationMethodLoggingSource());
 
     advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
 
@@ -42,5 +42,17 @@ public class ProxyMethodLoggingConfiguration implements ImportAware
       throw new IllegalArgumentException("@EnableMethodLogging is not present on importing class " +
           importMetadata.getClassName());
     }
+  }
+
+
+  @Bean @Role(ROLE_INFRASTRUCTURE)
+  public AnnotationMethodLoggingSource annotationMethodLoggingSource() {
+    return new AnnotationMethodLoggingSource();
+  }
+
+
+  @Bean @Role(ROLE_INFRASTRUCTURE)
+  public MethodLoggingInterceptor methodLoggingInterceptor() {
+    return new MethodLoggingInterceptor(annotationMethodLoggingSource());
   }
 }
