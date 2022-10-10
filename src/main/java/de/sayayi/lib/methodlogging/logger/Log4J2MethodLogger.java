@@ -46,7 +46,7 @@ public final class Log4J2MethodLogger implements MethodLogger
   {
     try {
       return new Log4J2MethodLogger((Logger)loggerField.get(instance));
-    } catch (IllegalAccessException e) {
+    } catch(IllegalAccessException e) {
       return NO_OP;
     }
   }

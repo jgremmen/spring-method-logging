@@ -70,17 +70,17 @@ public class AnnotationMethodLoggingSource
 
         for(int p = 0; p < parameterNames.length; p++)
         {
-          val paramLogAnnotation = getMergedAnnotation(parameters[p], ParamLog.class);
-          if (paramLogAnnotation == null || !paramLogAnnotation.hide())
+          val paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+          if (paramLog == null || !paramLog.hide())
           {
             val def = new ParameterDef();
 
             def.index = p;
-            def.inMethod = paramLogAnnotation != null && paramLogAnnotation.inMethod();
+            def.inMethod = paramLog != null && paramLog.inMethod();
 
-            if (!hasLength(def.name = paramLogAnnotation != null ? paramLogAnnotation.name() : ""))
+            if (!hasLength(def.name = paramLog != null ? paramLog.name() : ""))
               def.name = parameterNames[p];
-            if (!hasLength(def.format = paramLogAnnotation != null ? paramLogAnnotation.format() : ""))
+            if (!hasLength(def.format = paramLog != null ? paramLog.format() : ""))
              def.format = "%{value}";
 
             parameterDefs.add(def);

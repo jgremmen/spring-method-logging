@@ -66,7 +66,7 @@ public final class Slf4JMethodLogger implements MethodLogger
   {
     try {
       return new Slf4JMethodLogger((Logger)loggerField.get(instance));
-    } catch (IllegalAccessException e) {
+    } catch(IllegalAccessException e) {
       return NO_OP;
     }
   }

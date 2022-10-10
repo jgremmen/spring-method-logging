@@ -44,7 +44,7 @@ public final class JULMethodLogger implements MethodLogger
   {
     try {
       return new JULMethodLogger((Logger)loggerField.get(instance));
-    } catch (IllegalAccessException e) {
+    } catch(IllegalAccessException e) {
       return NO_OP;
     }
   }

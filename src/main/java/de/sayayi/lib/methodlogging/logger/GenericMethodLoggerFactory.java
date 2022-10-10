@@ -2,7 +2,6 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import lombok.val;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,9 +20,7 @@ public final class GenericMethodLoggerFactory implements MethodLoggerFactory
   @Override
   public @NotNull MethodLogger from(Field loggerField, Object obj)
   {
-    val loggerType = fieldLoggerTypeMap.computeIfAbsent(requireNonNull(loggerField), this::from_type);
-
-    switch(loggerType)
+    switch(fieldLoggerTypeMap.computeIfAbsent(requireNonNull(loggerField), this::from_type))
     {
       case JUL:
         return JULMethodLogger.from(loggerField, obj);
@@ -35,17 +32,15 @@ public final class GenericMethodLoggerFactory implements MethodLoggerFactory
         return Slf4JMethodLogger.from(loggerField, obj);
 
       default:
-        throw new IllegalStateException("unknown logger type: " + loggerType);
+        throw new IllegalStateException("unknown logger type for type " + loggerField.getType());
     }
   }
 
 
   @Contract(pure = true)
-  private @NotNull LoggerType from_type(Field loggerField)
+  private @NotNull LoggerType from_type(@NotNull Field loggerField)
   {
-    val loggerClassName = loggerField.getType().getName();
-
-    switch(loggerClassName)
+    switch(loggerField.getType().getName())
     {
       case "java.util.logging.Logger":
         return LoggerType.JUL;
@@ -57,7 +52,7 @@ public final class GenericMethodLoggerFactory implements MethodLoggerFactory
         return LoggerType.SLF4J;
     }
 
-    throw new IllegalStateException("unknown logger class: " + loggerClassName);
+    throw new IllegalStateException("unknown logger class: " + loggerField.getType());
   }
 
 
