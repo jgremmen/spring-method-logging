@@ -36,7 +36,7 @@ final class ParameterDef implements Serializable
   int index;
   String name;
   String format;
-  boolean inMethod;
+  boolean inline;
 
   Message formatMessage;
 
@@ -45,7 +45,10 @@ final class ParameterDef implements Serializable
   @NotNull Message getFormatMessage(@NotNull MessageContext messageContext)
   {
     if (formatMessage == null)
+    {
       formatMessage = messageContext.getMessageFactory().parse(format).trim();
+      format = null;
+    }
 
     return formatMessage;
   }

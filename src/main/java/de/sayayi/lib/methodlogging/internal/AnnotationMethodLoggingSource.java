@@ -103,7 +103,7 @@ final class AnnotationMethodLoggingSource
           if (!excludeParameters.contains(def.name))
           {
             def.index = p;
-            def.inMethod = paramLog != null && !paramLog.inline();
+            def.inline = paramLog == null || paramLog.inline();
 
             if (!hasLength(def.format = paramLog != null ? paramLog.format() : ""))
               def.format = "%{value}";

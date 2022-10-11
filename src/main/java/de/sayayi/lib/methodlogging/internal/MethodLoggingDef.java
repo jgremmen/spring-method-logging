@@ -44,9 +44,9 @@ final class MethodLoggingDef implements Serializable
   final String methodExitPrefix;
   final List<ParameterDef> inlineParameters;
   final List<ParameterDef> inMethodParameters;
-  final String inlineParameterFormat;
-  final String parameterFormat;
-  final String resultFormat;
+  String inlineParameterFormat;
+  String parameterFormat;
+  String resultFormat;
   final String methodName;
   final int line;
   final boolean showElapsedTime;
@@ -70,12 +70,8 @@ final class MethodLoggingDef implements Serializable
     inlineParameters = new ArrayList<>();
     inMethodParameters = new ArrayList<>();
 
-    parameters.forEach(pd -> {
-      if (pd.inMethod)
-        inMethodParameters.add(pd);
-      else
-        inlineParameters.add(pd);
-    });
+    parameters.forEach(parameterDef ->
+        (parameterDef.inline ? inlineParameters : inMethodParameters).add(parameterDef));
 
     ((ArrayList<ParameterDef>)inlineParameters).trimToSize();
     ((ArrayList<ParameterDef>)inMethodParameters).trimToSize();
@@ -99,7 +95,10 @@ final class MethodLoggingDef implements Serializable
   @NotNull Message getInlineParameterMessage(@NotNull MessageContext messageContext)
   {
     if (inlineParameterMessage == null)
+    {
       inlineParameterMessage = messageContext.getMessageFactory().parse(inlineParameterFormat).trim();
+      inlineParameterFormat = null;
+    }
 
     return inlineParameterMessage;
   }
@@ -109,7 +108,10 @@ final class MethodLoggingDef implements Serializable
   @NotNull Message getParameterMessage(@NotNull MessageContext messageContext)
   {
     if (parameterMessage == null)
+    {
       parameterMessage = messageContext.getMessageFactory().parse(parameterFormat).trim();
+      parameterFormat = null;
+    }
 
     return parameterMessage;
   }
@@ -119,7 +121,10 @@ final class MethodLoggingDef implements Serializable
   @NotNull Message getResultMessage(@NotNull MessageContext messageContext)
   {
     if (resultMessage == null)
+    {
       resultMessage = messageContext.getMessageFactory().parse(resultFormat).trim();
+      resultFormat = null;
+    }
 
     return resultMessage;
   }
