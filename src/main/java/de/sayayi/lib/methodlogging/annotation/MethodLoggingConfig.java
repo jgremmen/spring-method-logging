@@ -38,8 +38,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface MethodLoggingConfig
 {
-  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value}";
   String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value}";
+  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value}";
   String DEFAULT_RESULT_FORMAT = "result = %{result}";
 
 
@@ -58,11 +58,33 @@ public @interface MethodLoggingConfig
    */
   String loggerFieldName() default "logger";
 
+
   String methodEntryPrefix() default "> ";
+
 
   String methodExitPrefix() default "< ";
 
+
+  /**
+   * <p>
+   *   Indicate whether the method line number is logged or not.
+   * </p>
+   * <p>
+   *   The line number is not necessarily the exact line of the method declaration. The reason is that
+   *   a java class does not provide line information of methods but only of statements. The line number
+   *   presented is usually the line of the first statement in the method body.
+   * </p>
+   * <p>
+   *   If the class does not provide line number information, the visibility is reduced to {@link Visibility#HIDE}.
+   * </p>
+   *
+   * @return  {@link Visibility#SHOW} (the default) shows the line number if available,
+   *          {@link Visibility#HIDE} does not show the line number
+   *
+   * @see MethodLogging#lineNumber()
+   */
   Visibility lineNumber() default SHOW;
+
 
   Visibility elapsedTime() default HIDE;
 

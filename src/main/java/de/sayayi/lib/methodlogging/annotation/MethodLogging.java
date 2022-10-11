@@ -38,9 +38,9 @@ public @interface MethodLogging
    *   {@link MethodLoggingConfig#loggerFieldName()}.
    * </p>
    * <p>
-   *   Generally the loggable instance is a slf4j/jul/log4j logger but there are no restrictions to the kind
-   *   of object held by the field.<br>
-   *   The method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()}
+   *   Generally the loggable instance is a slf4j/jul/log4j logger or a logger from another logging framework
+   *   but essentially there are no restrictions to the kind of object held by the field. The only constraint
+   *   is that the method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()}
    *   must be able to handle the contents of the field.
    * </p>
    *
@@ -48,7 +48,26 @@ public @interface MethodLogging
    */
   String loggerFieldName() default "<DEFAULT>";
 
+
+  /**
+   * <p>
+   *   Indicate whether the method line number is logged or not.
+   * </p>
+   * <p>
+   *   The line number is not necessarily the exact line of the method declaration. The reason is that
+   *   a java class does not provide line information of methods but only of statements. The line number
+   *   presented is usually the line of the first statement in the method body.
+   * </p>
+   * <p>
+   *   If the class does not provide line number information, the visibility is reduced to {@link Visibility#HIDE}.
+   * </p>
+   *
+   * @return  {@link Visibility#SHOW} shows the line number if available, {@link Visibility#HIDE} does not show
+   *          the line number, {@link Visibility#DEFAULT} uses the default setting from
+   *          {@link MethodLoggingConfig#lineNumber()}
+   */
   Visibility lineNumber() default Visibility.DEFAULT;
+
 
   Visibility elapsedTime() default Visibility.DEFAULT;
 
@@ -72,14 +91,33 @@ public @interface MethodLogging
 
 
 
-  enum Visibility {
-    DEFAULT, SHOW, HIDE;
+
+  /** Feature visibility */
+  enum Visibility
+  {
+    /** for internal use only */
+    DEFAULT,
+
+    SHOW,
+    HIDE;
   }
 
 
 
 
-  enum Level {
-    DEFAULT, TRACE, DEBUG, INFO
+  /** Logging level */
+  enum Level
+  {
+    /** for internal use only */
+    DEFAULT,
+
+    /** Trace log level */
+    TRACE,
+
+    /** Debug log level */
+    DEBUG,
+
+    /** Info log level */
+    INFO
   }
 }
