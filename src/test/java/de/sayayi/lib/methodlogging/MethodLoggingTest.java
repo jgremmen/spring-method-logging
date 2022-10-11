@@ -49,8 +49,7 @@ import java.util.Locale;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -125,6 +124,19 @@ public class MethodLoggingTest
 
 
   @Test
+  void testMethod_exception()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class,
+        () -> myBean.exception(314)).getMessage());
+    assertEquals("INFO|> exception(id=314)", factory.log.get(0));
+    assertEquals("INFO|< exception -> IllegalArgumentException(314)", factory.log.get(1));
+  }
+
+
+  @Test
   void testJULLogger()
   {
     methodLoggerFactoryDelegate.setFactory(new GenericMethodLoggerFactory());
@@ -161,6 +173,12 @@ public class MethodLoggingTest
     @MethodLogging(lineNumber = HIDE, exclude = { "id", "p1" })
     @SuppressWarnings("unused")
     public void excludeParams(@ParamLog(name = "id") int p0, int p1, String name, Locale locale) {
+    }
+
+
+    @MethodLogging(lineNumber = HIDE)
+    public void exception(int id) {
+      throw new IllegalArgumentException(Integer.toString(id));
     }
   }
 
