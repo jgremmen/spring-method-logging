@@ -36,8 +36,6 @@ public @interface ParamLog
 
   String format() default "";
 
-  boolean hide() default false;
-
   boolean inline() default true;
 
   String name() default "";
