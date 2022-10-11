@@ -52,6 +52,7 @@ public @interface MethodLogging
 
   Level resultLevel() default Level.DEFAULT;
 
+  String[] exclude() default {};
 
 
 

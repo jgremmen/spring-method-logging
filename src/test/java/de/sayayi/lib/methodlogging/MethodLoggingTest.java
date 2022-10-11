@@ -45,6 +45,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
@@ -110,6 +111,19 @@ public class MethodLoggingTest
 
 
   @Test
+  void testMethod_excludeParams()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    myBean.excludeParams(12, -45,"Mr. Bean", Locale.UK);
+
+    assertEquals("INFO|> excludeParams(name=Mr. Bean,locale=en_GB)", factory.log.get(0));
+    assertEquals("INFO|< excludeParams", factory.log.get(1));
+  }
+
+
+  @Test
   void testJULLogger()
   {
     methodLoggerFactoryDelegate.setFactory(new GenericMethodLoggerFactory());
@@ -141,6 +155,12 @@ public class MethodLoggingTest
     public void setWithMultipleParams(@ParamLog(name = "id") int p0,
                                       @ParamLog(inMethod = true, name = "name") String p1) {
     }
+
+
+    @MethodLogging(lineNumber = HIDE, exclude = { "id", "p1" })
+    @SuppressWarnings("unused")
+    public void excludeParams(@ParamLog(name = "id") int p0, int p1, String name, Locale locale) {
+    }
   }
 
 
@@ -162,7 +182,7 @@ public class MethodLoggingTest
   @Configuration
   @EnableMethodLogging
   @Import({ MyBean.class, JULLoggerBean.class })
-  public static class MyConfiguration implements MethodLoggingConfigurer
+  static class MyConfiguration implements MethodLoggingConfigurer
   {
     @Override
     public MessageContext messageContext()
@@ -186,7 +206,7 @@ public class MethodLoggingTest
 
 
 
-  static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
+  private static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
     @Setter @Delegate private MethodLoggerFactory factory;
   }
 

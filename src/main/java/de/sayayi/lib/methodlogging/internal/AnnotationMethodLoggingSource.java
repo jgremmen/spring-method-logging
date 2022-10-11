@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
@@ -90,6 +91,7 @@ final class AnnotationMethodLoggingSource
       if (parameterNames != null && methodLogging.parameters() == SHOW)
       {
         val parameters = method.getParameters();
+        val excludeParameters = asList(methodLogging.exclude());
 
         for(int p = 0; p < parameterNames.length; p++)
         {
@@ -98,15 +100,18 @@ final class AnnotationMethodLoggingSource
           {
             val def = new ParameterDef();
 
-            def.index = p;
-            def.inMethod = paramLog != null && paramLog.inMethod();
-
             if (!hasLength(def.name = paramLog != null ? paramLog.name() : ""))
               def.name = parameterNames[p];
-            if (!hasLength(def.format = paramLog != null ? paramLog.format() : ""))
-             def.format = "%{value}";
+            if (!excludeParameters.contains(def.name))
+            {
+              def.index = p;
+              def.inMethod = paramLog != null && paramLog.inMethod();
 
-            parameterDefs.add(def);
+              if (!hasLength(def.format = paramLog != null ? paramLog.format() : ""))
+                def.format = "%{value}";
+
+              parameterDefs.add(def);
+            }
           }
         }
 
