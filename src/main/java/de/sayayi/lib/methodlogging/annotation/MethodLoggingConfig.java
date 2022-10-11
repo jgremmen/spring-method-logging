@@ -75,7 +75,8 @@ public @interface MethodLoggingConfig
    *   presented is usually the line of the first statement in the method body.
    * </p>
    * <p>
-   *   If the class does not provide line number information, the visibility is reduced to {@link Visibility#HIDE}.
+   *   If the class does not provide line number information, the visibility is reduced to
+   *   {@link Visibility#HIDE}.
    * </p>
    *
    * @return  {@link Visibility#SHOW} (the default) shows the line number if available,

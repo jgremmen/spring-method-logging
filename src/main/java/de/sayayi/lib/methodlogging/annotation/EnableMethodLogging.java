@@ -1,7 +1,9 @@
 package de.sayayi.lib.methodlogging.annotation;
 
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.internal.EnableMethodLoggingSelector;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 
@@ -17,8 +19,7 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 
 /**
  * Enables Spring's annotation-driven method logging capability. To be used together
- * with @{@link org.springframework.context.annotation.Configuration Configuration}
- * classes as follows:
+ * with @{@link Configuration} classes as follows:
  *
  * <pre class="code">
  * &#064;Configuration
@@ -43,7 +44,7 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  * {@code @EnableMethodLogging} is responsible for registering the necessary Spring
  * components that power annotation-driven method logging, such as the
  * proxy- or AspectJ-based advice that weaves the interceptor into the call stack when
- * {@link de.sayayi.lib.methodlogging.annotation.MethodLogging @MethodLogging} methods are invoked.
+ * {@link MethodLogging @MethodLogging} methods are invoked.
  *
  * <p>The {@link #mode} attribute controls how advice is applied: If the mode is
  * {@link AdviceMode#PROXY} (the default), then the other attributes control the behavior
@@ -59,7 +60,7 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  * @author Jeroen Gremmen
  * @since 0.1.0
  *
- * @see de.sayayi.lib.methodlogging.MethodLoggingConfigurer
+ * @see MethodLoggingConfigurer
  */
 @Target(TYPE)
 @Retention(RUNTIME)
