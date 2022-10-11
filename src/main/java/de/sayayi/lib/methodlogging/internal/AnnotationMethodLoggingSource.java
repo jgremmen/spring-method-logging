@@ -116,7 +116,7 @@ final class AnnotationMethodLoggingSource
             synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, classType),
             parameterDefs, methodLogging, method,
             methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
-            findLoggerAccessor(method.getDeclaringClass(), methodLogging));
+            findLoggerField(method.getDeclaringClass(), methodLogging));
       }
     }
 
@@ -199,7 +199,7 @@ final class AnnotationMethodLoggingSource
   }
 
 
-  private Field findLoggerAccessor(Class<?> clazz, @NotNull MethodLogging methodLogging)
+  private Field findLoggerField(Class<?> clazz, @NotNull MethodLogging methodLogging)
   {
     val loggerFieldName = methodLogging.loggerFieldName();
 

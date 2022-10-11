@@ -34,7 +34,6 @@ public @interface ParamLog
   @AliasFor("format")
   String value() default "";
 
-  @AliasFor("value")
   String format() default "";
 
   boolean hide() default false;

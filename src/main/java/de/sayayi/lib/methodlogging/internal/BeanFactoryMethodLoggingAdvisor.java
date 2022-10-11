@@ -33,7 +33,7 @@ import static lombok.AccessLevel.PROTECTED;
  */
 @RequiredArgsConstructor(access = PROTECTED)
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
-public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
+final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
 {
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 

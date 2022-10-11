@@ -17,7 +17,9 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.MessageContext;
 import de.sayayi.lib.message.MessageContext.ParameterBuilder;
+import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
+import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
@@ -33,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.StringJoiner;
 
-import static de.sayayi.lib.message.MessageFactory.NO_CACHE_INSTANCE;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
@@ -62,16 +63,16 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
   @Override
   public void afterPropertiesSet()
   {
-    if (methodLoggingConfigurer != null)
+    if (methodLoggingConfigurer == null)
+      methodLoggingConfigurer = new MethodLoggingConfigurer() {};
+
+    if ((messageContext = methodLoggingConfigurer.messageContext()) == null)
     {
-      messageContext = methodLoggingConfigurer.messageContext();
-      methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory();
+      messageContext = new MessageContext(DefaultFormatterService.getSharedInstance(),
+          new MessageFactory(new LRUMessagePartNormalizer(64)));
     }
 
-    if (messageContext == null)
-      messageContext = new MessageContext(DefaultFormatterService.getSharedInstance(), NO_CACHE_INSTANCE);
-
-    if (methodLoggerFactory == null)
+    if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
       methodLoggerFactory = new GenericMethodLoggerFactory();
   }
 

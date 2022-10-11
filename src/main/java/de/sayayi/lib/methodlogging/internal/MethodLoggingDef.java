@@ -58,9 +58,8 @@ final class MethodLoggingDef implements Serializable
   Message resultMessage;
 
 
-  MethodLoggingDef(@NotNull MethodLoggingConfig methodLoggingConfig,
-                   @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging,
-                   @NotNull Method method, int line, Field loggerField)
+  MethodLoggingDef(@NotNull MethodLoggingConfig methodLoggingConfig, @NotNull List<ParameterDef> parameters,
+                   @NotNull MethodLogging methodLogging, @NotNull Method method, int line, Field loggerField)
   {
     methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
     methodExitPrefix = methodLoggingConfig.methodExitPrefix();
