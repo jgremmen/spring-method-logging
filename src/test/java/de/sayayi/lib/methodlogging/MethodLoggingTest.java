@@ -15,10 +15,16 @@
  */
 package de.sayayi.lib.methodlogging;
 
+import de.sayayi.lib.message.MessageContext;
+import de.sayayi.lib.message.MessageFactory;
+import de.sayayi.lib.message.formatter.GenericFormatterService;
+import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
+import de.sayayi.lib.methodlogging.annotation.ParamLog;
+import de.sayayi.lib.methodlogging.formatter.CutOffFormatter;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import de.sayayi.lib.methodlogging.logger.JULMethodLogger;
 import lombok.Setter;
@@ -40,8 +46,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -61,7 +69,7 @@ public class MethodLoggingTest
 
 
   @Test
-  void testMethod()
+  void testMethod_getName()
   {
     val factory = new ListMethodLoggerFactory();
     methodLoggerFactoryDelegate.setFactory(factory);
@@ -71,6 +79,33 @@ public class MethodLoggingTest
     assertEquals("INFO|> getName", factory.log.get(0));
     assertEquals("DEBUG|name = Mr. Bean", factory.log.get(1));
     assertEquals("INFO|< getName", factory.log.get(2));
+  }
+
+
+  @Test
+  void testMethod_setWithParam()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    myBean.setWithParam("This is a very long text");
+
+    assertTrue(factory.log.get(0).startsWith("DEBUG|> setWithParam(name=This...):"));
+    assertTrue(factory.log.get(1).startsWith("DEBUG|< setWithParam:"));
+  }
+
+
+  @Test
+  void testMethod_setWithMultipleParams()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    myBean.setWithMultipleParams(45, "Mr. Bean");
+
+    assertEquals("INFO|> setWithMultipleParams(id=45)", factory.log.get(0));
+    assertEquals("DEBUG|name=Mr. Bean", factory.log.get(1));
+    assertEquals("INFO|< setWithMultipleParams", factory.log.get(2));
   }
 
 
@@ -96,8 +131,14 @@ public class MethodLoggingTest
     }
 
 
-    @MethodLogging
-    public void setName(String name) {
+    @MethodLogging(entryExitLevel = DEBUG)
+    public void setWithParam(@ParamLog("%{value,cutoff,8}") String name) {
+    }
+
+
+    @MethodLogging(lineNumber = HIDE)
+    public void setWithMultipleParams(@ParamLog(name = "id") int p0,
+                                      @ParamLog(inMethod = true, name = "name") String p1) {
     }
   }
 
@@ -122,6 +163,18 @@ public class MethodLoggingTest
   @Import({ MyBean.class, JULLoggerBean.class })
   public static class MyConfiguration implements MethodLoggingConfigurer
   {
+    @Override
+    public MessageContext messageContext()
+    {
+      val formatterService = new GenericFormatterService();
+
+      formatterService.addFormatter(new CutOffFormatter());
+
+      return new MessageContext(formatterService,
+          new MessageFactory(new LRUMessagePartNormalizer(64)));
+    }
+
+
     @Bean
     @Override
     public MethodLoggerFactoryDelegate methodLoggerFactory() {
