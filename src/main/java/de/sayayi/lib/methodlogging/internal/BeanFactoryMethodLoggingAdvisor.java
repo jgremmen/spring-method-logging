@@ -29,7 +29,7 @@ import static lombok.AccessLevel.PROTECTED;
 
 /**
  * @author Jeroen Gremmen
- * @version 0.1.0
+ * @since 0.1.0
  */
 @RequiredArgsConstructor(access = PROTECTED)
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")

@@ -23,7 +23,7 @@ import org.springframework.core.type.AnnotationMetadata;
 
 /**
  * @author Jeroen Gremmen
- * @version 0.1.0
+ * @since 0.1.0
  */
 public final class EnableMethodLoggingSelector implements ImportSelector
 {

@@ -34,7 +34,7 @@ import static java.util.Collections.emptySet;
 
 /**
  * @author Jeroen Gremmen
- * @version 0.1.0
+ * @since 0.1.0
  */
 public final class CutOffFormatter extends AbstractParameterFormatter implements NamedParameterFormatter
 {

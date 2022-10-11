@@ -26,7 +26,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * @author Jeroen Gremmen
- * @version 0.1.0
+ * @since 0.1.0
  */
 @Target(METHOD)
 @Retention(RUNTIME)

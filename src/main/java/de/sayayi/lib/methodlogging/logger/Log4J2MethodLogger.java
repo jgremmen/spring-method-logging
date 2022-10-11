@@ -30,7 +30,7 @@ import static lombok.AccessLevel.PRIVATE;
 
 /**
  * @author Jeroen Gremmen
- * @version 0.1.0
+ * @since 0.1.0
  */
 @RequiredArgsConstructor(access = PRIVATE)
 @SuppressWarnings("DuplicatedCode")

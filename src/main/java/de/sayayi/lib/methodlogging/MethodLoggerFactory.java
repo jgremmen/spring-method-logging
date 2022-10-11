@@ -26,7 +26,7 @@ import java.lang.reflect.Field;
  * A method logger factory is responsible for creating a {@link MethodLogger} for a given object.
  *
  * @author Jeroen Gremmen
- * @version 0.1.0
+ * @since 0.1.0
  *
  * @see GenericMethodLoggerFactory
  */
