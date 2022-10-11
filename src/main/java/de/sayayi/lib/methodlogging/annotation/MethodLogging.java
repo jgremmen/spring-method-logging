@@ -40,6 +40,8 @@ public @interface MethodLogging
 
   Visibility result() default Visibility.DEFAULT;
 
+  String inlineParameterFormat() default "<DEFAULT>";
+
   String parameterFormat() default "<DEFAULT>";
 
   String resultFormat() default "<DEFAULT>";

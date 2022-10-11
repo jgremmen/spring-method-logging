@@ -37,6 +37,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface MethodLoggingConfig
 {
+  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value}";
+  String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value}";
+  String DEFAULT_RESULT_FORMAT = "result = %{result}";
+
+
   String loggerFieldName() default "logger";
 
   String methodEntryPrefix() default "> ";
@@ -51,9 +56,11 @@ public @interface MethodLoggingConfig
 
   Visibility result() default SHOW;
 
-  String parameterFormat() default "%{parameter}=%{value}";
+  String inlineParameterFormat() default DEFAULT_INLINE_PARAMETER_FORMAT;
 
-  String resultFormat() default "result = %{result}";
+  String parameterFormat() default DEFAULT_PARAMETER_FORMAT;
+
+  String resultFormat() default DEFAULT_RESULT_FORMAT;
 
   Level entryExitLevel() default INFO;
 

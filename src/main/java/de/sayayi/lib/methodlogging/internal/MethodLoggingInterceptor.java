@@ -120,7 +120,7 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
     {
       val parameterList = new StringJoiner(",", "(", ")");
       for(val pd: methodLoggingDef.inlineParameters)
-        parameterList.add(logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
+        parameterList.add(logMethodEntry_inlineParameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
 
       method.append(parameterList);
     }
@@ -136,6 +136,17 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
         methodLogger.log(methodLoggingDef.parameterLevel,
             logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
       }
+  }
+
+
+  private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodLoggingDef methodLoggingDef,
+                                                         @NotNull ParameterDef parameterDef,
+                                                         @NotNull ParameterBuilder parameters, Object value)
+  {
+    return methodLoggingDef.getInlineParameterMessage(messageContext).format(messageContext, parameters
+        .with("parameter", parameterDef.name)
+        .with("value", parameterDef.getFormatMessage(messageContext)
+            .format(messageContext, singletonMap("value", value))));
   }
 
 

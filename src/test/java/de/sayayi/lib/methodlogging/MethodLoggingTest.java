@@ -104,7 +104,7 @@ public class MethodLoggingTest
     myBean.setWithMultipleParams(45, "Mr. Bean");
 
     assertEquals("INFO|> setWithMultipleParams(id=45)", factory.log.get(0));
-    assertEquals("DEBUG|name=Mr. Bean", factory.log.get(1));
+    assertEquals("DEBUG|parameter 'name' = Mr. Bean", factory.log.get(1));
     assertEquals("INFO|< setWithMultipleParams", factory.log.get(2));
   }
 
@@ -132,11 +132,12 @@ public class MethodLoggingTest
 
 
     @MethodLogging(entryExitLevel = DEBUG)
-    public void setWithParam(@ParamLog("%{value,cutoff,8}") String name) {
+    public void setWithParam(@SuppressWarnings("unused") @ParamLog("%{value,cutoff,8}") String name) {
     }
 
 
     @MethodLogging(lineNumber = HIDE)
+    @SuppressWarnings("unused")
     public void setWithMultipleParams(@ParamLog(name = "id") int p0,
                                       @ParamLog(inMethod = true, name = "name") String p1) {
     }

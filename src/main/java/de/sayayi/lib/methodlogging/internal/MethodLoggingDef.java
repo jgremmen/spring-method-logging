@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
 
 
 /**
@@ -43,6 +44,7 @@ final class MethodLoggingDef implements Serializable
   final String methodExitPrefix;
   final List<ParameterDef> inlineParameters;
   final List<ParameterDef> inMethodParameters;
+  final String inlineParameterFormat;
   final String parameterFormat;
   final String resultFormat;
   final String methodName;
@@ -54,6 +56,7 @@ final class MethodLoggingDef implements Serializable
   final Level parameterLevel;
   final Level resultLevel;
 
+  Message inlineParameterMessage;
   Message parameterMessage;
   Message resultMessage;
 
@@ -81,13 +84,24 @@ final class MethodLoggingDef implements Serializable
     this.line = line;
 
     methodName = method.getName();
-    parameterFormat = notEmpty(methodLogging.parameterFormat(), "%{parameter}=%{value}");
-    resultFormat = notEmpty(methodLogging.resultFormat(), "result = %{result}");
+    inlineParameterFormat = notEmpty(methodLogging.inlineParameterFormat(), DEFAULT_INLINE_PARAMETER_FORMAT);
+    parameterFormat = notEmpty(methodLogging.parameterFormat(), DEFAULT_PARAMETER_FORMAT);
+    resultFormat = notEmpty(methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT);
     showElapsedTime = methodLogging.elapsedTime() == SHOW;
     showResult = method.getReturnType() != void.class && methodLogging.result() == SHOW;
     entryExitLevel = methodLogging.entryExitLevel();
     parameterLevel = methodLogging.parameterLevel();
     resultLevel = methodLogging.resultLevel();
+  }
+
+
+  @Synchronized
+  @NotNull Message getInlineParameterMessage(@NotNull MessageContext messageContext)
+  {
+    if (inlineParameterMessage == null)
+      inlineParameterMessage = messageContext.getMessageFactory().parse(inlineParameterFormat).trim();
+
+    return inlineParameterMessage;
   }
 
 
