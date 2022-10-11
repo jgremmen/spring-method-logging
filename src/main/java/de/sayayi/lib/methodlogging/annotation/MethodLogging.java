@@ -15,6 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.annotation;
 
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -30,6 +32,20 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface MethodLogging
 {
+  /**
+   * <p>
+   *   The field name in this class that contains a loggable instance. The default is the value provided by
+   *   {@link MethodLoggingConfig#loggerFieldName()}.
+   * </p>
+   * <p>
+   *   Generally the loggable instance is a slf4j/jul/log4j logger but there are no restrictions to the kind
+   *   of object held by the field.<br>
+   *   The method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()}
+   *   must be able to handle the contents of the field.
+   * </p>
+   *
+   * @return  logger field name
+   */
   String loggerFieldName() default "<DEFAULT>";
 
   Visibility lineNumber() default Visibility.DEFAULT;
