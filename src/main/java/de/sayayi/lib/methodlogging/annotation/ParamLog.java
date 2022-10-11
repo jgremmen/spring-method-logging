@@ -38,7 +38,7 @@ public @interface ParamLog
 
   boolean hide() default false;
 
-  boolean inMethod() default false;
+  boolean inline() default true;
 
   String name() default "";
 }

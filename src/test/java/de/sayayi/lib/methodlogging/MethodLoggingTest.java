@@ -62,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     MethodLoggingTest.MyConfiguration.class,
     MethodLoggingTest.MyBean.class
 })
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 public class MethodLoggingTest
 {
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
@@ -153,7 +154,7 @@ public class MethodLoggingTest
     @MethodLogging(lineNumber = HIDE)
     @SuppressWarnings("unused")
     public void setWithMultipleParams(@ParamLog(name = "id") int p0,
-                                      @ParamLog(inMethod = true, name = "name") String p1) {
+                                      @ParamLog(inline = false, name = "name") String p1) {
     }
 
 
