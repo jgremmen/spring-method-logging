@@ -19,6 +19,7 @@ import de.sayayi.lib.message.MessageContext;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -81,6 +82,17 @@ public interface MethodLoggingConfigurer
   }
 
 
+  /**
+   * <p>
+   *   Returns the default logger field name.
+   * </p>
+   * <p>
+   *   This value can be overridden on a class level (see {@link MethodLoggingConfig#loggerFieldName()}) or on
+   *   a method level (see {@link MethodLogging#loggerFieldName()}).
+   * </p>
+   *
+   * @return  logger field name, never {@code null}
+   */
   @Contract(pure = true)
   default @NotNull String defaultLoggerFieldName() {
     return "log";
