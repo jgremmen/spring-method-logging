@@ -15,8 +15,10 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import lombok.val;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportAware;
@@ -53,16 +55,20 @@ public class MethodLoggingConfiguration implements ImportAware
   }
 
 
-  @Bean(autowireCandidate = false) @Role(ROLE_INFRASTRUCTURE)
-  public AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource() {
-    return new AnnotationMethodLoggingSource();
+  @Bean @Role(ROLE_INFRASTRUCTURE)
+  public AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
+      @Autowired(required = false) MethodLoggingConfigurer methodLoggingConfigurer)
+  {
+    return new AnnotationMethodLoggingSource((methodLoggingConfigurer == null
+        ? new MethodLoggingConfigurer() {} : methodLoggingConfigurer).defaultLoggerFieldName());
   }
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor()
+  public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor(
+      AnnotationMethodLoggingSource annotationMethodLoggingSource)
   {
-    val advisor = new BeanFactoryMethodLoggingAdvisor(internalAnnotationMethodLoggingSource());
+    val advisor = new BeanFactoryMethodLoggingAdvisor(annotationMethodLoggingSource);
 
     advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
 
@@ -71,7 +77,8 @@ public class MethodLoggingConfiguration implements ImportAware
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  public MethodLoggingInterceptor internalMethodLoggingInterceptor() {
-    return new MethodLoggingInterceptor(internalAnnotationMethodLoggingSource());
+  public MethodLoggingInterceptor internalMethodLoggingInterceptor(
+      AnnotationMethodLoggingSource annotationMethodLoggingSource) {
+    return new MethodLoggingInterceptor(annotationMethodLoggingSource);
   }
 }

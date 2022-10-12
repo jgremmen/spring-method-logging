@@ -49,6 +49,7 @@ import java.util.Locale;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -150,33 +151,34 @@ public class MethodLoggingTest
 
 
   @Component
+  @MethodLoggingConfig(lineNumber = HIDE)
   public static class MyBean
   {
-    @MethodLogging(lineNumber = HIDE, resultFormat = "name = %{result}")
+    @MethodLogging(resultFormat = "name = %{result}")
     public String getName() {
       return "Mr. Bean";
     }
 
 
-    @MethodLogging(entryExitLevel = DEBUG)
+    @MethodLogging(lineNumber = SHOW, entryExitLevel = DEBUG)
     public void setWithParam(@SuppressWarnings("unused") @ParamLog("%{value,cutoff,8}") String name) {
     }
 
 
-    @MethodLogging(lineNumber = HIDE)
+    @MethodLogging
     @SuppressWarnings("unused")
     public void setWithMultipleParams(@ParamLog(name = "id") int p0,
                                       @ParamLog(inline = false, name = "name") String p1) {
     }
 
 
-    @MethodLogging(lineNumber = HIDE, exclude = { "id", "p1" })
+    @MethodLogging(exclude = { "id", "p1" })
     @SuppressWarnings("unused")
     public void excludeParams(@ParamLog(name = "id") int p0, int p1, String name, Locale locale) {
     }
 
 
-    @MethodLogging(lineNumber = HIDE)
+    @MethodLogging
     public void exception(int id) {
       throw new IllegalArgumentException(Integer.toString(id));
     }
@@ -187,7 +189,6 @@ public class MethodLoggingTest
 
   @Component
   @Log
-  @MethodLoggingConfig(loggerFieldName = "log")
   public static class JULLoggerBean
   {
     @MethodLogging

@@ -56,12 +56,14 @@ final class AnnotationMethodLoggingSource
 {
   private final Map<MethodClassKey,MethodLoggingDef> methodLoggingDefinitionCache;
   private final LocalVariableTableParameterNameDiscoverer nameDiscoverer;
+  private final String defaultLoggerFieldName;
 
 
-  AnnotationMethodLoggingSource()
+  AnnotationMethodLoggingSource(@NotNull String defaultLoggerFieldName)
   {
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
+    this.defaultLoggerFieldName = defaultLoggerFieldName;
   }
 
 
@@ -146,6 +148,9 @@ final class AnnotationMethodLoggingSource
           attributes.put(name, m.getDefaultValue());
       }
     }
+
+    if ("<DEFAULT>".equals(attributes.getString("loggerFieldName")))
+      attributes.put("loggerFieldName", defaultLoggerFieldName);
 
     return attributes;
   }

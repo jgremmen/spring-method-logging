@@ -21,6 +21,7 @@ import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Configuration;
 
 
@@ -77,5 +78,11 @@ public interface MethodLoggingConfigurer
   @Contract(pure = true)
   default MethodLoggerFactory methodLoggerFactory() {
     return null;
+  }
+
+
+  @Contract(pure = true)
+  default @NotNull String defaultLoggerFieldName() {
+    return "log";
   }
 }

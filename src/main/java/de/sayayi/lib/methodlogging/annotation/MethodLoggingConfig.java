@@ -45,7 +45,7 @@ public @interface MethodLoggingConfig
 
   /**
    * <p>
-   *   The field name in this class that contains a loggable instance. The default is {@code "logger"}.
+   *   The field name in this class that contains a loggable instance. The default is {@code "log"}.
    * </p>
    * <p>
    *   Generally the loggable instance is a slf4j/jul/log4j logger but there are no restrictions to the kind
@@ -55,8 +55,10 @@ public @interface MethodLoggingConfig
    * </p>
    *
    * @return  logger field name
+   *
+   * @see MethodLoggingConfigurer#defaultLoggerFieldName()
    */
-  String loggerFieldName() default "logger";
+  String loggerFieldName() default "<DEFAULT>";
 
 
   String methodEntryPrefix() default "> ";
