@@ -17,39 +17,35 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
 import de.sayayi.lib.message.MessageContext;
-import lombok.NoArgsConstructor;
-import lombok.Synchronized;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-
-import static lombok.AccessLevel.PACKAGE;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@NoArgsConstructor(access = PACKAGE)
 final class ParameterDef implements Serializable
 {
   int index;
   String name;
-  String format;
   boolean inline;
 
+  String format;
   Message formatMessage;
 
 
-  @Synchronized
   @NotNull Message getFormatMessage(@NotNull MessageContext messageContext)
   {
-    if (formatMessage == null)
-    {
-      formatMessage = messageContext.getMessageFactory().parse(format).trim();
-      format = null;
-    }
+    synchronized(this) {
+      if (formatMessage == null)
+      {
+        formatMessage = messageContext.getMessageFactory().parse(format).trim();
+        format = null;
+      }
 
-    return formatMessage;
+      return formatMessage;
+    }
   }
 }

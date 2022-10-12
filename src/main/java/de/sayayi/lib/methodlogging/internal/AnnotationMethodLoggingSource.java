@@ -135,7 +135,6 @@ final class AnnotationMethodLoggingSource
     for(val m: MethodLoggingConfig.class.getDeclaredMethods())
     {
       val attributeType = m.getReturnType();
-
       if (attributeType != void.class && m.getParameterCount() == 0)
       {
         val name = m.getName();

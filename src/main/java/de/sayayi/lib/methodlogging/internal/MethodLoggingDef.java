@@ -91,42 +91,47 @@ final class MethodLoggingDef implements Serializable
   }
 
 
-  @Synchronized
   @NotNull Message getInlineParameterMessage(@NotNull MessageContext messageContext)
   {
-    if (inlineParameterMessage == null)
-    {
-      inlineParameterMessage = messageContext.getMessageFactory().parse(inlineParameterFormat).trim();
-      inlineParameterFormat = null;
-    }
+    synchronized(this) {
+      if (inlineParameterMessage == null)
+      {
+        inlineParameterMessage = messageContext.getMessageFactory().parse(inlineParameterFormat).trim();
+        inlineParameterFormat = null;
+      }
 
-    return inlineParameterMessage;
+      return inlineParameterMessage;
+    }
   }
 
 
   @Synchronized
   @NotNull Message getParameterMessage(@NotNull MessageContext messageContext)
   {
-    if (parameterMessage == null)
-    {
-      parameterMessage = messageContext.getMessageFactory().parse(parameterFormat).trim();
-      parameterFormat = null;
-    }
+    synchronized(this) {
+      if (parameterMessage == null)
+      {
+        parameterMessage = messageContext.getMessageFactory().parse(parameterFormat).trim();
+        parameterFormat = null;
+      }
 
-    return parameterMessage;
+      return parameterMessage;
+    }
   }
 
 
   @Synchronized
   @NotNull Message getResultMessage(@NotNull MessageContext messageContext)
   {
-    if (resultMessage == null)
-    {
-      resultMessage = messageContext.getMessageFactory().parse(resultFormat).trim();
-      resultFormat = null;
-    }
+    synchronized(this) {
+      if (resultMessage == null)
+      {
+        resultMessage = messageContext.getMessageFactory().parse(resultFormat).trim();
+        resultFormat = null;
+      }
 
-    return resultMessage;
+      return resultMessage;
+    }
   }
 
 

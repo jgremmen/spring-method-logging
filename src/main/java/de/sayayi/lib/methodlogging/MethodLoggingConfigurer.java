@@ -63,12 +63,12 @@ public interface MethodLoggingConfigurer
    * <p>
    *   The default is an instance of {@link GenericMethodLoggerFactory} which is capable of handling logger fields
    *   for the following logger frameworks:
-   *   <ul>
-   *     <li>java util logging (part of jre since 1.4)</li>
-   *     <li>log4j2</li>
-   *     <li>slf4j</li>
-   *   </ul>
    * </p>
+   * <ul>
+   *   <li>java util logging (part of jre since 1.4)</li>
+   *   <li>log4j2</li>
+   *   <li>slf4j</li>
+   * </ul>
    *
    * @return  Method logger factory or {@code null}
    *
