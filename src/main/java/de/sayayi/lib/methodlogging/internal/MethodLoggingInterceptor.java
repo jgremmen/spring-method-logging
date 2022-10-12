@@ -22,15 +22,12 @@ import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.StringJoiner;
 
@@ -45,28 +42,19 @@ import static org.springframework.util.StringUtils.hasLength;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-public class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
+public final class MethodLoggingInterceptor implements MethodInterceptor
 {
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
-
-  @Autowired(required = false)
-  @SuppressWarnings("SpringJavaAutowiredMembersInspection")
-  private MethodLoggingConfigurer methodLoggingConfigurer;
 
   private MessageContext messageContext;
   private MethodLoggerFactory methodLoggerFactory;
 
 
-  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
-    this.annotationMethodLoggingSource = annotationMethodLoggingSource;
-  }
-
-
-  @Override
-  public void afterPropertiesSet()
+  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource)
   {
-    if (methodLoggingConfigurer == null)
-      methodLoggingConfigurer = new MethodLoggingConfigurer() {};
+    this.annotationMethodLoggingSource = annotationMethodLoggingSource;
+
+    val methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
 
     if ((messageContext = methodLoggingConfigurer.messageContext()) == null)
     {

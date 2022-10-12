@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
  * @since 0.1.0
  */
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
-final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
+public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
 {
   private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
 

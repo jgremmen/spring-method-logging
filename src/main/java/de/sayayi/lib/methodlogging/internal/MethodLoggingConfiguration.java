@@ -59,8 +59,8 @@ public class MethodLoggingConfiguration implements ImportAware
   public AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
       @Autowired(required = false) MethodLoggingConfigurer methodLoggingConfigurer)
   {
-    return new AnnotationMethodLoggingSource((methodLoggingConfigurer == null
-        ? new MethodLoggingConfigurer() {} : methodLoggingConfigurer).defaultLoggerFieldName());
+    return new AnnotationMethodLoggingSource(
+        methodLoggingConfigurer == null ? new MethodLoggingConfigurer() {} : methodLoggingConfigurer);
   }
 
 

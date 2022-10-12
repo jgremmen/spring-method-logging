@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
@@ -52,18 +53,19 @@ import static org.springframework.util.StringUtils.hasLength;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-final class AnnotationMethodLoggingSource
+public final class AnnotationMethodLoggingSource
 {
   private final Map<MethodClassKey,MethodLoggingDef> methodLoggingDefinitionCache;
   private final LocalVariableTableParameterNameDiscoverer nameDiscoverer;
-  private final String defaultLoggerFieldName;
+  final MethodLoggingConfigurer methodLoggingConfigurer;
 
 
-  AnnotationMethodLoggingSource(@NotNull String defaultLoggerFieldName)
+  AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer)
   {
+    this.methodLoggingConfigurer = methodLoggingConfigurer;
+
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
-    this.defaultLoggerFieldName = defaultLoggerFieldName;
   }
 
 
@@ -150,7 +152,7 @@ final class AnnotationMethodLoggingSource
     }
 
     if ("<DEFAULT>".equals(attributes.getString("loggerFieldName")))
-      attributes.put("loggerFieldName", defaultLoggerFieldName);
+      attributes.put("loggerFieldName", methodLoggingConfigurer.defaultLoggerFieldName());
 
     return attributes;
   }
