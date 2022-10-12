@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.aop.ClassFilter;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
@@ -24,18 +24,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Method;
 
-import static lombok.AccessLevel.PROTECTED;
-
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor(access = PROTECTED)
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
 final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
 {
-  private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
+  private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
+
+  private final StaticMethodMatcherPointcut pointcut = new StaticMethodMatcherPointcut() {
+    @Override
+    public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
+      return annotationMethodLoggingSource.getMethodLoggingDefinition(method, targetClass).isPresent();
+    }
+  };
+
+
+  BeanFactoryMethodLoggingAdvisor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
+    this.annotationMethodLoggingSource = annotationMethodLoggingSource;
+  }
+
+
+  public void setClassFilter(ClassFilter classFilter) {
+    pointcut.setClassFilter(classFilter);
+  }
 
 
   @Autowired
@@ -45,15 +59,7 @@ final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPointcutA
 
 
   @Override
-  public @NotNull Pointcut getPointcut()
-  {
-    return new StaticMethodMatcherPointcut() {
-      @Override
-      public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass)
-      {
-        return annotationMethodLoggingSource != null &&
-               annotationMethodLoggingSource.getMethodLoggingDefinition(method, targetClass).isPresent();
-      }
-    };
+  public @NotNull Pointcut getPointcut() {
+    return pointcut;
   }
 }

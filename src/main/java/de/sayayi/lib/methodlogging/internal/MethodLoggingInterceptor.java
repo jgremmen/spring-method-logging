@@ -24,7 +24,6 @@ import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -38,7 +37,6 @@ import java.util.StringJoiner;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
-import static lombok.AccessLevel.PROTECTED;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
 import static org.springframework.util.StringUtils.hasLength;
 
@@ -47,8 +45,7 @@ import static org.springframework.util.StringUtils.hasLength;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor(access = PROTECTED)
-class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
+public class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
 {
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
@@ -58,6 +55,11 @@ class MethodLoggingInterceptor implements MethodInterceptor, InitializingBean
 
   private MessageContext messageContext;
   private MethodLoggerFactory methodLoggerFactory;
+
+
+  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
+    this.annotationMethodLoggingSource = annotationMethodLoggingSource;
+  }
 
 
   @Override

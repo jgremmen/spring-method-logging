@@ -34,7 +34,7 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 @Configuration
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")
-class MethodLoggingConfiguration implements ImportAware
+public class MethodLoggingConfiguration implements ImportAware
 {
   private AnnotationAttributes enableMethodLogging;
 
