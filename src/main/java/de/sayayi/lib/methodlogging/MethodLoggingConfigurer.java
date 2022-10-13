@@ -20,10 +20,12 @@ import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
+import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 
 
 /**
@@ -96,5 +98,28 @@ public interface MethodLoggingConfigurer
   @Contract(pure = true)
   default @NotNull String defaultLoggerFieldName() {
     return "log";
+  }
+
+
+  /**
+   * <p>
+   *   Tells whether a method parameter is to be excluded from logging. This method provides a way to
+   *   exclude parameters which have no meaningful string representation or are not important enough to be
+   *   logged at all.
+   * </p>
+   * <p>
+   *   This method is queried for non-primitive types and method parameters without a @{@link ParamLog}
+   *   annotation only.
+   * </p>
+   *
+   * @param methodParameterType  method parameter type
+   *
+   * @return  {@code true} if the parameter must be excluded, {@code false} otherwise
+   *
+   * @since 0.2.1
+   */
+  @Contract(pure = true)
+  default boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType) {
+    return false;
   }
 }

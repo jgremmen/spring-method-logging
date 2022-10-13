@@ -43,6 +43,7 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
+import static org.springframework.core.ResolvableType.forMethodParameter;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotationAttributes;
 import static org.springframework.core.annotation.AnnotationUtils.synthesizeAnnotation;
@@ -104,7 +105,12 @@ public final class AnnotationMethodLoggingSource
 
           if (!hasLength(def.name = paramLog != null ? paramLog.name() : ""))
             def.name = parameterNames[p];
-          if (!excludeParameters.contains(def.name))
+
+          val methodParameterType = forMethodParameter(method, p);
+          val exclude = excludeParameters.contains(def.name) ||
+              (paramLog == null && !methodParameterType.toClass().isPrimitive() &&
+                  methodLoggingConfigurer.excludeMethodParameter(methodParameterType));
+          if (!exclude)
           {
             def.index = p;
             def.inline = paramLog == null || paramLog.inline();
