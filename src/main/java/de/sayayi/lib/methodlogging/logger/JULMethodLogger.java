@@ -26,15 +26,13 @@ import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.*;
-import static lombok.AccessLevel.PRIVATE;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor(access = PRIVATE)
-@SuppressWarnings("DuplicatedCode")
+@RequiredArgsConstructor
 public final class JULMethodLogger implements MethodLogger
 {
   public static final @NotNull MethodLoggerFactory FIELD_FACTORY = JULMethodLogger::from;

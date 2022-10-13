@@ -25,15 +25,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
-import static lombok.AccessLevel.PRIVATE;
-
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor(access = PRIVATE)
-@SuppressWarnings("DuplicatedCode")
+@RequiredArgsConstructor
 public final class Log4J2MethodLogger implements MethodLogger
 {
   public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Log4J2MethodLogger::from;
