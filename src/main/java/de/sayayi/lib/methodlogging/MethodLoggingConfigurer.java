@@ -33,14 +33,12 @@ import org.springframework.core.ResolvableType;
 /**
  * <p>
  *   Interface to be implemented by @{@link Configuration} classes annotated
- *   with @{@link MethodLogging} that wish or need to specify explicitly how messages are
+ *   with @{@link EnableMethodLogging} that wish or need to specify explicitly how messages are
  *   formatted and logged for annotation-driven method logging.
  * </p>
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
- *
- * @see EnableMethodLogging
  */
 public interface MethodLoggingConfigurer
 {

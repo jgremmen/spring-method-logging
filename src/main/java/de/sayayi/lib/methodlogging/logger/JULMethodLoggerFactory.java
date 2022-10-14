@@ -27,7 +27,7 @@ import static java.util.logging.LogManager.getLogManager;
  * @author Jeroen Gremmen
  * @since 0.2.1
  */
-public class JULMethodLoggerFactory extends AbstractMethodLoggerFactory
+public final class JULMethodLoggerFactory extends AbstractMethodLoggerFactory
 {
   public JULMethodLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);

@@ -26,7 +26,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.2.1
  */
-public class Slf4jMethodLoggerFactory extends AbstractMethodLoggerFactory
+public final class Slf4jMethodLoggerFactory extends AbstractMethodLoggerFactory
 {
   public Slf4jMethodLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
