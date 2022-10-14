@@ -22,8 +22,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.INFO;
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEFAULT;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static java.lang.annotation.ElementType.TYPE;
@@ -84,9 +83,10 @@ public @interface MethodLoggingConfig
    * @return  {@link Visibility#SHOW} (the default) shows the line number if available,
    *          {@link Visibility#HIDE} does not show the line number
    *
+   * @see MethodLoggingConfigurer#defaultLineNumber()
    * @see MethodLogging#lineNumber()
    */
-  Visibility lineNumber() default SHOW;
+  Visibility lineNumber() default Visibility.DEFAULT;
 
 
   Visibility elapsedTime() default HIDE;
@@ -101,9 +101,9 @@ public @interface MethodLoggingConfig
 
   String resultFormat() default DEFAULT_RESULT_FORMAT;
 
-  Level entryExitLevel() default INFO;
+  Level entryExitLevel() default DEFAULT;
 
-  Level parameterLevel() default DEBUG;
+  Level parameterLevel() default DEFAULT;
 
-  Level resultLevel() default DEBUG;
+  Level resultLevel() default DEFAULT;
 }

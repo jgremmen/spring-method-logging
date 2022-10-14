@@ -159,6 +159,14 @@ public final class AnnotationMethodLoggingSource
 
     if ("<DEFAULT>".equals(attributes.getString("loggerFieldName")))
       attributes.put("loggerFieldName", methodLoggingConfigurer.defaultLoggerFieldName());
+    if (attributes.getEnum("entryExitLevel") == Level.DEFAULT)
+      attributes.put("entryExitLevel", methodLoggingConfigurer.defaultEntryExitLevel());
+    if (attributes.getEnum("parameterLevel") == Level.DEFAULT)
+      attributes.put("parameterLevel", methodLoggingConfigurer.defaultParameterLevel());
+    if (attributes.getEnum("resultLevel") == Level.DEFAULT)
+      attributes.put("resultLevel", methodLoggingConfigurer.defaultResultLevel());
+    if (attributes.getEnum("lineNumber") == Visibility.DEFAULT)
+      attributes.put("lineNumber", methodLoggingConfigurer.defaultLineNumber());
 
     return attributes;
   }

@@ -19,6 +19,8 @@ import de.sayayi.lib.message.MessageContext;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
@@ -108,8 +110,8 @@ public interface MethodLoggingConfigurer
    *   logged at all.
    * </p>
    * <p>
-   *   This method is queried for non-primitive types and method parameters without a @{@link ParamLog}
-   *   annotation only.
+   *   This method is queried for non-primitive types (except if it is an array, eg. {@code byte[]}) and
+   *   method parameters without a @{@link ParamLog} annotation only.
    * </p>
    *
    * @param methodParameterType  method parameter type
@@ -121,5 +123,41 @@ public interface MethodLoggingConfigurer
   @Contract(pure = true)
   default boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType) {
     return false;
+  }
+
+
+  /**
+   * @since 0.2.1
+   */
+  @Contract(pure = true)
+  default Level defaultEntryExitLevel() {
+    return Level.INFO;
+  }
+
+
+  /**
+   * @since 0.2.1
+   */
+  @Contract(pure = true)
+  default Level defaultParameterLevel() {
+    return Level.DEBUG;
+  }
+
+
+  /**
+   * @since 0.2.1
+   */
+  @Contract(pure = true)
+  default Level defaultResultLevel() {
+    return Level.DEBUG;
+  }
+
+
+  /**
+   * @since 0.2.1
+   */
+  @Contract(pure = true)
+  default Visibility defaultLineNumber() {
+    return Visibility.SHOW;
   }
 }
