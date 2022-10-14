@@ -89,7 +89,18 @@ public @interface MethodLoggingConfig
   Visibility lineNumber() default Visibility.DEFAULT;
 
 
+  /**
+   * <p>
+   *   Indicate whether the elapsed time measured on a method is to be logged on method exit or not.
+   * </p>
+   *
+   * @return  {@link Visibility#SHOW} shows the elapsed time on method exit, {@link Visibility#HIDE}
+   *          (the default) does not show the elapsed time
+   *
+   * @see MethodLogging#elapsedTime()
+   */
   Visibility elapsedTime() default HIDE;
+
 
   Visibility parameters() default SHOW;
 
