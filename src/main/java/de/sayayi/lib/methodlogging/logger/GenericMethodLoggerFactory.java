@@ -16,65 +16,81 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import org.jetbrains.annotations.Contract;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Objects.requireNonNull;
+import static java.util.logging.LogManager.getLogManager;
+import static org.springframework.util.ClassUtils.isPresent;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-public final class GenericMethodLoggerFactory implements MethodLoggerFactory
+public class GenericMethodLoggerFactory extends AbstractMethodLoggerFactory
 {
-  private final Map<Field,LoggerType> fieldLoggerTypeMap = new ConcurrentHashMap<>();
+  private final @NotNull LoggerType loggerFactoryType;
+
+
+  public GenericMethodLoggerFactory(boolean createLoggerOnNoField) {
+    this(null, createLoggerOnNoField);
+  }
+
+
+  public GenericMethodLoggerFactory(ClassLoader classLoader, boolean createLoggerOnNoField)
+  {
+    super(createLoggerOnNoField);
+
+    if (isPresent("org.slf4j.LoggerFactory", classLoader))
+      loggerFactoryType = LoggerType.SLF4J;
+    else if (isPresent("org.apache.logging.log4j.LogManager", classLoader))
+      loggerFactoryType = LoggerType.LOG4J2;
+    else if (isPresent("java.util.logging.LogManager", classLoader))
+      loggerFactoryType = LoggerType.JUL;
+    else
+      throw new IllegalStateException("unable to detect logger factory");
+  }
 
 
   @Override
-  public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj)
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz)
   {
-    switch(fieldLoggerTypeMap.computeIfAbsent(
-        requireNonNull(loggerField, () ->
-            "Class " + obj.getClass() + " or one of its superclasses must provide a logger field"),
-        this::from_type))
+    switch(loggerFactoryType)
     {
-      case JUL:
-        return JULMethodLogger.from(loggerField, obj);
+      case SLF4J:
+        return new Slf4jMethodLogger(LoggerFactory.getLogger(clazz));
 
       case LOG4J2:
-        return Log4J2MethodLogger.from(loggerField, obj);
+        return new Log4j2MethodLogger(LogManager.getLogger(clazz));
 
-      case SLF4J:
-        return Slf4JMethodLogger.from(loggerField, obj);
+      case JUL:
+        return new JULMethodLogger(getLogManager().getLogger(clazz.getName()));
 
-      default:
-        throw new IllegalStateException("unknown logger type for type " + loggerField.getType());
+      default:  // never reached
+        throw new IllegalStateException();
     }
   }
 
 
-  @Contract(pure = true)
-  private @NotNull LoggerType from_type(@NotNull Field loggerField)
+  @Override
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {
     switch(loggerField.getType().getName())
     {
-      case "java.util.logging.Logger":
-        return LoggerType.JUL;
+      case "org.slf4j.Logger":
+        return Slf4jMethodLogger.from(loggerField, obj);
 
       case "org.apache.logging.log4j.Logger":
-        return LoggerType.LOG4J2;
+        return Log4j2MethodLogger.from(loggerField, obj);
 
-      case "org.slf4j.Logger":
-        return LoggerType.SLF4J;
+      case "java.util.logging.Logger":
+        return JULMethodLogger.from(loggerField, obj);
     }
 
-    throw new IllegalStateException("unknown logger class: " + loggerField.getType());
+    return createMethodLogger(obj.getClass());
   }
 
 

@@ -140,7 +140,7 @@ public class MethodLoggingTest
   @Test
   void testJULLogger()
   {
-    methodLoggerFactoryDelegate.setFactory(new GenericMethodLoggerFactory());
+    methodLoggerFactoryDelegate.setFactory(new GenericMethodLoggerFactory(false));
     julLoggerBean.test();
 
     methodLoggerFactoryDelegate.setFactory(JULMethodLogger.FIELD_FACTORY);

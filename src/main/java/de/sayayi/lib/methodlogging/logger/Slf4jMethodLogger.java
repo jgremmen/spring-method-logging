@@ -25,15 +25,17 @@ import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 
+import static lombok.AccessLevel.PACKAGE;
+
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor
-public final class Slf4JMethodLogger implements MethodLogger
+@RequiredArgsConstructor(access = PACKAGE)
+public final class Slf4jMethodLogger implements MethodLogger
 {
-  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Slf4JMethodLogger::from;
+  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Slf4jMethodLogger::from;
 
   private final Logger logger;
 
@@ -81,7 +83,7 @@ public final class Slf4JMethodLogger implements MethodLogger
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {
     try {
-      return new Slf4JMethodLogger((Logger)loggerField.get(instance));
+      return new Slf4jMethodLogger((Logger)loggerField.get(instance));
     } catch(IllegalAccessException e) {
       return NO_OP;
     }

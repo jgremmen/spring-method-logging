@@ -31,9 +31,9 @@ import java.lang.reflect.Field;
  * @since 0.1.0
  */
 @RequiredArgsConstructor
-public final class Log4J2MethodLogger implements MethodLogger
+public final class Log4j2MethodLogger implements MethodLogger
 {
-  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Log4J2MethodLogger::from;
+  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Log4j2MethodLogger::from;
 
 
   private static final org.apache.logging.log4j.Level[] LEVELS = new org.apache.logging.log4j.Level[] {
@@ -62,7 +62,7 @@ public final class Log4J2MethodLogger implements MethodLogger
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {
     try {
-      return new Log4J2MethodLogger((Logger)loggerField.get(instance));
+      return new Log4j2MethodLogger((Logger)loggerField.get(instance));
     } catch(IllegalAccessException e) {
       return NO_OP;
     }

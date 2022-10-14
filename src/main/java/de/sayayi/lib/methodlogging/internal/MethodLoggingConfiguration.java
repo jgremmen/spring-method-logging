@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportAware;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
@@ -78,7 +79,7 @@ public class MethodLoggingConfiguration implements ImportAware
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
   public MethodLoggingInterceptor internalMethodLoggingInterceptor(
-      AnnotationMethodLoggingSource annotationMethodLoggingSource) {
-    return new MethodLoggingInterceptor(annotationMethodLoggingSource);
+      AnnotationMethodLoggingSource annotationMethodLoggingSource, ResourceLoader resourceLoader) {
+    return new MethodLoggingInterceptor(annotationMethodLoggingSource, resourceLoader);
   }
 }

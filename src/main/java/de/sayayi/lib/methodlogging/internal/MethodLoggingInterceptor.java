@@ -28,6 +28,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.core.io.ResourceLoader;
 
 import java.util.StringJoiner;
 
@@ -50,20 +51,22 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private MethodLoggerFactory methodLoggerFactory;
 
 
-  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource)
+  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource,
+                           @NotNull ResourceLoader resourceLoader)
   {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
     val methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
+    val classLoader = resourceLoader.getClassLoader();
 
     if ((messageContext = methodLoggingConfigurer.messageContext()) == null)
     {
-      messageContext = new MessageContext(DefaultFormatterService.getSharedInstance(),
+      messageContext = new MessageContext(new DefaultFormatterService(classLoader),
           new MessageFactory(new LRUMessagePartNormalizer(64)));
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
-      methodLoggerFactory = new GenericMethodLoggerFactory();
+      methodLoggerFactory = new GenericMethodLoggerFactory(classLoader, true);
   }
 
 
