@@ -15,26 +15,47 @@
  */
 package de.sayayi.lib.methodlogging.annotation;
 
+import de.sayayi.lib.message.MessageFactory;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AliasFor;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)
  */
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME)
+@Target(PARAMETER)
+@Retention(RUNTIME)
 public @interface ParamLog
 {
   @AliasFor("format")
   String value() default "";
 
+
+  /**
+   * <p>
+   *   Returns the format for the parameter value. The message context will provide a variable named {@code value}
+   *   containing the object passed to the method.
+   * </p>
+   * <p>
+   *   The default format is {@code %{value}}, which will format the parameter value using the default
+   *   formatter for this type from the message context.
+   * </p>
+   *
+   * @see MethodLoggingConfigurer#messageContext()
+   * @see MessageFactory#parse(String)
+   */
   String format() default "";
+
 
   boolean inline() default true;
 
