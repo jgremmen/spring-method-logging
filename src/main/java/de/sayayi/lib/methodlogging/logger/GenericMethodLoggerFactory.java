@@ -39,7 +39,10 @@ public final class GenericMethodLoggerFactory implements MethodLoggerFactory
   @Override
   public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj)
   {
-    switch(fieldLoggerTypeMap.computeIfAbsent(requireNonNull(loggerField), this::from_type))
+    switch(fieldLoggerTypeMap.computeIfAbsent(
+        requireNonNull(loggerField, () ->
+            "Class " + obj.getClass() + " or one of its superclasses must provide a logger field"),
+        this::from_type))
     {
       case JUL:
         return JULMethodLogger.from(loggerField, obj);
