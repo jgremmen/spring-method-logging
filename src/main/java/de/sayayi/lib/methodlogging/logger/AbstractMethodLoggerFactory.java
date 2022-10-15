@@ -29,7 +29,7 @@ import static java.lang.reflect.Modifier.STATIC;
 
 /**
  * @author Jeroen Gremmen
- * @since 0.2.1
+ * @since 0.3.0
  */
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
