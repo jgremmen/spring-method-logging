@@ -107,8 +107,9 @@ public final class AnnotationMethodLoggingSource
 
           val methodParameterType = forMethodParameter(method, p);
           val exclude = excludeParameters.contains(def.name) ||
-              (paramLog == null && (!methodParameterType.toClass().isPrimitive() || methodParameterType.isArray()) &&
-              methodLoggingConfigurer.excludeMethodParameter(methodParameterType));
+              (paramLog == null &&
+               (!methodParameterType.toClass().isPrimitive() || methodParameterType.isArray()) &&
+               methodLoggingConfigurer.excludeMethodParameter(methodParameterType));
           if (!exclude)
           {
             def.index = p;

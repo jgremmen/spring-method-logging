@@ -32,6 +32,7 @@ import static lombok.AccessLevel.PACKAGE;
  * @since 0.1.0
  */
 @RequiredArgsConstructor(access = PACKAGE)
+@SuppressWarnings("DuplicatedCode")
 final class Slf4jLogger implements MethodLogger
 {
   private final Logger logger;
