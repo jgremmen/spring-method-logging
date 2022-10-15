@@ -46,6 +46,7 @@ public interface MethodLoggerFactory
    *
    * @param loggerField  logger field or {@code null} if no logger field was found
    * @param obj          spring bean to create a method logger for, not {@code null}
+   * @param type         target type of {@code obj}, not {@code null}
    *
    * @return  method logger instance, never {@code null}
    *
