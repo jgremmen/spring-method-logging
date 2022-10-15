@@ -15,7 +15,7 @@
  */
 package de.sayayi.lib.methodlogging;
 
-import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
+import de.sayayi.lib.methodlogging.logger.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +28,10 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.1.0
  *
- * @see GenericMethodLoggerFactory
+ * @see JCLLoggerFactory
+ * @see JULLoggerFactory
+ * @see Log4j2LoggerFactory
+ * @see Slf4jLoggerFactory
  */
 public interface MethodLoggerFactory
 {
@@ -46,7 +49,7 @@ public interface MethodLoggerFactory
    *
    * @return  method logger instance, never {@code null}
    *
-   * @see MethodLogger#NO_OP
+   * @see AbstractMethodLoggerFactory
    */
   @Contract(pure = true)
   @NotNull MethodLogger from(Field loggerField, @NotNull Object obj);
