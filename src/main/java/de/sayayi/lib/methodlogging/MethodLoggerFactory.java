@@ -52,5 +52,5 @@ public interface MethodLoggerFactory
    * @see AbstractMethodLoggerFactory
    */
   @Contract(pure = true)
-  @NotNull MethodLogger from(Field loggerField, @NotNull Object obj);
+  @NotNull MethodLogger from(Field loggerField, @NotNull Object obj, @NotNull Class<?> type);
 }

@@ -233,9 +233,8 @@ public class MethodLoggingTest
   {
     final List<String> log = new ArrayList<>();
 
-
     @Override
-    public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj)
+    public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj, @NotNull Class<?> type)
     {
       return new MethodLogger() {
         @Override

@@ -43,19 +43,17 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 
 
   @Override
-  public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj)
+  public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj, @NotNull Class<?> type)
   {
     if (loggerField == null)
     {
-      val objType = obj.getClass();
-
       if (!createLoggerOnNoField)
       {
-        throw new IllegalStateException("Class " + obj.getClass() +
+        throw new IllegalStateException("Class " + type +
             " or one of its superclasses must provide a logger field");
       }
 
-      return createMethodLogger(objType);
+      return createMethodLogger(type);
     }
     else
     {
@@ -63,7 +61,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
       if ((modifiers & (STATIC | FINAL)) == (STATIC | FINAL))
       {
         synchronized(loggerCache) {
-          return loggerCache.computeIfAbsent(obj.getClass(), cl -> createMethodLogger(loggerField, obj));
+          return loggerCache.computeIfAbsent(type, cl -> createMethodLogger(loggerField, obj));
         }
       }
 

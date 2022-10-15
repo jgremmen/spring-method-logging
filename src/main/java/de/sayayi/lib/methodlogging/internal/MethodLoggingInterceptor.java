@@ -74,28 +74,26 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
     val _this = requireNonNull(invocation.getThis());
-    val methodDef = annotationMethodLoggingSource
-        .getMethodDefinition(invocation.getMethod(), ultimateTargetClass(_this));
+    val thisType = ultimateTargetClass(_this);
+    val methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
 
-    val methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this);
-    if (methodLogger.isLogEnabled(methodDef.entryExitLevel))
-    {
-      val startTime = currentTimeMillis();
-      Throwable throwable = null;
-
-      logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
-      try {
-        return methodDef.showResult
-            ? logResult(methodDef, methodLogger, invocation.proceed())
-            : invocation.proceed();
-      } catch(Throwable ex) {
-        throw throwable = ex;
-      } finally {
-        logMethodExit(methodDef, methodLogger, startTime, throwable);
-      }
-    }
-    else
+    val methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
+    if (!methodLogger.isLogEnabled(methodDef.entryExitLevel))
       return invocation.proceed();
+
+    val startTime = currentTimeMillis();
+    Throwable throwable = null;
+
+    logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
+    try {
+      return methodDef.showResult
+          ? logResult(methodDef, methodLogger, invocation.proceed())
+          : invocation.proceed();
+    } catch(Throwable ex) {
+      throw throwable = ex;
+    } finally {
+      logMethodExit(methodDef, methodLogger, startTime, throwable);
+    }
   }
 
 
@@ -103,9 +101,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
                               @NotNull MethodLogger methodLogger)
   {
     val parameters = messageContext.parameters();
-    val method = new StringBuilder(methodDef.methodEntryPrefix)
-        .append(methodDef.methodName);
     val printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
+    val method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
 
     if (printParameters && !methodDef.inlineParameters.isEmpty())
     {

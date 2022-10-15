@@ -34,7 +34,7 @@ public interface MethodLogger
   /**
    * A method logger that does nothing.
    *
-   * @see MethodLoggerFactory#from(Field, Object)
+   * @see MethodLoggerFactory#from(Field, Object, Class)
    */
   @NotNull MethodLogger NO_OP = new MethodLogger() {
     @Override public void log(@NotNull Level level, String message) {}
