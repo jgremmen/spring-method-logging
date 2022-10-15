@@ -55,11 +55,12 @@ dependencies {
   annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+  compileOnlyApi 'org.slf4j:slf4j-api:1.7.36'
+  compileOnlyApi 'org.apache.logging.log4j:log4j-api:2.19.0'
+
   implementation "org.springframework:spring-context:${springFrameworkVersion}"
   implementation "de.sayayi.lib:message-format:${messageFormatVersion}"
 
-  compileOnlyApi 'org.slf4j:slf4j-api:1.7.36'
-  compileOnlyApi 'org.apache.logging.log4j:log4j-api:2.19.0'
 
 
   // test
