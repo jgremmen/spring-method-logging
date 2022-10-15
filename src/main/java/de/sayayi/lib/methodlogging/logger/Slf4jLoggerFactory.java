@@ -24,23 +24,23 @@ import java.lang.reflect.Field;
 
 /**
  * @author Jeroen Gremmen
- * @since 0.2.1
+ * @since 0.3.0
  */
-public final class Slf4jMethodLoggerFactory extends AbstractMethodLoggerFactory
+public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
 {
-  public Slf4jMethodLoggerFactory(boolean createLoggerOnNoField) {
+  public Slf4jLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
   }
 
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new Slf4jMethodLogger(LoggerFactory.getLogger(clazz));
+    return new Slf4jLogger(LoggerFactory.getLogger(clazz));
   }
 
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return Slf4jMethodLogger.from(loggerField, obj);
+    return Slf4jLogger.from(loggerField, obj);
   }
 }

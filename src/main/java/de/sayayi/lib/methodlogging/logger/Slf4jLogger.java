@@ -16,7 +16,6 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Contract;
@@ -33,10 +32,8 @@ import static lombok.AccessLevel.PACKAGE;
  * @since 0.1.0
  */
 @RequiredArgsConstructor(access = PACKAGE)
-public final class Slf4jMethodLogger implements MethodLogger
+final class Slf4jLogger implements MethodLogger
 {
-  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Slf4jMethodLogger::from;
-
   private final Logger logger;
 
 
@@ -83,7 +80,7 @@ public final class Slf4jMethodLogger implements MethodLogger
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {
     try {
-      return new Slf4jMethodLogger((Logger)loggerField.get(instance));
+      return new Slf4jLogger((Logger)loggerField.get(instance));
     } catch(IllegalAccessException e) {
       return NO_OP;
     }

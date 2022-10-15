@@ -38,7 +38,7 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-final class MethodLoggingDef implements Serializable
+final class MethodDef implements Serializable
 {
   final String methodEntryPrefix;
   final String methodExitPrefix;
@@ -61,8 +61,8 @@ final class MethodLoggingDef implements Serializable
   Message resultMessage;
 
 
-  MethodLoggingDef(@NotNull MethodLoggingConfig methodLoggingConfig, @NotNull List<ParameterDef> parameters,
-                   @NotNull MethodLogging methodLogging, @NotNull Method method, int line, Field loggerField)
+  MethodDef(@NotNull MethodLoggingConfig methodLoggingConfig, @NotNull List<ParameterDef> parameters,
+            @NotNull MethodLogging methodLogging, @NotNull Method method, int line, Field loggerField)
   {
     methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
     methodExitPrefix = methodLoggingConfig.methodExitPrefix();

@@ -22,7 +22,7 @@ import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
+import de.sayayi.lib.methodlogging.logger.JCLLoggerFactory;
 import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -66,7 +66,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
-      methodLoggerFactory = new GenericMethodLoggerFactory(classLoader, true);
+      methodLoggerFactory = new JCLLoggerFactory(true);
   }
 
 
@@ -74,26 +74,24 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
     val _this = requireNonNull(invocation.getThis());
+    val methodDef = annotationMethodLoggingSource
+        .getMethodDefinition(invocation.getMethod(), ultimateTargetClass(_this));
 
-    //noinspection OptionalGetWithoutIsPresent
-    val methodLoggingDef = annotationMethodLoggingSource
-        .getMethodLoggingDefinition(invocation.getMethod(), ultimateTargetClass(_this)).get();
-
-    val methodLogger = methodLoggerFactory.from(methodLoggingDef.loggerField, _this);
-    if (methodLogger.isLogEnabled(methodLoggingDef.entryExitLevel))
+    val methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this);
+    if (methodLogger.isLogEnabled(methodDef.entryExitLevel))
     {
       val startTime = currentTimeMillis();
       Throwable throwable = null;
 
-      logMethodEntry(methodLoggingDef, invocation.getArguments(), methodLogger);
+      logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
       try {
-        return methodLoggingDef.showResult
-            ? logResult(methodLoggingDef, methodLogger, invocation.proceed())
+        return methodDef.showResult
+            ? logResult(methodDef, methodLogger, invocation.proceed())
             : invocation.proceed();
       } catch(Throwable ex) {
         throw throwable = ex;
       } finally {
-        logMethodExit(methodLoggingDef, methodLogger, startTime, throwable);
+        logMethodExit(methodDef, methodLogger, startTime, throwable);
       }
     }
     else
@@ -101,69 +99,72 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
-  private void logMethodEntry(@NotNull MethodLoggingDef methodLoggingDef, @NotNull Object[] arguments,
+  private void logMethodEntry(@NotNull MethodDef methodDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
     val parameters = messageContext.parameters();
-    val method = new StringBuilder(methodLoggingDef.methodEntryPrefix)
-        .append(methodLoggingDef.methodName);
-    val printParameters = methodLogger.isLogEnabled(methodLoggingDef.parameterLevel);
+    val method = new StringBuilder(methodDef.methodEntryPrefix)
+        .append(methodDef.methodName);
+    val printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
 
-    if (printParameters && !methodLoggingDef.inlineParameters.isEmpty())
+    if (printParameters && !methodDef.inlineParameters.isEmpty())
     {
       val parameterList = new StringJoiner(",", "(", ")");
-      for(val pd: methodLoggingDef.inlineParameters)
-        parameterList.add(logMethodEntry_inlineParameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
+      for(val parameterDef: methodDef.inlineParameters)
+      {
+        parameterList.add(
+            logMethodEntry_inlineParameter(methodDef, parameterDef, parameters, arguments[parameterDef.index]));
+      }
 
       method.append(parameterList);
     }
 
-    if (methodLoggingDef.line > 0)
-      method.append(':').append(methodLoggingDef.line);
+    if (methodDef.line > 0)
+      method.append(':').append(methodDef.line);
 
-    methodLogger.log(methodLoggingDef.entryExitLevel, method.toString());
+    methodLogger.log(methodDef.entryExitLevel, method.toString());
 
-    if (printParameters && !methodLoggingDef.inMethodParameters.isEmpty())
-      for(val pd: methodLoggingDef.inMethodParameters)
+    if (printParameters && !methodDef.inMethodParameters.isEmpty())
+      for(val parameterDef: methodDef.inMethodParameters)
       {
-        methodLogger.log(methodLoggingDef.parameterLevel,
-            logMethodEntry_parameter(methodLoggingDef, pd, parameters, arguments[pd.index]));
+        methodLogger.log(methodDef.parameterLevel,
+            logMethodEntry_parameter(methodDef, parameterDef, parameters, arguments[parameterDef.index]));
       }
   }
 
 
-  private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodLoggingDef methodLoggingDef,
+  private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodDef methodDef,
                                                          @NotNull ParameterDef parameterDef,
                                                          @NotNull ParameterBuilder parameters, Object value)
   {
-    return methodLoggingDef.getInlineParameterMessage(messageContext).format(messageContext, parameters
+    return methodDef.getInlineParameterMessage(messageContext).format(messageContext, parameters
         .with("parameter", parameterDef.name)
         .with("value", parameterDef.getFormatMessage(messageContext)
             .format(messageContext, singletonMap("value", value))));
   }
 
 
-  private @NotNull String logMethodEntry_parameter(@NotNull MethodLoggingDef methodLoggingDef,
+  private @NotNull String logMethodEntry_parameter(@NotNull MethodDef methodDef,
                                                    @NotNull ParameterDef parameterDef,
                                                    @NotNull ParameterBuilder parameters, Object value)
   {
-    return methodLoggingDef.getParameterMessage(messageContext).format(messageContext, parameters
+    return methodDef.getParameterMessage(messageContext).format(messageContext, parameters
         .with("parameter", parameterDef.name)
         .with("value", parameterDef.getFormatMessage(messageContext)
             .format(messageContext, singletonMap("value", value))));
   }
 
 
-  private void logMethodExit(@NotNull MethodLoggingDef methodLoggingDef, @NotNull MethodLogger methodLogger,
+  private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger,
                              long startTime, Throwable throwable)
   {
-    val exit = new StringBuilder(methodLoggingDef.methodExitPrefix)
-        .append(methodLoggingDef.methodName);
+    val exit = new StringBuilder(methodDef.methodExitPrefix)
+        .append(methodDef.methodName);
 
-    if (methodLoggingDef.line > 0)
-      exit.append(':').append(methodLoggingDef.line);
+    if (methodDef.line > 0)
+      exit.append(':').append(methodDef.line);
 
-    if (methodLoggingDef.showElapsedTime)
+    if (methodDef.showElapsedTime)
       exit.append(" (elapsed ").append(logMethodExit_elapsed(currentTimeMillis() - startTime)).append(')');
 
     if (throwable != null)
@@ -176,7 +177,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
         exit.append('(').append(msg).append(')');
     }
 
-    methodLogger.log(methodLoggingDef.entryExitLevel, exit.toString());
+    methodLogger.log(methodDef.entryExitLevel, exit.toString());
   }
 
 
@@ -218,14 +219,13 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
 
   @Contract("_, _, _ -> param3")
-  private Object logResult(@NotNull MethodLoggingDef methodLoggingDef, @NotNull MethodLogger methodLogger,
-                           Object result)
+  private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
   {
-    val resultLevel = methodLoggingDef.resultLevel;
+    val resultLevel = methodDef.resultLevel;
 
     if (methodLogger.isLogEnabled(resultLevel))
     {
-      methodLogger.log(resultLevel, methodLoggingDef
+      methodLogger.log(resultLevel, methodDef
           .getResultMessage(messageContext)
           .format(messageContext, singletonMap("result", result)));
     }

@@ -34,7 +34,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,9 +55,9 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 public final class AnnotationMethodLoggingSource
 {
-  private final Map<MethodClassKey,MethodLoggingDef> methodLoggingDefinitionCache;
-  private final LocalVariableTableParameterNameDiscoverer nameDiscoverer;
-  final MethodLoggingConfigurer methodLoggingConfigurer;
+  private final @NotNull Map<MethodClassKey, MethodDef> methodLoggingDefinitionCache;
+  private final @NotNull LocalVariableTableParameterNameDiscoverer nameDiscoverer;
+  final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
 
 
   AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer)
@@ -70,20 +69,20 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  public @NotNull Optional<MethodLoggingDef> getMethodLoggingDefinition(@NotNull Method method, Class<?> targetClass)
+  public MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
     val cacheKey = new MethodClassKey(method, targetClass);
     var methodLoggingDefinition = methodLoggingDefinitionCache.get(cacheKey);
 
     if (methodLoggingDefinition == null &&
-        (methodLoggingDefinition = findMethodLoggingDefinition(method)) != null)
+        (methodLoggingDefinition = analyseMethodDefinition(method)) != null)
       methodLoggingDefinitionCache.put(cacheKey, methodLoggingDefinition);
 
-    return Optional.ofNullable(methodLoggingDefinition);
+    return methodLoggingDefinition;
   }
 
 
-  private MethodLoggingDef findMethodLoggingDefinition(@NotNull Method method)
+  private MethodDef analyseMethodDefinition(@NotNull Method method)
   {
     if (method.isAnnotationPresent(MethodLogging.class))
     {
@@ -124,7 +123,7 @@ public final class AnnotationMethodLoggingSource
 
         parameterDefs.trimToSize();
 
-        return new MethodLoggingDef(
+        return new MethodDef(
             synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, classType),
             parameterDefs, methodLogging, method,
             methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
@@ -192,7 +191,7 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  private int findMethodLineNumber(Method method)
+  private int findMethodLineNumber(@NotNull Method method)
   {
     val declaringClass = method.getDeclaringClass();
     val classResourceName = declaringClass.getName().replace('.', '/') + ".class";

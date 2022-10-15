@@ -16,32 +16,31 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
-import static java.util.logging.LogManager.getLogManager;
-
 
 /**
  * @author Jeroen Gremmen
- * @since 0.2.1
+ * @since 0.3.0
  */
-public final class JULMethodLoggerFactory extends AbstractMethodLoggerFactory
+public final class Log4j2LoggerFactory extends AbstractMethodLoggerFactory
 {
-  public JULMethodLoggerFactory(boolean createLoggerOnNoField) {
+  public Log4j2LoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
   }
 
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new JULMethodLogger(getLogManager().getLogger(clazz.getName()));
+    return new Log4j2Logger(LogManager.getLogger(clazz));
   }
 
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return JULMethodLogger.from(loggerField, obj);
+    return Log4j2Logger.from(loggerField, obj);
   }
 }

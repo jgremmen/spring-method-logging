@@ -23,7 +23,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
-import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
+import de.sayayi.lib.methodlogging.logger.JCLLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Configuration;
@@ -65,14 +65,8 @@ public interface MethodLoggingConfigurer
    *   Construct the method logger factory to be used with method logging.
    * </p>
    * <p>
-   *   The default is an instance of {@link GenericMethodLoggerFactory} which is capable of handling logger fields
-   *   for the following logger frameworks:
+   *   The default is an instance of {@link JCLLoggerFactory} which part of the spring logging framework
    * </p>
-   * <ul>
-   *   <li>java util logging (part of jre since 1.4)</li>
-   *   <li>log4j2</li>
-   *   <li>slf4j</li>
-   * </ul>
    *
    * @return  Method logger factory or {@code null}
    *

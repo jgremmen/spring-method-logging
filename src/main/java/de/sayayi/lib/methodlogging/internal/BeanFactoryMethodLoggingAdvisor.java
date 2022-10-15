@@ -16,7 +16,6 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.ClassFilter;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
@@ -34,21 +33,9 @@ public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPo
 {
   private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
-  private final StaticMethodMatcherPointcut pointcut = new StaticMethodMatcherPointcut() {
-    @Override
-    public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
-      return annotationMethodLoggingSource.getMethodLoggingDefinition(method, targetClass).isPresent();
-    }
-  };
-
 
   BeanFactoryMethodLoggingAdvisor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
-  }
-
-
-  public void setClassFilter(ClassFilter classFilter) {
-    pointcut.setClassFilter(classFilter);
   }
 
 
@@ -59,7 +46,13 @@ public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPo
 
 
   @Override
-  public @NotNull Pointcut getPointcut() {
-    return pointcut;
+  public @NotNull Pointcut getPointcut()
+  {
+    return new StaticMethodMatcherPointcut() {
+      @Override
+      public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
+        return annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
+      }
+    };
   }
 }

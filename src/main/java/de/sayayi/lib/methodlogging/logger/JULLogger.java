@@ -16,31 +16,27 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.*;
+import static lombok.AccessLevel.PACKAGE;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor
-public final class Log4j2MethodLogger implements MethodLogger
+@RequiredArgsConstructor(access = PACKAGE)
+final class JULLogger implements MethodLogger
 {
-  public static final @NotNull MethodLoggerFactory FIELD_FACTORY = Log4j2MethodLogger::from;
-
-
-  private static final org.apache.logging.log4j.Level[] LEVELS = new org.apache.logging.log4j.Level[] {
-      null,
-      org.apache.logging.log4j.Level.TRACE,
-      org.apache.logging.log4j.Level.DEBUG,
-      org.apache.logging.log4j.Level.INFO
+  private static final java.util.logging.Level[] LEVELS = new java.util.logging.Level[] {
+      null, FINEST, FINE, INFO
   };
 
   private final Logger logger;
@@ -54,7 +50,7 @@ public final class Log4j2MethodLogger implements MethodLogger
 
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
-    return logger.isEnabled(LEVELS[level.ordinal()]);
+    return logger.isLoggable(LEVELS[level.ordinal()]);
   }
 
 
@@ -62,7 +58,7 @@ public final class Log4j2MethodLogger implements MethodLogger
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {
     try {
-      return new Log4j2MethodLogger((Logger)loggerField.get(instance));
+      return new JULLogger((Logger)loggerField.get(instance));
     } catch(IllegalAccessException e) {
       return NO_OP;
     }

@@ -25,8 +25,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.formatter.CutOffFormatter;
-import de.sayayi.lib.methodlogging.logger.GenericMethodLoggerFactory;
-import de.sayayi.lib.methodlogging.logger.JULMethodLogger;
+import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
 import lombok.Setter;
 import lombok.experimental.Delegate;
 import lombok.extern.java.Log;
@@ -140,10 +139,7 @@ public class MethodLoggingTest
   @Test
   void testJULLogger()
   {
-    methodLoggerFactoryDelegate.setFactory(new GenericMethodLoggerFactory(false));
-    julLoggerBean.test();
-
-    methodLoggerFactoryDelegate.setFactory(JULMethodLogger.FIELD_FACTORY);
+    methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(false));
     julLoggerBean.test();
   }
 
