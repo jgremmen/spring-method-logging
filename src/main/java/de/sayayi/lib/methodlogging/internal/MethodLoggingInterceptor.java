@@ -22,7 +22,7 @@ import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import de.sayayi.lib.methodlogging.logger.JCLLoggerFactory;
+import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -66,7 +66,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
-      methodLoggerFactory = new JCLLoggerFactory(true);
+      methodLoggerFactory = AutoDetectLoggerFactory.INSTANCE;
   }
 
 
