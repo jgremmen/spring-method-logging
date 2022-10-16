@@ -57,7 +57,29 @@ public @interface ParamLog
   String format() default "";
 
 
+  /**
+   * <p>
+   *   Tells if the parameter is to be logged inline (= {@code true}) as part of the parameter list. If this
+   *   annotation attribute equals {@code false} the parameter will be logged separately after the method
+   *   entry has been logged. Eg.:
+   * </p>
+   * <pre>
+   *   > method(inlineParam=...)
+   *   parameter 'notInlineParam' = ...
+   *   < method
+   * </pre>
+   * <p>
+   *   By default parameters are logged inline.
+   * </p>
+   */
   boolean inline() default true;
 
+
+  /**
+   * <p>
+   *   Tells the name of the parameter. This attribute provides a way to name the parameter in cases where
+   *   the class bytecode does not provide compiled-in parameter name information.
+   * </p>
+   */
   String name() default "";
 }
