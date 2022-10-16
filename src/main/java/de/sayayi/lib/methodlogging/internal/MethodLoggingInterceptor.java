@@ -66,7 +66,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
-      methodLoggerFactory = AutoDetectLoggerFactory.INSTANCE;
+      methodLoggerFactory = new AutoDetectLoggerFactory();
   }
 
 

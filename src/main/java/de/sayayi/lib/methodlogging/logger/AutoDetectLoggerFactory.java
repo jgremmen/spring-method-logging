@@ -16,7 +16,6 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,10 +28,7 @@ import java.lang.reflect.Field;
  */
 public final class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 {
-  public static final MethodLoggerFactory INSTANCE = new AutoDetectLoggerFactory();
-
-
-  private AutoDetectLoggerFactory() {
+  public AutoDetectLoggerFactory() {
     super(true);
   }
 
