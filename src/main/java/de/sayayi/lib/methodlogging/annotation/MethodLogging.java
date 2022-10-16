@@ -96,6 +96,10 @@ public @interface MethodLogging
 
   Level resultLevel() default Level.DEFAULT;
 
+
+  /**
+   * Provides an array of parameter names that are to be excluded from method logging.
+   */
   String[] exclude() default {};
 
 

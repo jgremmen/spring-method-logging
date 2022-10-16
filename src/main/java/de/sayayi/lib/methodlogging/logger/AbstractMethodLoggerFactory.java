@@ -17,7 +17,6 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import lombok.val;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -57,8 +56,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
     }
     else
     {
-      val modifiers = loggerField.getModifiers();
-      if ((modifiers & (STATIC | FINAL)) == (STATIC | FINAL))
+      if ((loggerField.getModifiers() & (STATIC | FINAL)) == (STATIC | FINAL))
       {
         synchronized(loggerCache) {
           return loggerCache.computeIfAbsent(type, cl -> createMethodLogger(loggerField, obj));
