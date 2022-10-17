@@ -16,8 +16,10 @@ buildDir = ".build"
 ext {
   jetbrainsAnnotationsVersion = "23.0.0"
   junitVersion = "5.9.1"
+  log4jVersion = "2.19.0"
   lombokVersion = "1.18.24"
   messageFormatVersion = "0.6.3"
+  slf4jVersion = "2.0.3"
   springFrameworkVersion = "5.3.23"
 }
 
@@ -55,12 +57,11 @@ dependencies {
   annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
-  compileOnlyApi 'org.slf4j:slf4j-api:1.7.36'
-  compileOnlyApi 'org.apache.logging.log4j:log4j-api:2.19.0'
+  compileOnlyApi "org.slf4j:slf4j-api:${slf4jVersion}"
+  compileOnlyApi "org.apache.logging.log4j:log4j-api:${log4jVersion}"
 
   implementation "org.springframework:spring-context:${springFrameworkVersion}"
   implementation "de.sayayi.lib:message-format:${messageFormatVersion}"
-
 
 
   // test
