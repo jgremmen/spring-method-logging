@@ -26,6 +26,8 @@ javadoc {
     group("Spring Method Logging", ["de.sayayi.lib.methodlogging"])
 
     noQualifiers 'java.util', 'java.lang'
+
+    addStringOption('Xdoclint:-missing', '-quiet')
   }
 
   failOnError false

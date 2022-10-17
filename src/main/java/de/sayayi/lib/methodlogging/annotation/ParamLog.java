@@ -64,9 +64,9 @@ public @interface ParamLog
    *   entry has been logged. Eg.:
    * </p>
    * <pre>
-   *   > method(inlineParam=...)
+   *   &gt; method(inlineParam=...)
    *   parameter 'notInlineParam' = ...
-   *   < method
+   *   &lt; method
    * </pre>
    * <p>
    *   By default parameters are logged inline.
