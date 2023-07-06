@@ -22,8 +22,9 @@ import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
-import lombok.val;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.Contract;
@@ -56,8 +57,9 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
-    val methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
-    val classLoader = resourceLoader.getClassLoader();
+    final MethodLoggingConfigurer methodLoggingConfigurer =
+        annotationMethodLoggingSource.methodLoggingConfigurer;
+    final ClassLoader classLoader = resourceLoader.getClassLoader();
 
     if ((messageContext = methodLoggingConfigurer.messageContext()) == null)
     {
@@ -73,15 +75,17 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   @Override
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
-    val _this = requireNonNull(invocation.getThis());
-    val thisType = ultimateTargetClass(_this);
-    val methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
+    final Object _this = requireNonNull(invocation.getThis());
+    final Class<?> thisType = ultimateTargetClass(_this);
+    final MethodDef methodDef =
+        annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
 
-    val methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
+    final MethodLogger methodLogger =
+        methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
     if (!methodLogger.isLogEnabled(methodDef.entryExitLevel))
       return invocation.proceed();
 
-    val startTime = currentTimeMillis();
+    final long startTime = currentTimeMillis();
     Throwable throwable = null;
 
     logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
@@ -100,14 +104,15 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private void logMethodEntry(@NotNull MethodDef methodDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
-    val parameters = messageContext.parameters();
-    val printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
-    val method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
+    final ParameterBuilder parameters = messageContext.parameters();
+    final boolean printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
+    final StringBuilder method =
+        new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
 
     if (printParameters && !methodDef.inlineParameters.isEmpty())
     {
-      val parameterList = new StringJoiner(",", "(", ")");
-      for(val parameterDef: methodDef.inlineParameters)
+      final StringJoiner parameterList = new StringJoiner(",", "(", ")");
+      for(final ParameterDef parameterDef: methodDef.inlineParameters)
       {
         parameterList.add(
             logMethodEntry_inlineParameter(methodDef, parameterDef, parameters, arguments[parameterDef.index]));
@@ -122,7 +127,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     methodLogger.log(methodDef.entryExitLevel, method.toString());
 
     if (printParameters && !methodDef.inMethodParameters.isEmpty())
-      for(val parameterDef: methodDef.inMethodParameters)
+      for(final ParameterDef parameterDef: methodDef.inMethodParameters)
       {
         methodLogger.log(methodDef.parameterLevel,
             logMethodEntry_parameter(methodDef, parameterDef, parameters, arguments[parameterDef.index]));
@@ -155,7 +160,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger,
                              long startTime, Throwable throwable)
   {
-    val exit = new StringBuilder(methodDef.methodExitPrefix)
+    final StringBuilder exit = new StringBuilder(methodDef.methodExitPrefix)
         .append(methodDef.methodName);
 
     if (methodDef.line > 0)
@@ -168,7 +173,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     {
       exit.append(" -> ").append(throwable.getClass().getSimpleName());
 
-      val msg = throwable.getLocalizedMessage();
+      final String msg = throwable.getLocalizedMessage();
 
       if (hasLength(msg))
         exit.append('(').append(msg).append(')');
@@ -191,9 +196,9 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     0|1|1|0 -> m,s     1|1|1|0 -> h,m
     0|1|1|1 -> m,s     1|1|1|1 -> h,m
  */
-    val s = new StringBuilder();
-    val hour = (millis / 3600000L) % 60;
-    val min = (millis / 60000L) % 60;
+    final StringBuilder s = new StringBuilder();
+    final int hour = (int)((millis / 3600000L) % 60);
+    final int min = (int)((millis / 60000L) % 60);
 
     if (hour > 0)
       s.append(hour).append('h').append(min).append('m');
@@ -202,8 +207,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       if (min > 0)
         s.append(min).append('m');
 
-      val sec = (millis / 1000L) % 60;
-      val msec = millis % 1000;
+      final int sec = (int)((millis / 1000L) % 60);
+      final int msec = (int)(millis % 1000);
 
       if (sec > 0 || (min > 0 && msec > 0))
         s.append(sec).append('s');
@@ -218,7 +223,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   @Contract("_, _, _ -> param3")
   private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
   {
-    val resultLevel = methodDef.resultLevel;
+    final Level resultLevel = methodDef.resultLevel;
 
     if (methodLogger.isLogEnabled(resultLevel))
     {

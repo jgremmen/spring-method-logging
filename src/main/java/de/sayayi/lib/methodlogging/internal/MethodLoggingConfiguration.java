@@ -17,7 +17,6 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
-import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -69,7 +68,8 @@ public class MethodLoggingConfiguration implements ImportAware
   public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor(
       AnnotationMethodLoggingSource annotationMethodLoggingSource)
   {
-    val advisor = new BeanFactoryMethodLoggingAdvisor(annotationMethodLoggingSource);
+    final BeanFactoryMethodLoggingAdvisor advisor =
+        new BeanFactoryMethodLoggingAdvisor(annotationMethodLoggingSource);
 
     advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
 

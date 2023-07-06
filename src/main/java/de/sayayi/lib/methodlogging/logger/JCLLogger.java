@@ -17,25 +17,28 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.logging.Log;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
-import static lombok.AccessLevel.PACKAGE;
+import static java.util.Objects.requireNonNull;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
-@RequiredArgsConstructor(access = PACKAGE)
 @SuppressWarnings("DuplicatedCode")
 final class JCLLogger implements MethodLogger
 {
-  private final Log logger;
+  private final @NotNull Log logger;
+
+
+  JCLLogger(Log logger) {
+    this.logger = requireNonNull(logger);
+  }
 
 
   @Override
@@ -82,7 +85,7 @@ final class JCLLogger implements MethodLogger
   {
     try {
       return new JCLLogger((Log)loggerField.get(instance));
-    } catch(IllegalAccessException e) {
+    } catch(IllegalAccessException | NullPointerException ex) {
       return NO_OP;
     }
   }

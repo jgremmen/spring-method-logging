@@ -54,8 +54,6 @@ repositories {
 
 dependencies {
   // java
-  annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-  compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
   compileOnlyApi "org.slf4j:slf4j-api:${slf4jVersion}"
   compileOnlyApi "org.apache.logging.log4j:log4j-api:${log4jVersion}"

@@ -24,13 +24,13 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
-import de.sayayi.lib.methodlogging.formatter.CutOffFormatter;
 import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
 import lombok.Setter;
 import lombok.experimental.Delegate;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,6 +84,7 @@ public class MethodLoggingTest
 
 
   @Test
+  @Disabled("Enable for message format 0.8.0")
   void testMethod_setWithParam()
   {
     val factory = new ListMethodLoggerFactory();
@@ -205,7 +206,7 @@ public class MethodLoggingTest
     {
       val formatterService = new GenericFormatterService();
 
-      formatterService.addFormatter(new CutOffFormatter());
+      //formatterService.addFormatter(new CutOffFormatter());
 
       return new MessageContext(formatterService,
           new MessageFactory(new LRUMessagePartNormalizer(64)));

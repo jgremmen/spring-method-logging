@@ -17,21 +17,19 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
-import static lombok.AccessLevel.PACKAGE;
+import static java.util.Objects.requireNonNull;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@RequiredArgsConstructor(access = PACKAGE)
 final class Log4j2Logger implements MethodLogger
 {
   private static final org.apache.logging.log4j.Level[] LEVELS = new org.apache.logging.log4j.Level[] {
@@ -41,7 +39,12 @@ final class Log4j2Logger implements MethodLogger
       org.apache.logging.log4j.Level.INFO
   };
 
-  private final Logger logger;
+  private final @NotNull Logger logger;
+
+
+  Log4j2Logger(Logger logger) {
+    this.logger = requireNonNull(logger);
+  }
 
 
   @Override
@@ -61,7 +64,7 @@ final class Log4j2Logger implements MethodLogger
   {
     try {
       return new Log4j2Logger((Logger)loggerField.get(instance));
-    } catch(IllegalAccessException e) {
+    } catch(IllegalAccessException | NullPointerException ex) {
       return NO_OP;
     }
   }

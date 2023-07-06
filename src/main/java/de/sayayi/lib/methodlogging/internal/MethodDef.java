@@ -20,7 +20,6 @@ import de.sayayi.lib.message.MessageContext;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
-import lombok.Synchronized;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -105,7 +104,6 @@ final class MethodDef implements Serializable
   }
 
 
-  @Synchronized
   @NotNull Message getParameterMessage(@NotNull MessageContext messageContext)
   {
     synchronized(this) {
@@ -120,7 +118,6 @@ final class MethodDef implements Serializable
   }
 
 
-  @Synchronized
   @NotNull Message getResultMessage(@NotNull MessageContext messageContext)
   {
     synchronized(this) {
