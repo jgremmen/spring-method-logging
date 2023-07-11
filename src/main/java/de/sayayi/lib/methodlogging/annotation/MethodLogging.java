@@ -16,6 +16,7 @@
 package de.sayayi.lib.methodlogging.annotation;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import org.intellij.lang.annotations.Language;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -30,6 +31,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(METHOD)
 @Retention(RUNTIME)
+@SuppressWarnings("UnknownLanguage")
 public @interface MethodLogging
 {
   /**
@@ -84,10 +86,13 @@ public @interface MethodLogging
 
   Visibility result() default Visibility.DEFAULT;
 
+  @Language("MessageFormat")
   String inlineParameterFormat() default "<DEFAULT>";
 
+  @Language("MessageFormat")
   String parameterFormat() default "<DEFAULT>";
 
+  @Language("MessageFormat")
   String resultFormat() default "<DEFAULT>";
 
   Level entryExitLevel() default Level.DEFAULT;

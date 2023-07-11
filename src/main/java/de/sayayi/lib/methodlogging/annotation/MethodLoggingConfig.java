@@ -18,6 +18,7 @@ package de.sayayi.lib.methodlogging.annotation;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
+import org.intellij.lang.annotations.Language;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -35,10 +36,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(TYPE)
 @Retention(RUNTIME)
+@SuppressWarnings({"UnknownLanguage", "RedundantSuppression"})
 public @interface MethodLoggingConfig
 {
+  @Language("MessageFormat")
   String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value}";
+
+  @Language("MessageFormat")
   String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value}";
+
+  @Language("MessageFormat")
   String DEFAULT_RESULT_FORMAT = "result = %{result}";
 
 
@@ -106,10 +113,13 @@ public @interface MethodLoggingConfig
 
   Visibility result() default SHOW;
 
+  @Language("MessageFormat")
   String inlineParameterFormat() default DEFAULT_INLINE_PARAMETER_FORMAT;
 
+  @Language("MessageFormat")
   String parameterFormat() default DEFAULT_PARAMETER_FORMAT;
 
+  @Language("MessageFormat")
   String resultFormat() default DEFAULT_RESULT_FORMAT;
 
   Level entryExitLevel() default DEFAULT;

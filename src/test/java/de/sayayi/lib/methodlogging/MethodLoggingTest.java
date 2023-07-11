@@ -15,9 +15,11 @@
  */
 package de.sayayi.lib.methodlogging;
 
-import de.sayayi.lib.message.MessageContext;
 import de.sayayi.lib.message.MessageFactory;
+import de.sayayi.lib.message.MessageSupport;
+import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.GenericFormatterService;
+import de.sayayi.lib.message.formatter.named.ClipFormatter;
 import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
@@ -30,7 +32,6 @@ import lombok.experimental.Delegate;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,7 +85,6 @@ public class MethodLoggingTest
 
 
   @Test
-  @Disabled("Enable for message format 0.8.0")
   void testMethod_setWithParam()
   {
     val factory = new ListMethodLoggerFactory();
@@ -158,7 +158,7 @@ public class MethodLoggingTest
 
 
     @MethodLogging(lineNumber = SHOW, entryExitLevel = DEBUG)
-    public void setWithParam(@SuppressWarnings("unused") @ParamLog("%{value,cutoff,8}") String name) {
+    public void setWithParam(@SuppressWarnings("unused") @ParamLog("%{value,clip,clip-size:8}") String name) {
     }
 
 
@@ -202,13 +202,13 @@ public class MethodLoggingTest
   static class MyConfiguration implements MethodLoggingConfigurer
   {
     @Override
-    public MessageContext messageContext()
+    public MessageSupport messageSupport()
     {
       val formatterService = new GenericFormatterService();
 
-      //formatterService.addFormatter(new CutOffFormatter());
+      formatterService.addFormatter(new ClipFormatter());
 
-      return new MessageContext(formatterService,
+      return MessageSupportFactory.create(formatterService,
           new MessageFactory(new LRUMessagePartNormalizer(64)));
     }
 

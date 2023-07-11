@@ -15,7 +15,7 @@
  */
 package de.sayayi.lib.methodlogging;
 
-import de.sayayi.lib.message.MessageContext;
+import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
@@ -44,18 +44,18 @@ public interface MethodLoggingConfigurer
 {
   /**
    * <p>
-   *   Construct the message context to be used with method/parameter/result logging.
+   *   Construct the message support to be used with method/parameter/result logging.
    * </p>
    * <p>
-   *   The default message context is constructed for the default locale and uses the shared
-   *   message formatter service {@link DefaultFormatterService#getSharedInstance()} and a message factory
-   *   with limited caching capabilities.
+   *   The default message support is constructed for the default locale and uses the shared
+   *   message formatter service {@link DefaultFormatterService#getSharedInstance()} and a
+   *   message factory without caching capabilities.
    * </p>
    *
-   * @return  Message context or {@code null}
+   * @return  Message support or {@code null}
    */
   @Contract(pure = true)
-  default MessageContext messageContext() {
+  default MessageSupport messageSupport() {
     return null;
   }
 
@@ -113,7 +113,8 @@ public interface MethodLoggingConfigurer
    * @since 0.2.1
    */
   @Contract(pure = true)
-  default boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType) {
+  default boolean excludeMethodParameter(
+      @SuppressWarnings("unused") @NotNull ResolvableType methodParameterType) {
     return false;
   }
 

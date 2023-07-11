@@ -17,6 +17,7 @@ package de.sayayi.lib.methodlogging.annotation;
 
 import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import org.intellij.lang.annotations.Language;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AliasFor;
 
@@ -35,6 +36,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(PARAMETER)
 @Retention(RUNTIME)
+@SuppressWarnings("UnknownLanguage")
 public @interface ParamLog
 {
   @AliasFor("format")
@@ -51,9 +53,10 @@ public @interface ParamLog
    *   formatter for this type from the message context.
    * </p>
    *
-   * @see MethodLoggingConfigurer#messageContext()
-   * @see MessageFactory#parse(String)
+   * @see MethodLoggingConfigurer#messageSupport()
+   * @see MessageFactory#parseMessage(String)
    */
+  @Language("MessageFormat")
   String format() default "";
 
 

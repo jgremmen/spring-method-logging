@@ -16,7 +16,8 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
-import de.sayayi.lib.message.MessageContext;
+import de.sayayi.lib.message.MessageSupport;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
@@ -26,22 +27,24 @@ import java.io.Serializable;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
+@SuppressWarnings("UnknownLanguage")
 final class ParameterDef implements Serializable
 {
   int index;
   String name;
   boolean inline;
 
-  String format;
+  @Language("MessageFormat") String format;
   Message formatMessage;
 
 
-  @NotNull Message getFormatMessage(@NotNull MessageContext messageContext)
+  @NotNull Message getFormatMessage(@NotNull MessageSupport messageContext)
   {
     synchronized(this) {
       if (formatMessage == null)
       {
-        formatMessage = messageContext.getMessageFactory().parse(format).trim();
+        formatMessage = messageContext.getMessageAccessor().getMessageFactory()
+            .parseMessage(format);
         format = null;
       }
 

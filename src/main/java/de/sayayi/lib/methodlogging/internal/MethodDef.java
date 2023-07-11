@@ -16,10 +16,11 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
-import de.sayayi.lib.message.MessageContext;
+import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,15 +38,16 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
+@SuppressWarnings("UnknownLanguage")
 final class MethodDef implements Serializable
 {
   final String methodEntryPrefix;
   final String methodExitPrefix;
   final List<ParameterDef> inlineParameters;
   final List<ParameterDef> inMethodParameters;
-  String inlineParameterFormat;
-  String parameterFormat;
-  String resultFormat;
+  @Language("MessageFormat") String inlineParameterFormat;
+  @Language("MessageFormat") String parameterFormat;
+  @Language("MessageFormat") String resultFormat;
   final String methodName;
   final int line;
   final boolean showElapsedTime;
@@ -90,12 +92,13 @@ final class MethodDef implements Serializable
   }
 
 
-  @NotNull Message getInlineParameterMessage(@NotNull MessageContext messageContext)
+  @NotNull Message getInlineParameterMessage(@NotNull MessageSupport messageSupport)
   {
     synchronized(this) {
       if (inlineParameterMessage == null)
       {
-        inlineParameterMessage = messageContext.getMessageFactory().parse(inlineParameterFormat).trim();
+        inlineParameterMessage = messageSupport.getMessageAccessor().getMessageFactory()
+            .parseMessage(inlineParameterFormat);
         inlineParameterFormat = null;
       }
 
@@ -104,12 +107,13 @@ final class MethodDef implements Serializable
   }
 
 
-  @NotNull Message getParameterMessage(@NotNull MessageContext messageContext)
+  @NotNull Message getParameterMessage(@NotNull MessageSupport messageSupport)
   {
     synchronized(this) {
       if (parameterMessage == null)
       {
-        parameterMessage = messageContext.getMessageFactory().parse(parameterFormat).trim();
+        parameterMessage = messageSupport.getMessageAccessor().getMessageFactory()
+            .parseMessage(parameterFormat);
         parameterFormat = null;
       }
 
@@ -118,12 +122,13 @@ final class MethodDef implements Serializable
   }
 
 
-  @NotNull Message getResultMessage(@NotNull MessageContext messageContext)
+  @NotNull Message getResultMessage(@NotNull MessageSupport messageSupport)
   {
     synchronized(this) {
       if (resultMessage == null)
       {
-        resultMessage = messageContext.getMessageFactory().parse(resultFormat).trim();
+        resultMessage = messageSupport.getMessageAccessor().getMessageFactory()
+            .parseMessage(resultFormat);
         resultFormat = null;
       }
 

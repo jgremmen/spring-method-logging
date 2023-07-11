@@ -15,11 +15,10 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
-import de.sayayi.lib.message.MessageContext;
-import de.sayayi.lib.message.MessageContext.ParameterBuilder;
 import de.sayayi.lib.message.MessageFactory;
+import de.sayayi.lib.message.MessageSupport;
+import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
-import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
@@ -34,7 +33,6 @@ import org.springframework.core.io.ResourceLoader;
 import java.util.StringJoiner;
 
 import static java.lang.System.currentTimeMillis;
-import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
 import static org.springframework.util.StringUtils.hasLength;
@@ -48,7 +46,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 {
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
-  private MessageContext messageContext;
+  private MessageSupport messageSupport;
   private MethodLoggerFactory methodLoggerFactory;
 
 
@@ -61,10 +59,11 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
         annotationMethodLoggingSource.methodLoggingConfigurer;
     final ClassLoader classLoader = resourceLoader.getClassLoader();
 
-    if ((messageContext = methodLoggingConfigurer.messageContext()) == null)
+    if ((messageSupport = methodLoggingConfigurer.messageSupport()) == null)
     {
-      messageContext = new MessageContext(new DefaultFormatterService(classLoader),
-          new MessageFactory(new LRUMessagePartNormalizer(64)));
+      messageSupport = MessageSupportFactory.create(
+          new DefaultFormatterService(classLoader, 128),
+          MessageFactory.NO_CACHE_INSTANCE);
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
@@ -104,7 +103,6 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private void logMethodEntry(@NotNull MethodDef methodDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
-    final ParameterBuilder parameters = messageContext.parameters();
     final boolean printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
     final StringBuilder method =
         new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
@@ -115,7 +113,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       for(final ParameterDef parameterDef: methodDef.inlineParameters)
       {
         parameterList.add(
-            logMethodEntry_inlineParameter(methodDef, parameterDef, parameters, arguments[parameterDef.index]));
+            logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
       }
 
       method.append(parameterList);
@@ -130,30 +128,38 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       for(final ParameterDef parameterDef: methodDef.inMethodParameters)
       {
         methodLogger.log(methodDef.parameterLevel,
-            logMethodEntry_parameter(methodDef, parameterDef, parameters, arguments[parameterDef.index]));
+            logMethodEntry_parameter(methodDef, parameterDef, arguments[parameterDef.index]));
       }
   }
 
 
   private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodDef methodDef,
                                                          @NotNull ParameterDef parameterDef,
-                                                         @NotNull ParameterBuilder parameters, Object value)
+                                                         Object value)
   {
-    return methodDef.getInlineParameterMessage(messageContext).format(messageContext, parameters
+    return messageSupport
+        .message(methodDef.getInlineParameterMessage(messageSupport))
         .with("parameter", parameterDef.name)
-        .with("value", parameterDef.getFormatMessage(messageContext)
-            .format(messageContext, singletonMap("value", value))));
+        .with("value", messageSupport
+            .message(parameterDef.getFormatMessage(messageSupport))
+            .with("value", value)
+            .format())
+        .format();
   }
 
 
   private @NotNull String logMethodEntry_parameter(@NotNull MethodDef methodDef,
                                                    @NotNull ParameterDef parameterDef,
-                                                   @NotNull ParameterBuilder parameters, Object value)
+                                                   Object value)
   {
-    return methodDef.getParameterMessage(messageContext).format(messageContext, parameters
+    return messageSupport
+        .message(methodDef.getParameterMessage(messageSupport))
         .with("parameter", parameterDef.name)
-        .with("value", parameterDef.getFormatMessage(messageContext)
-            .format(messageContext, singletonMap("value", value))));
+        .with("value", messageSupport
+            .message(parameterDef.getFormatMessage(messageSupport))
+            .with("value", value)
+            .format())
+        .format();
   }
 
 
@@ -221,15 +227,17 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
 
   @Contract("_, _, _ -> param3")
-  private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
+  private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger,
+                           Object result)
   {
     final Level resultLevel = methodDef.resultLevel;
 
     if (methodLogger.isLogEnabled(resultLevel))
     {
-      methodLogger.log(resultLevel, methodDef
-          .getResultMessage(messageContext)
-          .format(messageContext, singletonMap("result", result)));
+      methodLogger.log(resultLevel, messageSupport
+          .message(methodDef.getResultMessage(messageSupport))
+          .with("result", result)
+          .format());
     }
 
     return result;
