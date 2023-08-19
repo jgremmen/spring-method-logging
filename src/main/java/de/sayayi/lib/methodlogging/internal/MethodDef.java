@@ -97,8 +97,7 @@ final class MethodDef implements Serializable
     synchronized(this) {
       if (inlineParameterMessage == null)
       {
-        inlineParameterMessage = messageSupport.getMessageAccessor().getMessageFactory()
-            .parseMessage(inlineParameterFormat);
+        inlineParameterMessage = messageSupport.message(inlineParameterFormat).getMessage();
         inlineParameterFormat = null;
       }
 
@@ -112,8 +111,7 @@ final class MethodDef implements Serializable
     synchronized(this) {
       if (parameterMessage == null)
       {
-        parameterMessage = messageSupport.getMessageAccessor().getMessageFactory()
-            .parseMessage(parameterFormat);
+        parameterMessage = messageSupport.message(parameterFormat).getMessage();
         parameterFormat = null;
       }
 
@@ -127,8 +125,7 @@ final class MethodDef implements Serializable
     synchronized(this) {
       if (resultMessage == null)
       {
-        resultMessage = messageSupport.getMessageAccessor().getMessageFactory()
-            .parseMessage(resultFormat);
+        resultMessage = messageSupport.message(resultFormat).getMessage();
         resultFormat = null;
       }
 

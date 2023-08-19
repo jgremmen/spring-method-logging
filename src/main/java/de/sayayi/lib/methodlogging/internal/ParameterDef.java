@@ -43,8 +43,7 @@ final class ParameterDef implements Serializable
     synchronized(this) {
       if (formatMessage == null)
       {
-        formatMessage = messageContext.getMessageAccessor().getMessageFactory()
-            .parseMessage(format);
+        formatMessage = messageContext.message(format).getMessage();
         format = null;
       }
 

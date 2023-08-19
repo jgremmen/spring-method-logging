@@ -72,7 +72,7 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  public MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
+  MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
     final MethodClassKey cacheKey = new MethodClassKey(method, targetClass);
     MethodDef methodLoggingDefinition = methodLoggingDefinitionCache.get(cacheKey);
