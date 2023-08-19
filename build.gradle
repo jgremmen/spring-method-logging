@@ -71,5 +71,7 @@ dependencies {
   testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testImplementation "org.springframework:spring-test:${springFrameworkVersion}"
+
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
