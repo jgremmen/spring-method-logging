@@ -18,9 +18,9 @@ ext {
   junitVersion = "5.10.0"
   log4jVersion = "2.20.0"
   lombokVersion = "1.18.28"
-  messageFormatVersion = "0.8.2"
-  slf4jVersion = "2.0.7"
-  springFrameworkVersion = "5.3.29"
+  messageFormatVersion = "0.8.3"
+  slf4jVersion = "2.0.9"
+  springFrameworkVersion = "5.3.30"
 }
 
 
