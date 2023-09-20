@@ -23,8 +23,8 @@ import java.lang.reflect.Field;
 
 
 /**
- * A method logger is an adapter for the method logging extension which provides access to an underlying
- * logging framework.
+ * A method logger is an adapter for the method logging extension which provides access to an
+ * underlying logging framework.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
-import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
@@ -32,6 +31,7 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.util.StringJoiner;
 
+import static de.sayayi.lib.message.MessageFactory.NO_CACHE_INSTANCE;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
@@ -57,13 +57,12 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
     final MethodLoggingConfigurer methodLoggingConfigurer =
         annotationMethodLoggingSource.methodLoggingConfigurer;
-    final ClassLoader classLoader = resourceLoader.getClassLoader();
 
     if ((messageSupport = methodLoggingConfigurer.messageSupport()) == null)
     {
       messageSupport = MessageSupportFactory.create(
-          new DefaultFormatterService(classLoader, 128),
-          MessageFactory.NO_CACHE_INSTANCE);
+          new DefaultFormatterService(resourceLoader.getClassLoader(), 128),
+          NO_CACHE_INSTANCE);
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
@@ -173,7 +172,11 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       exit.append(':').append(methodDef.line);
 
     if (methodDef.showElapsedTime)
-      exit.append(" (elapsed ").append(logMethodExit_elapsed(currentTimeMillis() - startTime)).append(')');
+    {
+      exit.append(" (elapsed ")
+          .append(logMethodExit_elapsed(currentTimeMillis() - startTime))
+          .append(')');
+    }
 
     if (throwable != null)
     {

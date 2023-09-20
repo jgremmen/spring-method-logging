@@ -36,13 +36,11 @@ import java.lang.reflect.Field;
 public interface MethodLoggerFactory
 {
   /**
+   * Creates a new method logger instance based on the given object {@code obj} and optional
+   * {@code loggerField}.
    * <p>
-   *   Creates a new method logger instance based on the given object {@code obj} and optional {@code loggerField}.
-   * </p>
-   * <p>
-   *   This method is invoked every time a method requires logging. In order to reduce performance overhead,
-   *   the factory may return cached method loggers.
-   * </p>
+   * This method is invoked every time a method requires logging. In order to reduce performance
+   * overhead, the factory may return cached method loggers.
    *
    * @param loggerField  logger field or {@code null} if no logger field was found
    * @param obj          spring bean to create a method logger for, not {@code null}

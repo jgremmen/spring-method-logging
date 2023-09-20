@@ -62,8 +62,9 @@ final class MethodDef implements Serializable
   Message resultMessage;
 
 
-  MethodDef(@NotNull MethodLoggingConfig methodLoggingConfig, @NotNull List<ParameterDef> parameters,
-            @NotNull MethodLogging methodLogging, @NotNull Method method, int line, Field loggerField)
+  MethodDef(@NotNull MethodLoggingConfig methodLoggingConfig,
+            @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging,
+            @NotNull Method method, int line, Field loggerField)
   {
     methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
     methodExitPrefix = methodLoggingConfig.methodExitPrefix();
@@ -81,7 +82,8 @@ final class MethodDef implements Serializable
     this.line = line;
 
     methodName = method.getName();
-    inlineParameterFormat = notEmpty(methodLogging.inlineParameterFormat(), DEFAULT_INLINE_PARAMETER_FORMAT);
+    inlineParameterFormat =
+        notEmpty(methodLogging.inlineParameterFormat(), DEFAULT_INLINE_PARAMETER_FORMAT);
     parameterFormat = notEmpty(methodLogging.parameterFormat(), DEFAULT_PARAMETER_FORMAT);
     resultFormat = notEmpty(methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT);
     showElapsedTime = methodLogging.elapsedTime() == SHOW;

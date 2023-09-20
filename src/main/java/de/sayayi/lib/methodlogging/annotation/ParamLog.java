@@ -44,14 +44,11 @@ public @interface ParamLog
 
 
   /**
+   * Returns the format for the parameter value. The message context will provide a variable named
+   * {@code value} containing the object passed to the method.
    * <p>
-   *   Returns the format for the parameter value. The message context will provide a variable named {@code value}
-   *   containing the object passed to the method.
-   * </p>
-   * <p>
-   *   The default format is {@code %{value}}, which will format the parameter value using the default
-   *   formatter for this type from the message context.
-   * </p>
+   * The default format is {@code %{value}}, which will format the parameter value using the default
+   * formatter for this type from the message context.
    *
    * @see MethodLoggingConfigurer#messageSupport()
    * @see MessageFactory#parseMessage(String)
@@ -61,28 +58,24 @@ public @interface ParamLog
 
 
   /**
-   * <p>
-   *   Tells if the parameter is to be logged inline (= {@code true}) as part of the parameter list. If this
-   *   annotation attribute equals {@code false} the parameter will be logged separately after the method
-   *   entry has been logged. Eg.:
-   * </p>
+   * Tells if the parameter is to be logged inline (= {@code true}) as part of the parameter list.
+   * If this annotation attribute equals {@code false} the parameter will be logged separately after
+   * the method entry has been logged. Eg.:
+   *
    * <pre>
    *   &gt; method(inlineParam=...)
    *   parameter 'notInlineParam' = ...
    *   &lt; method
    * </pre>
-   * <p>
-   *   By default parameters are logged inline.
-   * </p>
+   *
+   * By default parameters are logged inline.
    */
   boolean inline() default true;
 
 
   /**
-   * <p>
-   *   Tells the name of the parameter. This attribute provides a way to name the parameter in cases where
-   *   the class bytecode does not provide compiled-in parameter name information.
-   * </p>
+   * Tells the name of the parameter. This attribute provides a way to name the parameter in cases
+   * where the class bytecode does not provide compiled-in parameter name information.
    */
   String name() default "";
 }

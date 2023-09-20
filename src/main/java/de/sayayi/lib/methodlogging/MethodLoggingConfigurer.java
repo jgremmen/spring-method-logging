@@ -17,7 +17,6 @@ package de.sayayi.lib.methodlogging;
 
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
-import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
@@ -31,11 +30,9 @@ import org.springframework.core.ResolvableType;
 
 
 /**
- * <p>
- *   Interface to be implemented by @{@link Configuration} classes annotated
- *   with @{@link EnableMethodLogging} that wish or need to specify explicitly how messages are
- *   formatted and logged for annotation-driven method logging.
- * </p>
+ * Interface to be implemented by @{@link Configuration} classes annotated with
+ * @{@link EnableMethodLogging} that wish or need to specify explicitly how messages are
+ * formatted and logged for annotation-driven method logging.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -43,14 +40,11 @@ import org.springframework.core.ResolvableType;
 public interface MethodLoggingConfigurer
 {
   /**
+   * Construct the message support to be used with method/parameter/result logging.
    * <p>
-   *   Construct the message support to be used with method/parameter/result logging.
-   * </p>
-   * <p>
-   *   The default message support is constructed for the default locale and uses the shared
-   *   message formatter service {@link DefaultFormatterService#getSharedInstance()} and a
-   *   message factory without caching capabilities.
-   * </p>
+   * The default message support is constructed for the default locale and uses the shared
+   * message formatter service {@link DefaultFormatterService#getSharedInstance()} and a
+   * message factory without caching capabilities.
    *
    * @return  Message support or {@code null}
    */
@@ -61,12 +55,10 @@ public interface MethodLoggingConfigurer
 
 
   /**
+   * Construct the method logger factory to be used with method logging.
    * <p>
-   *   Construct the method logger factory to be used with method logging.
-   * </p>
-   * <p>
-   *   The default is an instance of {@link JCLLoggerFactory} which part of the spring logging framework
-   * </p>
+   * The default is an instance of {@link JCLLoggerFactory} which part of the spring logging
+   * framework.
    *
    * @return  Method logger factory or {@code null}
    *
@@ -79,13 +71,11 @@ public interface MethodLoggingConfigurer
 
 
   /**
+   * Returns the default logger field name.
    * <p>
-   *   Returns the default logger field name.
-   * </p>
-   * <p>
-   *   This value can be overridden on a class level (see {@link MethodLoggingConfig#loggerFieldName()}) or on
-   *   a method level (see {@link MethodLogging#loggerFieldName()}).
-   * </p>
+   * This value can be overridden on a class level
+   * (see {@link MethodLoggingConfig#loggerFieldName()}) or on a method level
+   * (see {@link MethodLogging#loggerFieldName()}).
    *
    * @return  logger field name, never {@code null}
    */
@@ -96,15 +86,12 @@ public interface MethodLoggingConfigurer
 
 
   /**
+   * Tells whether a method parameter is to be excluded from logging. This method provides a way to
+   * exclude parameters which have no meaningful string representation or are not important enough
+   * to be logged at all.
    * <p>
-   *   Tells whether a method parameter is to be excluded from logging. This method provides a way to
-   *   exclude parameters which have no meaningful string representation or are not important enough to be
-   *   logged at all.
-   * </p>
-   * <p>
-   *   This method is queried for non-primitive types (except if it is an array, eg. {@code byte[]}) and
-   *   method parameters without a @{@link ParamLog} annotation only.
-   * </p>
+   * This method is queried for non-primitive types (except if it is an array, eg. {@code byte[]})
+   * and method parameters without a @{@link ParamLog} annotation only.
    *
    * @param methodParameterType  method parameter type
    *
