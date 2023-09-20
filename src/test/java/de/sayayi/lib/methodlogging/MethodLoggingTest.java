@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.*;
     MethodLoggingTest.MyConfiguration.class,
     MethodLoggingTest.MyBean.class
 })
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 public class MethodLoggingTest
 {
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
@@ -223,7 +222,7 @@ public class MethodLoggingTest
 
 
 
-  private static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
+  static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
     @Setter @Delegate private MethodLoggerFactory factory;
   }
 
