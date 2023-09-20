@@ -40,7 +40,8 @@ public final class JCLLoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
+                                                     @NotNull Object obj) {
     return JCLLogger.from(loggerField, obj);
   }
 }

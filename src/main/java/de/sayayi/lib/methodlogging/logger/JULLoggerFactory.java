@@ -41,7 +41,8 @@ public final class JULLoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
+                                                     @NotNull Object obj) {
     return JULLogger.from(loggerField, obj);
   }
 }

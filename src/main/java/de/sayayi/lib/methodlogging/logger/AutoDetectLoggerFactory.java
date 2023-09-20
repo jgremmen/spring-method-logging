@@ -40,7 +40,8 @@ public final class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
+                                                     @NotNull Object obj)
   {
     switch(loggerField.getType().getName())
     {

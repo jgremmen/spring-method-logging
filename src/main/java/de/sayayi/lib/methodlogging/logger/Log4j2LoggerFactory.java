@@ -40,7 +40,8 @@ public final class Log4j2LoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
+                                                     @NotNull Object obj) {
     return Log4j2Logger.from(loggerField, obj);
   }
 }

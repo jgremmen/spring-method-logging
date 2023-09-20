@@ -71,5 +71,6 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz);
 
 
-  protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj);
+  protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
+                                                              @NotNull Object obj);
 }

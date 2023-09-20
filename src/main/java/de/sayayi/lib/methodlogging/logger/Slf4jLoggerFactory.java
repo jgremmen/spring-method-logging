@@ -40,7 +40,8 @@ public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
+                                                     @NotNull Object obj) {
     return Slf4jLogger.from(loggerField, obj);
   }
 }
