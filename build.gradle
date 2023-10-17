@@ -6,22 +6,22 @@ plugins {
 }
 
 
-description "Method Logging Extension for Spring"
+description 'Method Logging Extension for Spring'
 group 'de.sayayi.lib'
 version '0.4.1'
 
 
-layout.buildDirectory = ".build"
+layout.buildDirectory = '.build'
 
 
 ext {
-  jetbrainsAnnotationsVersion = "24.0.1"
-  junitVersion = "5.10.0"
-  log4jVersion = "2.20.0"
-  lombokVersion = "1.18.28"
-  messageFormatVersion = "0.8.3"
-  slf4jVersion = "2.0.9"
-  springFrameworkVersion = "5.3.30"
+  jetbrainsAnnotationsVersion = '24.0.1'
+  junitVersion = '5.10.+'
+  log4jVersion = '2.20.0'
+  lombokVersion = '1.18.+'
+  messageFormatVersion = '0.9.0-SNAPSHOT'
+  slf4jVersion = '2.0.9'
+  springFrameworkVersion = '5.3.30'
 }
 
 
@@ -34,7 +34,7 @@ java {
 
 compileTestJava {
   options.debugOptions.debugLevel = 'lines,vars,source'
-  options.compilerArgs = [ "-parameters" ]
+  options.compilerArgs = [ '-parameters' ]
 }
 
 
@@ -49,6 +49,14 @@ apply from: file('gradle/publishing.gradle')
 
 
 repositories {
+  maven {
+    url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    mavenContent {
+      includeGroup 'de.sayayi.lib'
+      snapshotsOnly()
+    }
+  }
+
   mavenCentral()
 }
 
@@ -60,11 +68,7 @@ dependencies {
   compileOnlyApi "org.apache.logging.log4j:log4j-api:${log4jVersion}"
 
   implementation "org.springframework:spring-context:${springFrameworkVersion}"
-
-  implementation("de.sayayi.lib:message-format:${messageFormatVersion}") {
-    exclude group: 'org.antlr', module: 'antlr4'
-    exclude group: 'javax.cache', module: 'cache-api'
-  }
+  implementation "de.sayayi.lib:message-format:${messageFormatVersion}"
 
 
   // test
