@@ -20,12 +20,12 @@ tasks.withType(Jar).configureEach {
 
   manifest {
     attributes(
-        "Implementation-Vendor": "Jeroen Gremmen",
-        "Implementation-Vendor-Id": "de.sayayi",
-        "Implementation-Title": project.name,
-        "Implementation-Version": project.version,
-        "Created-By": "${System.getProperty("java.version")}",
-        "Built-Date": new Date().format('yyyy-MM-dd HH:mm:ss')
+        'Implementation-Vendor': 'Jeroen Gremmen',
+        'Implementation-Vendor-Id': 'de.sayayi',
+        'Implementation-Title': project.name,
+        'Implementation-Version': project.version,
+        'Created-By': "${System.getProperty('java.version')}",
+        'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
     )
   }
 
@@ -53,6 +53,13 @@ artifacts {
   archives javadocJar
   archives sourcesJar
 }
+
+
+def snapshot = version.toString().endsWith('-SNAPSHOT')
+def tmpRepositoryDirectory = rootProject.layout.buildDirectory
+    .dir('repository').get()
+    .dir(snapshot ? 'snapshot' : 'release')
+    .asFile
 
 
 publishing {
@@ -99,12 +106,16 @@ publishing {
 
   repositories {
     maven {
-      name = "mavenTemp"
-      url = "${rootProject.buildDir}/repository"
+      name = 'mavenTemp'
+      url = tmpRepositoryDirectory
     }
+
     maven {
-      // maven central
-      url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+      name = 'mavenCentral'
+      url = snapshot
+          ? 'https://oss.sonatype.org/content/repositories/snapshots'
+          : 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+
       credentials {
         username = project.findProperty('mavenCentral.username')
         password = project.findProperty('mavenCentral.password')
