@@ -58,15 +58,13 @@ artifacts {
 publishing {
   publications {
     maven(MavenPublication) {
+      suppressPomMetadataWarningsFor 'optionalApiElements'
+      suppressPomMetadataWarningsFor 'optionalRuntimeElements'
+
       from components.java
+
       artifact javadocJar
       artifact sourcesJar
-
-      versionMapping {
-        usage('java-runtime') {
-          fromResolutionResult()
-        }
-      }
 
       pom {
         name = 'Spring Method Logging'

@@ -17,15 +17,19 @@ layout.buildDirectory = '.build'
 ext {
   jetbrainsAnnotationsVersion = '24.0.1'
   junitVersion = '5.10.+'
-  log4jVersion = '2.20.0'
+  log4jVersion = '[2.20.0,3.0.0)'
   lombokVersion = '1.18.+'
-  messageFormatVersion = '0.9.0-SNAPSHOT'
-  slf4jVersion = '2.0.9'
+  messageFormatVersion = '[0.8.0,)'
+  slf4jVersion = '[2.0.0,2.1.0)'
   springFrameworkVersion = '5.3.30'
 }
 
 
 java {
+  registerFeature('optional') {
+    usingSourceSet sourceSets.main
+  }
+
   toolchain {
     languageVersion = JavaLanguageVersion.of(8)
   }
@@ -63,9 +67,10 @@ repositories {
 
 dependencies {
   // java
-  compileOnlyApi "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
-  compileOnlyApi "org.slf4j:slf4j-api:${slf4jVersion}"
-  compileOnlyApi "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+  compileOnly "org.jetbrains:annotations-java5:${jetbrainsAnnotationsVersion}"
+
+  optionalCompileOnlyApi "org.slf4j:slf4j-api:${slf4jVersion}"
+  optionalCompileOnlyApi "org.apache.logging.log4j:log4j-api:${log4jVersion}"
 
   implementation "org.springframework:spring-context:${springFrameworkVersion}"
   implementation "de.sayayi.lib:message-format:${messageFormatVersion}"
@@ -73,7 +78,9 @@ dependencies {
 
   // test
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
   testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testImplementation "org.springframework:spring-test:${springFrameworkVersion}"
 
