@@ -15,13 +15,13 @@ layout.buildDirectory = '.build'
 
 
 ext {
-  jetbrainsAnnotationsVersion = '24.0.1'
+  jetbrainsAnnotationsVersion = '24.0.+'
   junitVersion = '5.10.+'
   log4jVersion = '[2.20.0,3.0.0)'
   lombokVersion = '1.18.+'
   messageFormatVersion = '[0.8.0,)'
   slf4jVersion = '[2.0.0,2.1.0)'
-  springFrameworkVersion = '5.3.30'
+  springFrameworkVersion = '5.3.+'
 }
 
 
