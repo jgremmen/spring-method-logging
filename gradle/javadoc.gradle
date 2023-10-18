@@ -16,7 +16,7 @@
 
 
 javadoc {
-  title "Spring Method Logging Extension ${version}"
+  title 'Spring Method Logging Extension ${version}'
 
   (options as StandardJavadocDocletOptions).with {
     linksOffline 'https://javadoc.io/doc/org.jetbrains/annotations-java5/24.0.1/',
@@ -24,7 +24,7 @@ javadoc {
 
     encoding 'UTF-8'
 
-    group("Spring Method Logging", ["de.sayayi.lib.methodlogging"])
+    group('Spring Method Logging', ['de.sayayi.lib.methodlogging'])
 
     noQualifiers 'java.util', 'java.lang'
 
