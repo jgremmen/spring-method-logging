@@ -26,7 +26,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
-public final class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
+public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 {
   public AutoDetectLoggerFactory() {
     super(true);
