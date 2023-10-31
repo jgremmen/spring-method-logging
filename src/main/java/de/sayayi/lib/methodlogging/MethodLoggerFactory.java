@@ -33,6 +33,7 @@ import java.lang.reflect.Field;
  * @see Log4j2LoggerFactory
  * @see Slf4jLoggerFactory
  */
+@FunctionalInterface
 public interface MethodLoggerFactory
 {
   /**
