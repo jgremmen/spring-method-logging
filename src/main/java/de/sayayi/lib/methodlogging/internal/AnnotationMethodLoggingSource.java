@@ -21,6 +21,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.asm.*;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
@@ -42,12 +43,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static org.springframework.aop.support.AopUtils.getMostSpecificMethod;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
 import static org.springframework.core.ResolvableType.forMethodParameter;
+import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotationAttributes;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotationAttributes;
 import static org.springframework.core.annotation.AnnotationUtils.synthesizeAnnotation;
 import static org.springframework.util.StringUtils.hasLength;
 
@@ -58,7 +61,7 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 public final class AnnotationMethodLoggingSource
 {
-  private final @NotNull Map<MethodClassKey, MethodDef> methodLoggingDefinitionCache;
+  private final @NotNull Map<MethodClassKey,MethodDef> methodLoggingDefinitionCache;
   private final @NotNull LocalVariableTableParameterNameDiscoverer nameDiscoverer;
   final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
 
@@ -72,32 +75,38 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  @Contract(pure = true)
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
     final MethodClassKey cacheKey = new MethodClassKey(method, targetClass);
     MethodDef methodLoggingDefinition = methodLoggingDefinitionCache.get(cacheKey);
 
     if (methodLoggingDefinition == null &&
-        (methodLoggingDefinition = analyseMethodDefinition(method)) != null)
+        (methodLoggingDefinition = analyseMethodDefinition(method, targetClass)) != null)
       methodLoggingDefinitionCache.put(cacheKey, methodLoggingDefinition);
 
     return methodLoggingDefinition;
   }
 
 
-  private MethodDef analyseMethodDefinition(@NotNull Method method)
+  @Contract(pure = true)
+  private MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
   {
-    if (method.isAnnotationPresent(MethodLogging.class))
-    {
-      final Class<?> classType = method.getDeclaringClass();
-      final AnnotationAttributes methodLoggingConfigAttributes =
-          findMethodLoggingConfigAttributes(classType);
-      final MethodLogging methodLogging = findMethodLogging(methodLoggingConfigAttributes, method);
-      final String[] parameterNames = nameDiscoverer.getParameterNames(method);
-      final ArrayList<ParameterDef> parameterDefs = new ArrayList<>(8);
+    final AnnotationAttributes methodLoggingAttributes =
+        findMergedAnnotationAttributes(getMostSpecificMethod(method, targetClass),
+            MethodLogging.class, false, true);
 
-      if (parameterNames != null && methodLogging.parameters() == SHOW)
+    if (methodLoggingAttributes != null)
+    {
+      final AnnotationAttributes methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(targetClass);
+      final MethodLogging methodLogging =
+          findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
+      final String[] parameterNames = nameDiscoverer.getParameterNames(method);
+      final List<ParameterDef> parameterDefs;
+
+      if (parameterNames != null && parameterNames.length > 0 && methodLogging.parameters() == SHOW)
       {
+        parameterDefs = new ArrayList<>(8);
         final Parameter[] parameters = method.getParameters();
         final List<String> excludeParameters = asList(methodLogging.exclude());
 
@@ -112,8 +121,8 @@ public final class AnnotationMethodLoggingSource
           final ResolvableType methodParameterType = forMethodParameter(method, p);
           final boolean exclude = excludeParameters.contains(def.name) ||
               (paramLog == null &&
-               (!methodParameterType.toClass().isPrimitive() || methodParameterType.isArray()) &&
-               methodLoggingConfigurer.excludeMethodParameter(methodParameterType));
+                  (!methodParameterType.toClass().isPrimitive() || methodParameterType.isArray()) &&
+                  methodLoggingConfigurer.excludeMethodParameter(methodParameterType));
 
           if (!exclude)
           {
@@ -127,49 +136,43 @@ public final class AnnotationMethodLoggingSource
           }
         }
 
-        parameterDefs.trimToSize();
-
-        return new MethodDef(
-            synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, classType),
-            parameterDefs, methodLogging, method,
-            methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
-            findLoggerField(method.getDeclaringClass(), methodLogging));
+        ((ArrayList<?>)parameterDefs).trimToSize();
       }
+      else
+        parameterDefs = emptyList();
+
+      return new MethodDef(
+          synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
+          parameterDefs, methodLogging, method,
+          methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
+          findLoggerField(method.getDeclaringClass(), methodLogging));
     }
 
     return null;
   }
 
 
-  private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Class<?> classType)
+  @Contract(pure = true)
+  private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Class<?> type)
   {
-    AnnotationAttributes attributes = getMergedAnnotationAttributes(classType, MethodLoggingConfig.class);
+    AnnotationAttributes attributes =
+        findMergedAnnotationAttributes(type, MethodLoggingConfig.class, false, true);
+
     if (attributes == null)
-      attributes = new AnnotationAttributes(MethodLoggingConfig.class);
-
-    for(final Method m: MethodLoggingConfig.class.getDeclaredMethods())
-    {
-      final Class<?> attributeType = m.getReturnType();
-      if (attributeType != void.class && m.getParameterCount() == 0)
-      {
-        final String name = m.getName();
-
-        if (!attributes.containsKey(name) ||
-            (attributeType == Visibility.class && attributes.getEnum(name) == Visibility.DEFAULT) ||
-            (attributeType == Level.class && attributes.getEnum(name) == Level.DEFAULT) ||
-            (attributeType == String.class && "<DEFAULT>".equals(attributes.getString(name))))
-          attributes.put(name, m.getDefaultValue());
-      }
-    }
+      attributes = createDefaultMethodLoggingConfigAttributes();
 
     if ("<DEFAULT>".equals(attributes.getString("loggerFieldName")))
       attributes.put("loggerFieldName", methodLoggingConfigurer.defaultLoggerFieldName());
+
     if (attributes.getEnum("entryExitLevel") == Level.DEFAULT)
       attributes.put("entryExitLevel", methodLoggingConfigurer.defaultEntryExitLevel());
+
     if (attributes.getEnum("parameterLevel") == Level.DEFAULT)
       attributes.put("parameterLevel", methodLoggingConfigurer.defaultParameterLevel());
+
     if (attributes.getEnum("resultLevel") == Level.DEFAULT)
       attributes.put("resultLevel", methodLoggingConfigurer.defaultResultLevel());
+
     if (attributes.getEnum("lineNumber") == Visibility.DEFAULT)
       attributes.put("lineNumber", methodLoggingConfigurer.defaultLineNumber());
 
@@ -177,27 +180,39 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  private @NotNull MethodLogging findMethodLogging(@NotNull AnnotationAttributes methodLoggingConfigAttributes,
-                                                   @NotNull Method method)
+  @Contract(pure = true)
+  private @NotNull AnnotationAttributes createDefaultMethodLoggingConfigAttributes()
   {
-    final AnnotationAttributes methodAttributes =
-        requireNonNull(getMergedAnnotationAttributes(method, MethodLogging.class));
+    final AnnotationAttributes attributes = new AnnotationAttributes(MethodLoggingConfig.class);
 
-    for(final Entry<String,Object> methodAttribute: methodAttributes.entrySet())
+    for(final Method m: MethodLoggingConfig.class.getDeclaredMethods())
+      if (m.getReturnType() != void.class && m.getParameterCount() == 0)
+        attributes.put(m.getName(), m.getDefaultValue());
+
+    return attributes;
+  }
+
+
+  private @NotNull MethodLogging findMergedMethodLogging(
+      @NotNull AnnotationAttributes methodLoggingConfigAttributes,
+      @NotNull AnnotationAttributes methodLoggingAttributes)
+  {
+    for(final Entry<String,Object> methodAttribute: methodLoggingAttributes.entrySet())
     {
       final String name = methodAttribute.getKey();
       final Object value = methodAttribute.getValue();
 
       if (value == Visibility.DEFAULT || value == Level.DEFAULT)
-        methodAttributes.put(name, methodLoggingConfigAttributes.getEnum(name));
+        methodLoggingAttributes.put(name, methodLoggingConfigAttributes.getEnum(name));
       else if ("<DEFAULT>".equals(value))
-        methodAttributes.put(name, methodLoggingConfigAttributes.getString(name));
+        methodLoggingAttributes.put(name, methodLoggingConfigAttributes.getString(name));
     }
 
-    return synthesizeAnnotation(methodAttributes, MethodLogging.class, method);
+    return synthesizeAnnotation(methodLoggingAttributes, MethodLogging.class, null);
   }
 
 
+  @Contract(pure = true)
   private int findMethodLineNumber(@NotNull Method method)
   {
     final Class<?> declaringClass = method.getDeclaringClass();

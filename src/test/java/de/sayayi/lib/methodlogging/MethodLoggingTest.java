@@ -38,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -51,6 +52,7 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
 
 
 /**
@@ -66,6 +68,7 @@ public class MethodLoggingTest
 {
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
   @Autowired private MyBean myBean;
+  @Autowired private MyBeanIf myBeanIf;
   @Autowired private JULLoggerBean julLoggerBean;
 
 
@@ -75,11 +78,24 @@ public class MethodLoggingTest
     val factory = new ListMethodLoggerFactory();
     methodLoggerFactoryDelegate.setFactory(factory);
 
+    val log = factory.log;
+
     myBean.getName();
 
-    assertEquals("INFO|> getName", factory.log.get(0));
-    assertEquals("DEBUG|name = Mr. Bean", factory.log.get(1));
-    assertEquals("INFO|< getName", factory.log.get(2));
+    assertEquals(3, log.size());
+    assertEquals("INFO|> getName", log.get(0));
+    assertEquals("DEBUG|name = Mr. Bean", log.get(1));
+    assertEquals("INFO|< getName", log.get(2));
+
+    log.clear();
+
+
+    myBeanIf.getName();
+
+    assertEquals(3, log.size());
+    assertEquals("INFO|> getName", log.get(0));
+    assertEquals("DEBUG|nameIf = Mr. Bean", log.get(1));
+    assertEquals("INFO|< getName", log.get(2));
   }
 
 
@@ -183,6 +199,16 @@ public class MethodLoggingTest
 
 
 
+  @MethodLoggingConfig(lineNumber = HIDE)
+  public interface MyBeanIf
+  {
+    @MethodLogging(resultFormat = "nameIf = %{result}")
+    String getName();
+  }
+
+
+
+
   @Component
   @Log
   public static class JULLoggerBean
@@ -216,6 +242,13 @@ public class MethodLoggingTest
     @Override
     public MethodLoggerFactoryDelegate methodLoggerFactory() {
       return new MethodLoggerFactoryDelegate();
+    }
+
+
+    @Bean
+    @Scope(proxyMode = INTERFACES)
+    public MyBeanIf myBeanIf() {
+      return  () -> "Mr. Bean";
     }
   }
 

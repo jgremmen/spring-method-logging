@@ -23,9 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Method;
 
-import static java.lang.reflect.Modifier.ABSTRACT;
-import static java.lang.reflect.Modifier.STATIC;
-
 
 /**
  * @author Jeroen Gremmen
@@ -53,11 +50,8 @@ public final class BeanFactoryMethodLoggingAdvisor extends AbstractBeanFactoryPo
   {
     return new StaticMethodMatcherPointcut() {
       @Override
-      public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass)
-      {
-        return method.getDeclaringClass() != Object.class &&
-            (method.getModifiers() & (STATIC | ABSTRACT)) == 0 &&
-            annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
+      public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
+        return annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
       }
     };
   }
