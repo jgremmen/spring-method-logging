@@ -8,14 +8,14 @@ plugins {
 
 description 'Method Logging Extension for Spring'
 group 'de.sayayi.lib'
-version '0.4.2-SNAPSHOT'
+version '0.4.2'
 
 
 layout.buildDirectory = '.build'
 
 
 ext {
-  jetbrainsAnnotationsVersion = '24.0.+'
+  jetbrainsAnnotationsVersion = '24.1.+'
   junitVersion = '5.10.+'
   log4jVersion = '[2.17.1,3.0.0)'
   lombokVersion = '1.18.+'
