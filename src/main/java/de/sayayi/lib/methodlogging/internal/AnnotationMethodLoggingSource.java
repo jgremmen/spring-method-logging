@@ -236,7 +236,7 @@ public final class AnnotationMethodLoggingSource
           return methodDescriptor.equals(name.concat(descriptor)) ? methodVisitor : null;
         }
       }, SKIP_FRAMES);
-    } catch(IOException ignored) {
+    } catch(NullPointerException | IOException ignored) {
     }
 
     return lineNumber.get();
