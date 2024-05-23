@@ -102,20 +102,27 @@ public @interface MethodLoggingConfig
 
   Visibility parameters() default SHOW;
 
+
   Visibility result() default SHOW;
+
 
   @Language("MessageFormat")
   String inlineParameterFormat() default DEFAULT_INLINE_PARAMETER_FORMAT;
 
+
   @Language("MessageFormat")
   String parameterFormat() default DEFAULT_PARAMETER_FORMAT;
+
 
   @Language("MessageFormat")
   String resultFormat() default DEFAULT_RESULT_FORMAT;
 
+
   Level entryExitLevel() default DEFAULT;
 
+
   Level parameterLevel() default DEFAULT;
+
 
   Level resultLevel() default DEFAULT;
 }

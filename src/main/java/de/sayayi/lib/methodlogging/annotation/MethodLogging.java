@@ -75,22 +75,30 @@ public @interface MethodLogging
    */
   Visibility elapsedTime() default Visibility.DEFAULT;
 
+
   Visibility parameters() default Visibility.DEFAULT;
 
+
   Visibility result() default Visibility.DEFAULT;
+
 
   @Language("MessageFormat")
   String inlineParameterFormat() default "<DEFAULT>";
 
+
   @Language("MessageFormat")
   String parameterFormat() default "<DEFAULT>";
+
 
   @Language("MessageFormat")
   String resultFormat() default "<DEFAULT>";
 
+
   Level entryExitLevel() default Level.DEFAULT;
 
+
   Level parameterLevel() default Level.DEFAULT;
+
 
   Level resultLevel() default Level.DEFAULT;
 

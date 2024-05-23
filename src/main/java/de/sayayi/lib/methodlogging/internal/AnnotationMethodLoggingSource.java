@@ -79,14 +79,9 @@ public final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
-    final MethodClassKey cacheKey = new MethodClassKey(method, targetClass);
-    MethodDef methodLoggingDefinition = methodLoggingDefinitionCache.get(cacheKey);
-
-    if (methodLoggingDefinition == null &&
-        (methodLoggingDefinition = analyseMethodDefinition(method, targetClass)) != null)
-      methodLoggingDefinitionCache.put(cacheKey, methodLoggingDefinition);
-
-    return methodLoggingDefinition;
+    return methodLoggingDefinitionCache.computeIfAbsent(
+        new MethodClassKey(method, targetClass),
+        methodClassKey -> analyseMethodDefinition(method, targetClass));
   }
 
 
@@ -97,59 +92,67 @@ public final class AnnotationMethodLoggingSource
         findMergedAnnotationAttributes(getMostSpecificMethod(method, targetClass),
             MethodLogging.class, false, true);
 
-    if (methodLoggingAttributes != null)
+    if (methodLoggingAttributes == null)
+      return null;
+
+    final AnnotationAttributes methodLoggingConfigAttributes =
+        findMethodLoggingConfigAttributes(targetClass);
+    final MethodLogging methodLogging =
+        findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
+
+    return new MethodDef(
+        synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
+        getParameterDefs(method, methodLogging), methodLogging, method,
+        methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
+        findLoggerField(method.getDeclaringClass(), methodLogging));
+  }
+
+
+  @Contract(pure = true)
+  private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method method,
+                                                       @NotNull MethodLogging methodLogging)
+  {
+    final String[] parameterNames = nameDiscoverer.getParameterNames(method);
+
+    if (parameterNames == null || parameterNames.length == 0 || methodLogging.parameters() != SHOW)
+      return emptyList();
+
+    final ArrayList<ParameterDef> parameterDefs = new ArrayList<>(8);
+    final Parameter[] parameters = method.getParameters();
+    final List<String> excludeParameters = asList(methodLogging.exclude());
+
+    for(int p = 0; p < parameterNames.length; p++)
     {
-      final AnnotationAttributes methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(targetClass);
-      final MethodLogging methodLogging =
-          findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
-      final String[] parameterNames = nameDiscoverer.getParameterNames(method);
-      final List<ParameterDef> parameterDefs;
+      final ParamLog paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+      final ParameterDef parameterDef = new ParameterDef();
 
-      if (parameterNames != null && parameterNames.length > 0 && methodLogging.parameters() == SHOW)
+      if (!hasLength(parameterDef.name = paramLog != null ? paramLog.name() : ""))
+        parameterDef.name = parameterNames[p];
+
+      if (!excludeParameters.contains(parameterDef.name) &&
+          (paramLog != null || isParameterIncluded(forMethodParameter(method, p))))
       {
-        parameterDefs = new ArrayList<>(8);
-        final Parameter[] parameters = method.getParameters();
-        final List<String> excludeParameters = asList(methodLogging.exclude());
+        parameterDef.index = p;
+        parameterDef.inline = paramLog == null || paramLog.inline();
 
-        for(int p = 0; p < parameterNames.length; p++)
-        {
-          final ParamLog paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
-          final ParameterDef def = new ParameterDef();
+        if (!hasLength(parameterDef.format = paramLog != null ? paramLog.format() : ""))
+          parameterDef.format = "%{value}";
 
-          if (!hasLength(def.name = paramLog != null ? paramLog.name() : ""))
-            def.name = parameterNames[p];
-
-          final ResolvableType methodParameterType = forMethodParameter(method, p);
-          final boolean exclude = excludeParameters.contains(def.name) ||
-              (paramLog == null &&
-                  (!methodParameterType.toClass().isPrimitive() || methodParameterType.isArray()) &&
-                  methodLoggingConfigurer.excludeMethodParameter(methodParameterType));
-
-          if (!exclude)
-          {
-            def.index = p;
-            def.inline = paramLog == null || paramLog.inline();
-
-            if (!hasLength(def.format = paramLog != null ? paramLog.format() : ""))
-              def.format = "%{value}";
-
-            parameterDefs.add(def);
-          }
-        }
-
-        ((ArrayList<?>)parameterDefs).trimToSize();
+        parameterDefs.add(parameterDef);
       }
-      else
-        parameterDefs = emptyList();
-
-      return new MethodDef(
-          synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
-          parameterDefs, methodLogging, method,
-          methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
-          findLoggerField(method.getDeclaringClass(), methodLogging));
     }
 
-    return null;
+    parameterDefs.trimToSize();
+
+    return parameterDefs;
+  }
+
+
+  private boolean isParameterIncluded(@NotNull ResolvableType methodParameterType)
+  {
+    return
+        (methodParameterType.toClass().isPrimitive() && !methodParameterType.isArray()) ||
+        !methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
   }
 
 
@@ -186,9 +189,9 @@ public final class AnnotationMethodLoggingSource
   {
     final AnnotationAttributes attributes = new AnnotationAttributes(MethodLoggingConfig.class);
 
-    for(final Method m: MethodLoggingConfig.class.getDeclaredMethods())
-      if (m.getReturnType() != void.class && m.getParameterCount() == 0)
-        attributes.put(m.getName(), m.getDefaultValue());
+    for(final Method annotationMethod: MethodLoggingConfig.class.getDeclaredMethods())
+      if (annotationMethod.getReturnType() != void.class && annotationMethod.getParameterCount() == 0)
+        attributes.put(annotationMethod.getName(), annotationMethod.getDefaultValue());
 
     return attributes;
   }
@@ -200,13 +203,12 @@ public final class AnnotationMethodLoggingSource
   {
     for(final Entry<String,Object> methodAttribute: methodLoggingAttributes.entrySet())
     {
-      final String name = methodAttribute.getKey();
       final Object value = methodAttribute.getValue();
 
       if (value == Visibility.DEFAULT || value == Level.DEFAULT)
-        methodLoggingAttributes.put(name, methodLoggingConfigAttributes.getEnum(name));
+        methodAttribute.setValue(methodLoggingConfigAttributes.getEnum(methodAttribute.getKey()));
       else if ("<DEFAULT>".equals(value))
-        methodLoggingAttributes.put(name, methodLoggingConfigAttributes.getString(name));
+        methodAttribute.setValue(methodLoggingConfigAttributes.getString(methodAttribute.getKey()));
     }
 
     return synthesizeAnnotation(methodLoggingAttributes, MethodLogging.class, null);

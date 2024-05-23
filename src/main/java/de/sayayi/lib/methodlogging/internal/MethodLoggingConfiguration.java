@@ -17,6 +17,10 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.aop.Pointcut;
+import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
+import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +30,8 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 
+import java.lang.reflect.Method;
+
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
 
 
@@ -33,7 +39,7 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")
 public class MethodLoggingConfiguration implements ImportAware
@@ -56,7 +62,7 @@ public class MethodLoggingConfiguration implements ImportAware
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  public AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
+  AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
       @Autowired(required = false) MethodLoggingConfigurer methodLoggingConfigurer)
   {
     return new AnnotationMethodLoggingSource(
@@ -65,12 +71,24 @@ public class MethodLoggingConfiguration implements ImportAware
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  public BeanFactoryMethodLoggingAdvisor internalMethodLoggingAdvisor(
-      AnnotationMethodLoggingSource annotationMethodLoggingSource)
+  AbstractBeanFactoryPointcutAdvisor internalMethodLoggingAdvisor(
+      AnnotationMethodLoggingSource annotationMethodLoggingSource,
+      MethodLoggingInterceptor methodLoggingInterceptor)
   {
-    final BeanFactoryMethodLoggingAdvisor advisor =
-        new BeanFactoryMethodLoggingAdvisor(annotationMethodLoggingSource);
+    final AbstractBeanFactoryPointcutAdvisor advisor = new AbstractBeanFactoryPointcutAdvisor() {
+      @Override
+      public @NotNull Pointcut getPointcut()
+      {
+        return new StaticMethodMatcherPointcut() {
+          @Override
+          public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
+            return annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
+          }
+        };
+      }
+    };
 
+    advisor.setAdvice(methodLoggingInterceptor);
     advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
 
     return advisor;
@@ -78,8 +96,9 @@ public class MethodLoggingConfiguration implements ImportAware
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  public MethodLoggingInterceptor internalMethodLoggingInterceptor(
-      AnnotationMethodLoggingSource annotationMethodLoggingSource, ResourceLoader resourceLoader) {
+  MethodLoggingInterceptor internalMethodLoggingInterceptor(
+      AnnotationMethodLoggingSource annotationMethodLoggingSource,
+      ResourceLoader resourceLoader) {
     return new MethodLoggingInterceptor(annotationMethodLoggingSource, resourceLoader);
   }
 }
