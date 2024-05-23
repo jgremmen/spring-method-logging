@@ -23,6 +23,18 @@ import java.lang.reflect.Field;
 
 
 /**
+ * Method logger factory implementation which dynamically selects the appropriate logger
+ * based on the type of the logger field.
+ * <p>
+ * Currently it supports the following logger frameworks:
+ * <ul>
+ *   <li>Apache logging (org.apache.commons.logging)</li>
+ *   <li>JDK logging (java.util.logging)</li>
+ *   <li>Log4j2 (org.apache.logging.log4j)</li>
+ *   <li>Slf4j (org.slf4j)</li>
+ *   <li>Logback (ch.qos.logback.classic.Logger)</li>
+ * </ul>
+ *
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
@@ -56,6 +68,9 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
       case "org.slf4j.Logger":
         return Slf4jLogger.from(loggerField, obj);
+
+      case "ch.qos.logback.classic.Logger":
+        return LogbackLogger.from(loggerField, obj);
     }
 
     return MethodLogger.NO_OP;

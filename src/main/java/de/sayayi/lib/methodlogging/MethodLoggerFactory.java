@@ -32,6 +32,7 @@ import java.lang.reflect.Field;
  * @see JULLoggerFactory
  * @see Log4j2LoggerFactory
  * @see Slf4jLoggerFactory
+ * @see LogbackLoggerFactory
  */
 @FunctionalInterface
 public interface MethodLoggerFactory
