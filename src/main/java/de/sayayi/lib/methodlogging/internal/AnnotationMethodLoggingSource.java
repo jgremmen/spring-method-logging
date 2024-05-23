@@ -24,8 +24,9 @@ import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.asm.*;
-import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.MethodClassKey;
+import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAttributes;
 
@@ -62,7 +63,7 @@ import static org.springframework.util.StringUtils.hasLength;
 public final class AnnotationMethodLoggingSource
 {
   private final @NotNull Map<MethodClassKey,MethodDef> methodLoggingDefinitionCache;
-  private final @NotNull LocalVariableTableParameterNameDiscoverer nameDiscoverer;
+  private final @NotNull ParameterNameDiscoverer nameDiscoverer;
   final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
 
 
@@ -71,7 +72,7 @@ public final class AnnotationMethodLoggingSource
     this.methodLoggingConfigurer = methodLoggingConfigurer;
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
-    nameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
+    nameDiscoverer = new DefaultParameterNameDiscoverer();
   }
 
 
