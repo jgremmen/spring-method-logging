@@ -17,6 +17,7 @@ package de.sayayi.lib.methodlogging;
 
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
+import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
@@ -31,7 +32,7 @@ import org.springframework.core.ResolvableType;
 
 /**
  * Interface to be implemented by @{@link Configuration} classes annotated with
- * @{@link EnableMethodLogging} that wish or need to specify explicitly how messages are
+ * \u0040{@link EnableMethodLogging} that wish or need to specify explicitly how messages are
  * formatted and logged for annotation-driven method logging.
  *
  * @author Jeroen Gremmen

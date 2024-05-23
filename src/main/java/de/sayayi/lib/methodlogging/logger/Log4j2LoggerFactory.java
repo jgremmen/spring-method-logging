@@ -23,6 +23,8 @@ import java.lang.reflect.Field;
 
 
 /**
+ * Method logger factory implementation for the Log4j2 logging framework.
+ *
  * @author Jeroen Gremmen
  * @since 0.3.0
  */

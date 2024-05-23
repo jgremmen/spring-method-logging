@@ -24,6 +24,8 @@ import static java.util.logging.LogManager.getLogManager;
 
 
 /**
+ * Method logger factory implementation for the jdk logging framework.
+ *
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
