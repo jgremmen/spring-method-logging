@@ -32,6 +32,7 @@ import lombok.experimental.Delegate;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
@@ -64,16 +66,19 @@ import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
     MethodLoggingTest.MyConfiguration.class,
     MethodLoggingTest.MyBean.class
 })
+@DisplayName("Method logging")
 public class MethodLoggingTest
 {
+  @Autowired private JULLoggerBean julLoggerBean;
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
   @Autowired private MyBean myBean;
   @Autowired private MyBeanIf myBeanIf;
-  @Autowired private JULLoggerBean julLoggerBean;
+  @Autowired private Supplier<String> mySupplier;
 
 
   @Test
-  void testMethod_getName()
+  @DisplayName("Bean method without parameters")
+  void beanMethodNoParameters()
   {
     val factory = new ListMethodLoggerFactory();
     methodLoggerFactoryDelegate.setFactory(factory);
@@ -86,9 +91,17 @@ public class MethodLoggingTest
     assertEquals("INFO|> getName", log.get(0));
     assertEquals("DEBUG|name = Mr. Bean", log.get(1));
     assertEquals("INFO|< getName", log.get(2));
+  }
 
-    log.clear();
 
+  @Test
+  @DisplayName("Interface method with annotation on interface")
+  void interfaceLogging()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    val log = factory.log;
 
     myBeanIf.getName();
 
@@ -100,6 +113,25 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("Interface method with annotation on implementation")
+  void supplierGet()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    val log = factory.log;
+
+    mySupplier.get();
+
+    assertEquals(3, log.size());
+    assertEquals("INFO|> get", log.get(0));
+    assertEquals("DEBUG|result = Mr. Supplier", log.get(1));
+    assertEquals("INFO|< get", log.get(2));
+  }
+
+
+  @Test
+  @DisplayName("Single parameter method with line numbers")
   void testMethod_setWithParam()
   {
     val factory = new ListMethodLoggerFactory();
@@ -113,6 +145,7 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("Multiple parameter method with in-method logging")
   void testMethod_setWithMultipleParams()
   {
     val factory = new ListMethodLoggerFactory();
@@ -127,6 +160,7 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("Excluding method parameters")
   void testMethod_excludeParams()
   {
     val factory = new ListMethodLoggerFactory();
@@ -140,6 +174,7 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("Exception handling")
   void testMethod_exception()
   {
     val factory = new ListMethodLoggerFactory();
@@ -153,6 +188,7 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("java.util.logging logger factory")
   void testJULLogger()
   {
     methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(false));
@@ -250,13 +286,28 @@ public class MethodLoggingTest
     public MyBeanIf myBeanIf() {
       return  () -> "Mr. Bean";
     }
+
+
+    @Bean
+    @Scope(proxyMode = INTERFACES)
+    public Supplier<String> mySupplier()
+    {
+      return new Supplier<String>() {
+        @Override
+        @MethodLogging
+        public String get() {
+          return "Mr. Supplier";
+        }
+      };
+    }
   }
 
 
 
 
+  @Setter
   static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
-    @Setter @Delegate private MethodLoggerFactory factory;
+    @Delegate private MethodLoggerFactory factory;
   }
 
 
