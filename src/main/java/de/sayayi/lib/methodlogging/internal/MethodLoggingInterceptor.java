@@ -55,8 +55,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
-    final MethodLoggingConfigurer methodLoggingConfigurer =
-        annotationMethodLoggingSource.methodLoggingConfigurer;
+    final MethodLoggingConfigurer methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
 
     if ((messageSupport = methodLoggingConfigurer.messageSupport()) == null)
     {
@@ -75,11 +74,9 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     final Object _this = requireNonNull(invocation.getThis());
     final Class<?> thisType = ultimateTargetClass(_this);
-    final MethodDef methodDef =
-        annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
+    final MethodDef methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
 
-    final MethodLogger methodLogger =
-        methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
+    final MethodLogger methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
     if (!methodLogger.isLogEnabled(methodDef.entryExitLevel))
       return invocation.proceed();
 
@@ -103,17 +100,13 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
                               @NotNull MethodLogger methodLogger)
   {
     final boolean printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
-    final StringBuilder method =
-        new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
+    final StringBuilder method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
 
     if (printParameters && !methodDef.inlineParameters.isEmpty())
     {
       final StringJoiner parameterList = new StringJoiner(",", "(", ")");
       for(final ParameterDef parameterDef: methodDef.inlineParameters)
-      {
-        parameterList.add(
-            logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
-      }
+        parameterList.add(logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
 
       method.append(parameterList);
     }
@@ -165,8 +158,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger,
                              long startTime, Throwable throwable)
   {
-    final StringBuilder exit = new StringBuilder(methodDef.methodExitPrefix)
-        .append(methodDef.methodName);
+    final StringBuilder exit = new StringBuilder(methodDef.methodExitPrefix).append(methodDef.methodName);
 
     if (methodDef.line > 0)
       exit.append(':').append(methodDef.line);
@@ -230,8 +222,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
 
   @Contract("_, _, _ -> param3")
-  private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger,
-                           Object result)
+  private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
   {
     final Level resultLevel = methodDef.resultLevel;
 

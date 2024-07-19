@@ -51,7 +51,7 @@ public class MethodLoggingConfiguration implements ImportAware
   public void setImportMetadata(AnnotationMetadata importMetadata)
   {
     enableMethodLogging = AnnotationAttributes.fromMap(
-        importMetadata.getAnnotationAttributes(EnableMethodLogging.class.getName(), false));
+        importMetadata.getAnnotationAttributes(EnableMethodLogging.class.getName()));
 
     if (enableMethodLogging == null)
     {
