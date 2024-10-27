@@ -1,0 +1,5 @@
+org.springframework.core
+org.springframework.core.annotation
+org.springframework.core.io
+org.springframework.core.type
+
