@@ -15,13 +15,23 @@ layout.buildDirectory = '.build'
 
 ext {
   jetbrainsAnnotationsVersion = '[24.0,26.1)'
-  junitVersion = '5.11.+'
+  junitVersion = '5.12.+'
   log4jVersion = '[2.17.1,3.0.0)'
   lombokVersion = '1.18.+'
-  messageFormatVersion = '[0.8.0,)'
+  messageFormatVersion = '[0.8,0.13)'
   slf4jVersion = '[2.0.0,2.1.0)'
   logbackVersion = '[1.3.0,1.4.0)'
   springFrameworkVersion = '[5.3.0,6.0.0)'
+}
+
+
+ext.resolveVersion = { artifactName ->
+  configurations
+      .compileClasspath
+      .resolvedConfiguration
+      .resolvedArtifacts
+      .find { it.name == artifactName }
+      .moduleVersion.id.version
 }
 
 
@@ -49,7 +59,8 @@ test {
 
 repositories {
   maven {
-    url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    url = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
     mavenContent {
       includeGroup 'de.sayayi.lib'
       snapshotsOnly()
@@ -86,60 +97,43 @@ dependencies {
 }
 
 
-def resolvedJetbrainsAnnotationsVersion = configurations
-    .compileClasspath
-    .resolvedConfiguration
-    .resolvedArtifacts
-    .find { it.name == 'annotations' }
-    .moduleVersion.id.version
-
-def resolvedMessageFormatVersion = configurations
-    .compileClasspath
-    .resolvedConfiguration
-    .resolvedArtifacts
-    .find { it.name == 'message-format' }
-    .moduleVersion.id.version
-
-def resolvedSpringFrameworkVersion = configurations
-    .compileClasspath
-    .resolvedConfiguration
-    .resolvedArtifacts
-    .find { it.name == 'spring-context' }
-    .moduleVersion.id.version
-
-
 javadoc {
-  title "Spring Method Logging Extension ${version}"
+  title = "Spring Method Logging Extension ${version}"
 
   (options as StandardJavadocDocletOptions).with {
-    linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolvedJetbrainsAnnotationsVersion}/",
+    linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolveVersion('annotations')}/",
                  'gradle/javadocs/jetbrains-annotations'
-    linksOffline "https://javadoc.io/doc/de.sayayi.lib/message-format/${resolvedMessageFormatVersion}/",
+    linksOffline "https://javadoc.io/doc/de.sayayi.lib/message-format/${resolveVersion('message-format')}/",
                  'gradle/javadocs/message-format'
-    linksOffline "https://javadoc.io/doc/org.springframework/spring-beans/${resolvedSpringFrameworkVersion}/",
+    linksOffline "https://javadoc.io/doc/org.springframework/spring-beans/${resolveVersion('spring-beans')}/",
                  'gradle/javadocs/spring-beans'
-    linksOffline "https://javadoc.io/doc/org.springframework/spring-context/${resolvedSpringFrameworkVersion}/",
+    linksOffline "https://javadoc.io/doc/org.springframework/spring-context/${resolveVersion('spring-context')}/",
                  'gradle/javadocs/spring-context'
-    linksOffline "https://javadoc.io/doc/org.springframework/spring-core/${resolvedSpringFrameworkVersion}/",
+    linksOffline "https://javadoc.io/doc/org.springframework/spring-core/${resolveVersion('spring-core')}/",
                  'gradle/javadocs/spring-core'
 
-    encoding 'UTF-8'
+    encoding = 'UTF-8'
 
     group('Spring Method Logging', [
         'de.sayayi.lib.methodlogging',
         'de.sayayi.lib.methodlogging.annotation',
+        'de.sayayi.lib.methodlogging.internal',
         'de.sayayi.lib.methodlogging.logger'
     ])
 
     noQualifiers 'java.util', 'java.lang'
 
     addStringOption('Xdoclint:-missing', '-quiet')
+    addStringOption('-show-module-contents', 'api')
   }
 
-  failOnError false
-
-  exclude 'de/sayayi/lib/methodlogging/internal/**'
+  failOnError = false
 }
 
 
 apply from: file('gradle/publishing.gradle')
+
+
+wrapper {
+  distributionType = Wrapper.DistributionType.BIN
+}
