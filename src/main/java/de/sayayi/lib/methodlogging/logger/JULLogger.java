@@ -39,9 +39,11 @@ final class JULLogger implements MethodLogger
 
   private final @NotNull Logger logger;
 
+
   JULLogger(Logger logger) {
     this.logger = requireNonNull(logger);
   }
+
 
   @Override
   public void log(@NotNull Level level, String message) {

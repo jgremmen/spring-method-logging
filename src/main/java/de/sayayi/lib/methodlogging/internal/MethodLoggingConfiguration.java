@@ -75,7 +75,7 @@ public class MethodLoggingConfiguration implements ImportAware
       AnnotationMethodLoggingSource annotationMethodLoggingSource,
       MethodLoggingInterceptor methodLoggingInterceptor)
   {
-    final AbstractBeanFactoryPointcutAdvisor advisor = new AbstractBeanFactoryPointcutAdvisor() {
+    var advisor = new AbstractBeanFactoryPointcutAdvisor() {
       @Override
       public @NotNull Pointcut getPointcut()
       {

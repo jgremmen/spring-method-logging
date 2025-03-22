@@ -28,7 +28,7 @@ import org.springframework.core.type.AnnotationMetadata;
 public final class EnableMethodLoggingSelector implements ImportSelector
 {
   @Override
-  public @NotNull String[] selectImports(@NotNull AnnotationMetadata importingClassMetadata)
+  public String @NotNull [] selectImports(@NotNull AnnotationMetadata importingClassMetadata)
   {
     return new String[] {
       AutoProxyRegistrar.class.getName(),

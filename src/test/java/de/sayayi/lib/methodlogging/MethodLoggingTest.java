@@ -20,7 +20,7 @@ import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.GenericFormatterService;
 import de.sayayi.lib.message.formatter.named.ClipFormatter;
-import de.sayayi.lib.message.parser.normalizer.LRUMessagePartNormalizer;
+import de.sayayi.lib.message.part.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
@@ -292,7 +292,7 @@ public class MethodLoggingTest
     @Scope(proxyMode = INTERFACES)
     public Supplier<String> mySupplier()
     {
-      return new Supplier<String>() {
+      return new Supplier<>() {
         @Override
         @MethodLogging
         public String get() {

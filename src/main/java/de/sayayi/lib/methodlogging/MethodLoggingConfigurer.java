@@ -91,7 +91,7 @@ public interface MethodLoggingConfigurer
    * exclude parameters which have no meaningful string representation or are not important enough
    * to be logged at all.
    * <p>
-   * This method is queried for non-primitive types (except if it is an array, eg. {@code byte[]})
+   * This method is queried for non-primitive types (except if it is an array, e.g. {@code byte[]})
    * and method parameters without a @{@link ParamLog} annotation only.
    *
    * @param methodParameterType  method parameter type
@@ -101,8 +101,7 @@ public interface MethodLoggingConfigurer
    * @since 0.2.1
    */
   @Contract(pure = true)
-  default boolean excludeMethodParameter(
-      @SuppressWarnings("unused") @NotNull ResolvableType methodParameterType) {
+  default boolean excludeMethodParameter(@SuppressWarnings("unused") @NotNull ResolvableType methodParameterType) {
     return false;
   }
 

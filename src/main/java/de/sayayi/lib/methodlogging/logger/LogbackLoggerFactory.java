@@ -42,8 +42,7 @@ public final class LogbackLoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
-                                                     @NotNull Object obj) {
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
     return LogbackLogger.from(loggerField, obj);
   }
 }

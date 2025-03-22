@@ -47,10 +47,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
     if (loggerField == null)
     {
       if (!createLoggerOnNoField)
-      {
-        throw new IllegalStateException("Class " + type +
-            " or one of its superclasses must provide a logger field");
-      }
+        throw new IllegalStateException("Class " + type + " or one of its superclasses must provide a logger field");
 
       return createMethodLogger(type);
     }
@@ -71,6 +68,5 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz);
 
 
-  protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
-                                                              @NotNull Object obj);
+  protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj);
 }

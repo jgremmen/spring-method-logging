@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
+import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
+
 
 /**
  * Method logger factory implementation which dynamically selects the appropriate logger
@@ -52,8 +54,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
 
   @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField,
-                                                     @NotNull Object obj)
+  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {
     switch(loggerField.getType().getName())
     {
@@ -73,6 +74,6 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
         return LogbackLogger.from(loggerField, obj);
     }
 
-    return MethodLogger.NO_OP;
+    return NO_OP;
   }
 }
