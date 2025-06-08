@@ -19,7 +19,7 @@ import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.GenericFormatterService;
-import de.sayayi.lib.message.formatter.named.ClipFormatter;
+import de.sayayi.lib.message.formatter.post.ClipPostFormatter;
 import de.sayayi.lib.message.part.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
@@ -209,7 +209,7 @@ public class MethodLoggingTest
 
 
     @MethodLogging(lineNumber = SHOW, entryExitLevel = DEBUG)
-    public void setWithParam(@SuppressWarnings("unused") @ParamLog("%{value,clip,clip-size:8}") String name) {
+    public void setWithParam(@SuppressWarnings("unused") @ParamLog("%{value,clip:8}") String name) {
     }
 
 
@@ -267,7 +267,7 @@ public class MethodLoggingTest
     {
       val formatterService = new GenericFormatterService();
 
-      formatterService.addFormatter(new ClipFormatter());
+      formatterService.addParameterPostFormatter(new ClipPostFormatter());
 
       return MessageSupportFactory.create(formatterService,
           new MessageFactory(new LRUMessagePartNormalizer(64)));
