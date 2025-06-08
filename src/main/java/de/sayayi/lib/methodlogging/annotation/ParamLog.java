@@ -60,7 +60,7 @@ public @interface ParamLog
   /**
    * Tells if the parameter is to be logged inline (= {@code true}) as part of the parameter list.
    * If this annotation attribute equals {@code false} the parameter will be logged separately after
-   * the method entry has been logged. Eg.:
+   * the method entry has been logged. E.g.:
    *
    * <pre>
    *   &gt; method(inlineParam=...)
@@ -68,7 +68,7 @@ public @interface ParamLog
    *   &lt; method
    * </pre>
    *
-   * By default parameters are logged inline.
+   * By default, parameters are logged inline.
    */
   boolean inline() default true;
 

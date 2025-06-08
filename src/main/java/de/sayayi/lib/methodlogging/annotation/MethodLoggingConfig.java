@@ -52,7 +52,7 @@ public @interface MethodLoggingConfig
   /**
    * The field name in this class that contains a loggable instance. The default is {@code "log"}.
    * <p>
-   * Generally the loggable instance is a slf4j/jul/log4j logger but there are no restrictions to
+   * Generally the loggable instance is a slf4j/jul/log4j logger, but there are no restrictions to
    * the kind of object held by the field.<br>
    * The method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()}
    * must be able to handle the contents of the field.
