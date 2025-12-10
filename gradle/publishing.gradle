@@ -30,6 +30,8 @@ tasks.withType(Jar).configureEach {
   }
 
   from files('LICENSE')
+
+  dependsOn test
 }
 
 
