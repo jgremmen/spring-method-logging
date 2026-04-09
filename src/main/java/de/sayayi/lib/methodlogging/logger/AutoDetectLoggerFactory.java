@@ -31,6 +31,7 @@ import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
  * Currently it supports the following logger frameworks:
  * <ul>
  *   <li>Apache logging (org.apache.commons.logging)</li>
+ *   <li>JBoss logging (org.jboss.logging)</li>
  *   <li>JDK logging (java.util.logging)</li>
  *   <li>Log4j2 (org.apache.logging.log4j)</li>
  *   <li>Slf4j (org.slf4j)</li>
@@ -62,6 +63,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
       case "java.util.logging.Logger" -> JULLogger.from(loggerField, obj);
       case "org.apache.commons.logging.Log" -> JCLLogger.from(loggerField, obj);
       case "org.apache.logging.log4j.Logger" -> Log4j2Logger.from(loggerField, obj);
+      case "org.jboss.logging.Logger" -> JBossLogger.from(loggerField, obj);
       case "org.slf4j.Logger" -> Slf4jLogger.from(loggerField, obj);
       case "org.pmw.tinylog.Logger" -> TinylogLogger.from(obj);
       default -> NO_OP;

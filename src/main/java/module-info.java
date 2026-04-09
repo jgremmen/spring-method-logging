@@ -10,6 +10,7 @@ module de.sayayi.lib.methodlogging
   requires static ch.qos.logback.classic;
   requires static ch.qos.logback.core;
   requires static org.apache.logging.log4j;
+  requires static org.jboss.logging;
   requires static org.jetbrains.annotations;
   requires static org.slf4j;
   requires static spring.jcl;

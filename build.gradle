@@ -53,15 +53,6 @@ test {
 
 
 repositories {
-  maven {
-    url = 'https://oss.sonatype.org/content/repositories/snapshots/'
-
-    mavenContent {
-      includeGroup 'de.sayayi.lib'
-      snapshotsOnly()
-    }
-  }
-
   mavenCentral()
 }
 
@@ -74,6 +65,7 @@ dependencies {
   optionalCompileOnlyApi libs.log4j.api
   optionalCompileOnlyApi libs.logback.classic
   optionalCompileOnlyApi libs.tinylog.api
+  optionalCompileOnlyApi libs.jboss.logging
 
   implementation libs.spring.context
   implementation libs.message.format
