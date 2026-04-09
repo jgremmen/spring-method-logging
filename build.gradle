@@ -40,6 +40,13 @@ compileTestJava {
 }
 
 
+compileJava {
+  options.compilerArgs.addAll([
+    '--add-reads', 'de.sayayi.lib.methodlogging=ALL-UNNAMED'
+  ])
+}
+
+
 test {
   useJUnitPlatform()
 }
@@ -114,6 +121,7 @@ javadoc {
 
     addStringOption('Xdoclint:-missing', '-quiet')
     addStringOption('-show-module-contents', 'api')
+    addStringOption('-add-reads', 'de.sayayi.lib.methodlogging=ALL-UNNAMED')
   }
 
   failOnError = false
