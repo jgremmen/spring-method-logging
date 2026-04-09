@@ -31,8 +31,8 @@ public final class EnableMethodLoggingSelector implements ImportSelector
   public String @NotNull [] selectImports(@NotNull AnnotationMetadata importingClassMetadata)
   {
     return new String[] {
-      AutoProxyRegistrar.class.getName(),
-      MethodLoggingConfiguration.class.getName()
+        AutoProxyRegistrar.class.getName(),
+        MethodLoggingConfiguration.class.getName()
     };
   }
 }

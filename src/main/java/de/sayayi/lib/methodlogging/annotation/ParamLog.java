@@ -36,7 +36,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(PARAMETER)
 @Retention(RUNTIME)
-@SuppressWarnings("UnknownLanguage")
 public @interface ParamLog
 {
   @AliasFor("format")

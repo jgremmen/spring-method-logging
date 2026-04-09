@@ -53,7 +53,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
-    var methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
+    final var methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
 
     if ((messageSupport = methodLoggingConfigurer.messageSupport()) == null)
     {
@@ -70,15 +70,15 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   @Override
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
-    var _this = requireNonNull(invocation.getThis());
-    var thisType = ultimateTargetClass(_this);
-    var methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
+    final var _this = requireNonNull(invocation.getThis());
+    final var thisType = ultimateTargetClass(_this);
+    final var methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
 
-    var methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
+    final var methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
     if (!methodLogger.isLogEnabled(methodDef.entryExitLevel))
       return invocation.proceed();
 
-    var startTime = currentTimeMillis();
+    final var startTime = currentTimeMillis();
     Throwable throwable = null;
 
     logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
@@ -97,12 +97,13 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private void logMethodEntry(@NotNull MethodDef methodDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
-    var printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
-    var method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
+    final var printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
+    final var method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
 
     if (printParameters && !methodDef.inlineParameters.isEmpty())
     {
-      var parameterList = new StringJoiner(",", "(", ")");
+      final var parameterList = new StringJoiner(",", "(", ")");
+
       for(var parameterDef: methodDef.inlineParameters)
         parameterList.add(logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
 
@@ -124,8 +125,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
 
   private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodDef methodDef,
-                                                         @NotNull ParameterDef parameterDef,
-                                                         Object value)
+                                                         @NotNull ParameterDef parameterDef, Object value)
   {
     return messageSupport
         .message(methodDef.getInlineParameterMessage(messageSupport))
@@ -153,10 +153,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
-  private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger,
-                             long startTime, Throwable throwable)
+  private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, long startTime,
+                             Throwable throwable)
   {
-    var exit = new StringBuilder(methodDef.methodExitPrefix).append(methodDef.methodName);
+    final var exit = new StringBuilder(methodDef.methodExitPrefix).append(methodDef.methodName);
 
     if (methodDef.line > 0)
       exit.append(':').append(methodDef.line);
@@ -172,7 +172,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     {
       exit.append(" -> ").append(throwable.getClass().getSimpleName());
 
-      var msg = throwable.getLocalizedMessage();
+      final var msg = throwable.getLocalizedMessage();
 
       if (hasLength(msg))
         exit.append('(').append(msg).append(')');
@@ -195,9 +195,9 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     0|1|1|0 -> m,s     1|1|1|0 -> h,m
     0|1|1|1 -> m,s     1|1|1|1 -> h,m
  */
-    var s = new StringBuilder();
-    var hour = (int)((millis / 3600000L) % 60);
-    var min = (int)((millis / 60000L) % 60);
+    final var s = new StringBuilder();
+    final var hour = (int)((millis / 3600000L) % 60);
+    final var min = (int)((millis / 60000L) % 60);
 
     if (hour > 0)
       s.append(hour).append('h').append(min).append('m');
@@ -206,8 +206,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       if (min > 0)
         s.append(min).append('m');
 
-      var sec = (int)((millis / 1000L) % 60);
-      var msec = (int)(millis % 1000);
+      final var sec = (int)((millis / 1000L) % 60);
+      final var msec = (int)(millis % 1000);
 
       if (sec > 0 || (min > 0 && msec > 0))
         s.append(sec).append('s');
@@ -222,7 +222,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   @Contract("_, _, _ -> param3")
   private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
   {
-    var resultLevel = methodDef.resultLevel;
+    final var resultLevel = methodDef.resultLevel;
 
     if (methodLogger.isLogEnabled(resultLevel))
     {

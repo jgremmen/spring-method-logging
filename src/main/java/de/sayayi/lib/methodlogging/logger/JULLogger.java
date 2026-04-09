@@ -33,9 +33,7 @@ import static java.util.logging.Level.*;
  */
 final class JULLogger implements MethodLogger
 {
-  private static final java.util.logging.Level[] LEVELS = new java.util.logging.Level[] {
-      null, FINEST, FINE, INFO
-  };
+  private static final java.util.logging.Level[] LEVELS = new java.util.logging.Level[] { null, FINEST, FINE, INFO };
 
   private final @NotNull Logger logger;
 

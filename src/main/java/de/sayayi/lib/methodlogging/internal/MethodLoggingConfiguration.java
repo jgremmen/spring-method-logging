@@ -96,9 +96,8 @@ public class MethodLoggingConfiguration implements ImportAware
 
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  MethodLoggingInterceptor internalMethodLoggingInterceptor(
-      AnnotationMethodLoggingSource annotationMethodLoggingSource,
-      ResourceLoader resourceLoader) {
+  MethodLoggingInterceptor internalMethodLoggingInterceptor(AnnotationMethodLoggingSource annotationMethodLoggingSource,
+                                                            ResourceLoader resourceLoader) {
     return new MethodLoggingInterceptor(annotationMethodLoggingSource, resourceLoader);
   }
 }

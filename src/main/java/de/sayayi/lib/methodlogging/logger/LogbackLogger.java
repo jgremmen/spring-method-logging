@@ -46,17 +46,9 @@ final class LogbackLogger implements MethodLogger
   {
     switch(level)
     {
-      case TRACE:
-        logger.trace(message);
-        break;
-
-      case DEBUG:
-        logger.debug(message);
-        break;
-
-      case INFO:
-        logger.info(message);
-        break;
+      case TRACE -> logger.trace(message);
+      case DEBUG -> logger.debug(message);
+      case INFO -> logger.info(message);
     }
   }
 
@@ -64,19 +56,12 @@ final class LogbackLogger implements MethodLogger
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {
-    switch(level)
-    {
-      case TRACE:
-        return logger.isTraceEnabled();
-
-      case DEBUG:
-        return logger.isDebugEnabled();
-
-      case INFO:
-        return logger.isInfoEnabled();
-    }
-
-    return false;
+    return switch(level) {
+      case TRACE -> logger.isTraceEnabled();
+      case DEBUG -> logger.isDebugEnabled();
+      case INFO -> logger.isInfoEnabled();
+      default -> false;
+    };
   }
 
 

@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
+import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.support.AopUtils.getMostSpecificMethod;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
@@ -85,15 +85,16 @@ public final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   private MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
   {
-    var methodLoggingAttributes =
+    final var methodLoggingAttributes =
         findMergedAnnotationAttributes(getMostSpecificMethod(method, targetClass),
             MethodLogging.class, false, true);
 
     if (methodLoggingAttributes == null)
       return null;
 
-    var methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(targetClass);
-    var methodLogging = findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
+    final var methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(targetClass);
+    final var methodLogging =
+        findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
 
     return new MethodDef(
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
@@ -104,21 +105,20 @@ public final class AnnotationMethodLoggingSource
 
 
   @Contract(pure = true)
-  private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method method,
-                                                       @NotNull MethodLogging methodLogging)
+  private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method method, @NotNull MethodLogging methodLogging)
   {
-    var parameterNames = nameDiscoverer.getParameterNames(method);
+    final var parameterNames = nameDiscoverer.getParameterNames(method);
     if (parameterNames == null || parameterNames.length == 0 || methodLogging.parameters() != SHOW)
-      return emptyList();
+      return List.of();
 
-    var parameterDefs = new ArrayList<ParameterDef>(8);
-    var parameters = method.getParameters();
-    var excludeParameters = asList(methodLogging.exclude());
+    final var parameterDefs = new ArrayList<ParameterDef>(8);
+    final var parameters = method.getParameters();
+    final var excludeParameters = asList(methodLogging.exclude());
 
     for(int p = 0; p < parameterNames.length; p++)
     {
-      var paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
-      var parameterDef = new ParameterDef();
+      final var paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+      final var parameterDef = new ParameterDef();
 
       if (!hasLength(parameterDef.name = paramLog != null ? paramLog.name() : ""))
         parameterDef.name = parameterNames[p];
@@ -136,9 +136,7 @@ public final class AnnotationMethodLoggingSource
       }
     }
 
-    parameterDefs.trimToSize();
-
-    return parameterDefs;
+    return copyOf(parameterDefs);
   }
 
 
@@ -181,7 +179,7 @@ public final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   private @NotNull AnnotationAttributes createDefaultMethodLoggingConfigAttributes()
   {
-    var attributes = new AnnotationAttributes(MethodLoggingConfig.class);
+    final var attributes = new AnnotationAttributes(MethodLoggingConfig.class);
 
     for(var annotationMethod: MethodLoggingConfig.class.getDeclaredMethods())
       if (annotationMethod.getReturnType() != void.class && annotationMethod.getParameterCount() == 0)
@@ -191,13 +189,13 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  private @NotNull MethodLogging findMergedMethodLogging(
-      @NotNull AnnotationAttributes methodLoggingConfigAttributes,
-      @NotNull AnnotationAttributes methodLoggingAttributes)
+  @Contract(pure = true)
+  private @NotNull MethodLogging findMergedMethodLogging(@NotNull AnnotationAttributes methodLoggingConfigAttributes,
+                                                         @NotNull AnnotationAttributes methodLoggingAttributes)
   {
     for(var methodAttribute: methodLoggingAttributes.entrySet())
     {
-      var value = methodAttribute.getValue();
+      final var value = methodAttribute.getValue();
 
       if (value == Visibility.DEFAULT || value == Level.DEFAULT)
         methodAttribute.setValue(methodLoggingConfigAttributes.getEnum(methodAttribute.getKey()));
@@ -212,12 +210,12 @@ public final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   private int findMethodLineNumber(@NotNull Method method)
   {
-    var declaringClass = method.getDeclaringClass();
-    var classResourceName = declaringClass.getName().replace('.', '/') + ".class";
-    var methodDescriptor = method.getName().concat(Type.getMethodDescriptor(method));
+    final var declaringClass = method.getDeclaringClass();
+    final var classResourceName = declaringClass.getName().replace('.', '/') + ".class";
+    final var methodDescriptor = method.getName().concat(Type.getMethodDescriptor(method));
 
-    var lineNumber = new AtomicInteger(-1);
-    var methodVisitor = new MethodVisitor(ASM_VERSION) {
+    final var lineNumber = new AtomicInteger(-1);
+    final var methodVisitor = new MethodVisitor(ASM_VERSION) {
       @Override
       public void visitLineNumber(int line, Label start) {
         lineNumber.compareAndSet(-1, line);
@@ -239,15 +237,17 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  @Contract(pure = true)
   private Field findLoggerField(Class<?> clazz, @NotNull MethodLogging methodLogging)
   {
-    var loggerFieldName = methodLogging.loggerFieldName();
+    final var loggerFieldName = methodLogging.loggerFieldName();
 
     if (!loggerFieldName.isEmpty())
       for(; clazz != Object.class && clazz != null; clazz = clazz.getSuperclass())
       {
         try {
-          var field = clazz.getDeclaredField(loggerFieldName);
+          final var field = clazz.getDeclaredField(loggerFieldName);
+
           field.setAccessible(true);
 
           return field;

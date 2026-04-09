@@ -21,15 +21,18 @@ import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings("UnknownLanguage")
 final class ParameterDef implements Serializable
 {
+  private final Lock lock = new ReentrantLock();
+
   int index;
   String name;
   boolean inline;
@@ -40,14 +43,17 @@ final class ParameterDef implements Serializable
 
   @NotNull Message getFormatMessage(@NotNull MessageSupport messageContext)
   {
-    synchronized(this) {
+    lock.lock();
+    try {
       if (formatMessage == null)
       {
-        formatMessage = messageContext.message(format).getMessage();
+        formatMessage = messageContext.getMessageAccessor().getMessageFactory().parseMessage(format);
         format = null;
       }
 
       return formatMessage;
+    } finally {
+      lock.unlock();
     }
   }
 }

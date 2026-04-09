@@ -31,7 +31,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(METHOD)
 @Retention(RUNTIME)
-@SuppressWarnings("UnknownLanguage")
 public @interface MethodLogging
 {
   /**

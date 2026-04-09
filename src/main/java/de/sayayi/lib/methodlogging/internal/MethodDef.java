@@ -38,7 +38,6 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-@SuppressWarnings("UnknownLanguage")
 final class MethodDef implements Serializable
 {
   final String methodEntryPrefix;
