@@ -16,7 +16,7 @@
 
 
 tasks.withType(Jar).configureEach {
-  reproducibleFileOrder true
+  reproducibleFileOrder = true
 
   manifest {
     attributes(
@@ -51,10 +51,7 @@ tasks.register('sourcesJar', Jar) {
 }
 
 
-artifacts {
-  archives javadocJar
-  archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 
 def snapshot = version.toString().endsWith('-SNAPSHOT')
@@ -67,9 +64,6 @@ def tmpRepositoryDirectory = rootProject.layout.buildDirectory
 publishing {
   publications {
     maven(MavenPublication) {
-      suppressPomMetadataWarningsFor 'optionalApiElements'
-      suppressPomMetadataWarningsFor 'optionalRuntimeElements'
-
       from components.java
 
       artifact javadocJar
@@ -80,6 +74,20 @@ publishing {
         description = "Spring Method Logging Extension"
         url = 'https://github.com/jgremmen/spring-method-logging'
         inceptionYear = '2022'
+
+        withXml {
+          def optionalArtifactIds = configurations.optionalApi
+              .resolvedConfiguration
+              .firstLevelModuleDependencies
+              .collect { it.moduleName }
+              .toSet()
+
+          asNode().dependencies[0]?.dependency?.each { dep ->
+            if (dep.artifactId.text() in optionalArtifactIds) {
+              dep.appendNode('optional', 'true')
+            }
+          }
+        }
 
         licenses {
           license {

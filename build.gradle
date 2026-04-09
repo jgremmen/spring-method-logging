@@ -5,9 +5,9 @@ plugins {
 }
 
 
-description 'Method Logging Extension for Spring'
-group 'de.sayayi.lib'
-version '0.5.0-SNAPSHOT'
+description = 'Method Logging Extension for Spring'
+group = 'de.sayayi.lib'
+version = '0.5.0-SNAPSHOT'
 
 
 layout.buildDirectory = '.build'
@@ -23,11 +23,14 @@ ext.resolveVersion = { artifactName ->
 }
 
 
-java {
-  registerFeature('optional') {
-    usingSourceSet sourceSets.main
-  }
+configurations {
+  optionalApi
 
+  compileOnlyApi.extendsFrom(optionalApi)
+}
+
+
+java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(21)
   }
@@ -61,11 +64,11 @@ dependencies {
   // java
   compileOnlyApi libs.jetbrains.annotations
 
-  optionalCompileOnlyApi libs.slf4j.api
-  optionalCompileOnlyApi libs.log4j.api
-  optionalCompileOnlyApi libs.logback.classic
-  optionalCompileOnlyApi libs.tinylog.api
-  optionalCompileOnlyApi libs.jboss.logging
+  optionalApi libs.slf4j.api
+  optionalApi libs.log4j.api
+  optionalApi libs.logback.classic
+  optionalApi libs.tinylog.api
+  optionalApi libs.jboss.logging
 
   implementation libs.spring.context
   implementation libs.message.format
