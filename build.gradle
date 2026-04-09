@@ -67,6 +67,7 @@ dependencies {
   optionalCompileOnlyApi libs.slf4j.api
   optionalCompileOnlyApi libs.log4j.api
   optionalCompileOnlyApi libs.logback.classic
+  optionalCompileOnlyApi libs.tinylog.api
 
   implementation libs.spring.context
   implementation libs.message.format

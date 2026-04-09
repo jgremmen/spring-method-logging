@@ -35,6 +35,7 @@ import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
  *   <li>Log4j2 (org.apache.logging.log4j)</li>
  *   <li>Slf4j (org.slf4j)</li>
  *   <li>Logback (ch.qos.logback.classic.Logger)</li>
+ *   <li>Tinylog (org.pmw.tinylog.Logger)</li>
  * </ul>
  *
  * @author Jeroen Gremmen
@@ -56,24 +57,14 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {
-    switch(loggerField.getType().getName())
-    {
-      case "org.apache.commons.logging.Log":
-        return JCLLogger.from(loggerField, obj);
-
-      case "java.util.logging.Logger":
-        return JULLogger.from(loggerField, obj);
-
-      case "org.apache.logging.log4j.Logger":
-        return Log4j2Logger.from(loggerField, obj);
-
-      case "org.slf4j.Logger":
-        return Slf4jLogger.from(loggerField, obj);
-
-      case "ch.qos.logback.classic.Logger":
-        return LogbackLogger.from(loggerField, obj);
-    }
-
-    return NO_OP;
+    return switch(loggerField.getType().getName()) {
+      case "ch.qos.logback.classic.Logger" -> LogbackLogger.from(loggerField, obj);
+      case "java.util.logging.Logger" -> JULLogger.from(loggerField, obj);
+      case "org.apache.commons.logging.Log" -> JCLLogger.from(loggerField, obj);
+      case "org.apache.logging.log4j.Logger" -> Log4j2Logger.from(loggerField, obj);
+      case "org.slf4j.Logger" -> Slf4jLogger.from(loggerField, obj);
+      case "org.pmw.tinylog.Logger" -> TinylogLogger.from(obj);
+      default -> NO_OP;
+    };
   }
 }
