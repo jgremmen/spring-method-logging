@@ -23,11 +23,14 @@ import java.lang.reflect.Field;
 
 
 /**
- * A method logger is an adapter for the method logging extension which provides access to an
- * underlying logging framework.
+ * Adapter that bridges the method logging framework to an underlying logging implementation (e.g. SLF4J, Log4j2, JUL).
+ * Instances are created by a {@link MethodLoggerFactory} and are used by the method logging interceptor to emit entry,
+ * exit, parameter and result messages at the configured log level.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see MethodLoggerFactory
  */
 public interface MethodLogger
 {

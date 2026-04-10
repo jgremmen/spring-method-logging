@@ -27,8 +27,16 @@ import static java.lang.reflect.Modifier.STATIC;
 
 
 /**
+ * Base class for {@link MethodLoggerFactory} implementations that provides caching for loggers obtained from
+ * static final fields and handles the case where no logger field is available on the target class.
+ * <p>
+ * Subclasses only need to implement the two {@code createMethodLogger} methods to bridge to a specific logging
+ * framework.
+ *
  * @author Jeroen Gremmen
  * @since 0.3.0
+ *
+ * @see AutoDetectLoggerFactory
  */
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
@@ -36,6 +44,13 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   private final boolean createLoggerOnNoField;
 
 
+  /**
+   * Creates a new abstract method logger factory.
+   *
+   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the
+   *                               target class; if {@code false}, an {@link IllegalStateException} is thrown in that
+   *                               case
+   */
   protected AbstractMethodLoggerFactory(boolean createLoggerOnNoField) {
     this.createLoggerOnNoField = createLoggerOnNoField;
   }
@@ -65,8 +80,23 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   }
 
 
+  /**
+   * Creates a method logger for the given class when no logger field is available.
+   *
+   * @param clazz  the target class, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz);
 
 
+  /**
+   * Creates a method logger by reading the logger instance from the given field on the target object.
+   *
+   * @param loggerField  the field containing the logger instance, not {@code null}
+   * @param obj          the target object owning the field, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj);
 }

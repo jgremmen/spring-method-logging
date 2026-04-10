@@ -25,8 +25,8 @@ import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
 
 
 /**
- * Method logger factory implementation which dynamically selects the appropriate logger
- * based on the type of the logger field.
+ * Method logger factory implementation which dynamically selects the appropriate logger based on the type of the
+ * logger field.
  * <p>
  * Currently it supports the following logger frameworks:
  * <ul>
@@ -44,17 +44,27 @@ import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
  */
 public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /** Creates a new auto-detecting method logger factory. */
   public AutoDetectLoggerFactory() {
     super(true);
   }
 
 
+  /**
+   * Creates a JCL-based method logger as a fallback when no logger field is available.
+   * {@inheritDoc}
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
     return new JCLLogger(LogFactory.getLog(clazz));
   }
 
 
+  /**
+   * Creates a method logger matching the type of the logger field. If the field type is not recognized,
+   * {@link MethodLogger#NO_OP} is returned.
+   * {@inheritDoc}
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {

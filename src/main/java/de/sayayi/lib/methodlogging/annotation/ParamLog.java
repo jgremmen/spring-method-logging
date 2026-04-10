@@ -29,25 +29,41 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 
 /**
+ * Annotation that marks a method parameter for logging when the enclosing method is annotated with
+ * {@link MethodLogging @MethodLogging}. It allows customizing how the parameter value is formatted, whether it appears
+ * inline or on a separate line, and what name is used in the log output.
+ * <p>
+ * Parameters without this annotation may still be logged depending on their type and the
+ * {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} configuration. Annotating a parameter with
+ * {@code @ParamLog} always ensures it is included and allows fine-grained control over its log representation.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
  *
+ * @see MethodLogging
  * @see MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)
  */
 @Target(PARAMETER)
 @Retention(RUNTIME)
 public @interface ParamLog
 {
+  /**
+   * Alias for {@link #format()}.
+   *
+   * @see #format()
+   */
   @AliasFor("format")
   String value() default "";
 
 
   /**
-   * Returns the format for the parameter value. The message context will provide a variable named
-   * {@code value} containing the object passed to the method.
+   * Returns the format for the parameter value. The message context will provide a variable named {@code value}
+   * containing the object passed to the method.
    * <p>
-   * The default format is {@code %{value}}, which will format the parameter value using the default
-   * formatter for this type from the message context.
+   * The default format is {@code %{value}}, which will format the parameter value using the default formatter for this
+   * type from the message context.
+   *
+   * @return  a message format string, or empty to use the default format
    *
    * @see MethodLoggingConfigurer#messageSupport()
    * @see MessageFactory#parseMessage(String)
@@ -57,9 +73,9 @@ public @interface ParamLog
 
 
   /**
-   * Tells if the parameter is to be logged inline (= {@code true}) as part of the parameter list.
-   * If this annotation attribute equals {@code false} the parameter will be logged separately after
-   * the method entry has been logged. E.g.:
+   * Tells if the parameter is to be logged inline (= {@code true}) as part of the parameter list. If this annotation
+   * attribute equals {@code false} the parameter will be logged separately after the method entry has been logged.
+   * E.g.:
    *
    * <pre>
    *   &gt; method(inlineParam=...)
@@ -68,13 +84,17 @@ public @interface ParamLog
    * </pre>
    *
    * By default, parameters are logged inline.
+   *
+   * @return  {@code true} to log the parameter inline, {@code false} to log it separately
    */
   boolean inline() default true;
 
 
   /**
-   * Tells the name of the parameter. This attribute provides a way to name the parameter in cases
-   * where the class bytecode does not provide compiled-in parameter name information.
+   * Tells the name of the parameter. This attribute provides a way to name the parameter in cases where the class
+   * bytecode does not provide compiled-in parameter name information.
+   *
+   * @return  the parameter name to use in log output, or empty to use the discovered name
    */
   String name() default "";
 }

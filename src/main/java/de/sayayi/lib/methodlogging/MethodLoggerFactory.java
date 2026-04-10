@@ -25,24 +25,25 @@ import java.lang.reflect.Field;
 /**
  * A method logger factory is responsible for creating a {@link MethodLogger} for a given object.
  *
- * @author Jeroen Gremmen
- * @since 0.1.0
- *
+ * @see JBossLoggerFactory
  * @see JCLLoggerFactory
  * @see JULLoggerFactory
  * @see Log4j2LoggerFactory
  * @see Slf4jLoggerFactory
  * @see LogbackLoggerFactory
+ * @see TinylogLoggerFactory
+ *
+ * @author Jeroen Gremmen
+ * @since 0.1.0
  */
 @FunctionalInterface
 public interface MethodLoggerFactory
 {
   /**
-   * Creates a new method logger instance based on the given object {@code obj} and optional
-   * {@code loggerField}.
+   * Creates a new method logger instance based on the given object {@code obj} and optional {@code loggerField}.
    * <p>
-   * This method is invoked every time a method requires logging. In order to reduce performance
-   * overhead, the factory may return cached method loggers.
+   * This method is invoked every time a method requires logging. In order to reduce performance overhead, the factory
+   * may return cached method loggers.
    *
    * @param loggerField  logger field or {@code null} if no logger field was found
    * @param obj          spring bean to create a method logger for, not {@code null}
