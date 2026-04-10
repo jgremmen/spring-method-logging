@@ -17,6 +17,5 @@ module de.sayayi.lib.methodlogging
 
   exports de.sayayi.lib.methodlogging;
   exports de.sayayi.lib.methodlogging.annotation;
-  exports de.sayayi.lib.methodlogging.internal;
   exports de.sayayi.lib.methodlogging.logger;
 }
