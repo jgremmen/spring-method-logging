@@ -1,71 +1,124 @@
 ## Spring Method Logging Extension
 
-Add method entry, exit, parameter and result logging capabilities to spring managed beans.
-All it requires is a couple of annotations.
+[![License](https://img.shields.io/github/license/jgremmen/spring-method-logging)](https://github.com/jgremmen/spring-method-logging/blob/master/LICENSE)
+
+A lightweight extension for the Spring Framework that adds automatic method entry, exit, parameter and result logging
+to Spring-managed beans. All it takes is a couple of annotations — no boilerplate logging code required.
+
+### Features
+
+- **Method entry/exit logging** - automatically logs when a method is entered and exited
+- **Parameter logging** - logs method parameter names and values, either inline or on separate lines
+- **Result logging** - logs the return value of a method
+- **Elapsed time** - optionally logs how long a method took to execute
+- **Line numbers** - optionally includes the source line number in log messages
+- **Exception logging** - logs exception type and message when a method exits with an error
+- **Multiple logging frameworks** - supports SLF4J, Log4j2, Logback, JUL, JBoss Logging, Tinylog
+  and JCL (Java Commons Logging) out of the box
+- **Customizable** - log levels, message formats, parameter visibility and more can be configured
+  globally, per class or per method
+
+### Maven coordinates
+
+```xml
+<dependency>
+  <groupId>de.sayayi.lib</groupId>
+  <artifactId>spring-method-logging</artifactId>
+  <version>0.5.0</version>
+</dependency>
+```
 
 ### Getting started
 
-The method logging functionality must be enabled by providing the <code>@EnableMethodLogging</code> 
-on a spring configuration bean.
+Enable the method logging functionality by adding `@EnableMethodLogging` to a Spring configuration class:
 
-    @Configuration
-    @EnableMethodLogging
-    public class LetsDoSomeLoggingConfiguration {
-    }
+```java
+@Configuration
+@EnableMethodLogging
+public class LetsDoSomeLoggingConfiguration {
+}
+```
 
-Now each bean method that has the <code>@MethodLogging</code> annotation will have its entry and exit logged.
+Any bean method annotated with `@MethodLogging` will now have its entry and exit logged automatically:
 
-    @Component
-    public class MyBean
-    {
-      @MethodLogging(lineNumber = HIDE)
-      public String test(String name) {
-        return name;
-      }
-    }
+```java
+@Component
+public class MyBean
+{
+  @MethodLogging(lineNumber = HIDE)
+  public String test(String name) {
+    return name;
+  }
+}
+```
 
-Invoking method test will generate the following logging output:
+Invoking the `test` method will produce the following log output:
 
-    > test(name=Hello World)
-    result = Hello World
-    < test
+```
+> test(name=Hello World)
+result = Hello World
+< test
+```
 
-### Using Logger Instance
+### Class-level defaults
 
-The basic configuration will use the jcl logger also used by the spring framework, which in turn will redirect to
-another logging framework like eg. Log4j or Slf4j. Method Logging can be configured to use a logger field provided 
-by the instance that contains the methods to be logged.
+Use `@MethodLoggingConfig` on a class to define defaults for all `@MethodLogging`-annotated methods in that class.
+Individual methods can still override any of these settings.
 
-A typical scenario for Log4j will look like this:
+### Parameter control
 
-    public class MyBean 
-    {
-      // log4j logger
-      private static final Logger logger = LogManager.getLogger(MyBean.class);
+The `@ParamLog` annotation can be placed on individual method parameters to control how they appear in the log output.
+It allows you to set a custom format, change the display name or log the parameter on a separate line instead of inline.
 
-      @MethodLogging
-      public void test() 
-      {
-        logger.info("I'm busy testing...");
-        ...
-        logger.info("not done yet");
-        ...
-        logger.info("I'm done");
-      }
-    }
+Parameters can also be excluded from logging by name using the `exclude` attribute on `@MethodLogging`.
 
-Now the <code>logger</code> instance can be used for logging, provided the method logger factory is configured 
-to use the Log4j framework and the correct field name. 
+### Using a logger instance
 
-    @Configuration
-    @EnableMethodLogging
-    public class LetsDoSomeLoggingConfiguration implements MethodLoggingConfigurer 
-    {
-       public MethodLoggerFactory methodLoggerFactory() {
-         return new Log4j2LoggerFactory(true);
-       }
+The basic configuration uses the JCL logger (also used internally by the Spring Framework), which in turn delegates to 
+another logging framework such as Log4j or SLF4J. Method logging can instead be configured to use a logger field 
+provided by the bean that contains the methods to be logged.
 
-       public String defaultLoggerFieldName() {
-         return "logger";
-       }
-    }
+A typical scenario for Log4j2 looks like this:
+
+```java
+public class MyBean 
+{
+  // log4j logger
+  private static final Logger logger = LogManager.getLogger(MyBean.class);
+
+  @MethodLogging
+  public void test() 
+  {
+    logger.info("I'm busy testing...");
+    ...
+    logger.info("not done yet");
+    ...
+    logger.info("I'm done");
+  }
+}
+```
+
+To use the `logger` field, configure the method logger factory and the field name by implementing
+`MethodLoggingConfigurer`:
+
+```java
+@Configuration
+@EnableMethodLogging
+public class LetsDoSomeLoggingConfiguration implements MethodLoggingConfigurer 
+{
+   public MethodLoggerFactory methodLoggerFactory() {
+     return new Log4j2LoggerFactory(true);
+   }
+
+   public String defaultLoggerFieldName() {
+     return "logger";
+   }
+}
+```
+
+This way, the method entry/exit messages and your application log messages all go through the same logger, keeping the
+output consistent.
+
+### License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
