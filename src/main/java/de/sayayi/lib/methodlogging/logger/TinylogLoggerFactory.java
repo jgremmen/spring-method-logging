@@ -36,12 +36,12 @@ public final class TinylogLoggerFactory extends AbstractMethodLoggerFactory
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new TinylogLogger(clazz);
+    return TinylogLogger.INSTANCE;
   }
 
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return TinylogLogger.from(obj);
+    return TinylogLogger.INSTANCE;
   }
 }

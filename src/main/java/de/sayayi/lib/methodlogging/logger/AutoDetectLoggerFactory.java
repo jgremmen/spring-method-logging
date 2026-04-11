@@ -36,7 +36,7 @@ import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
  *   <li>Log4j2 (org.apache.logging.log4j)</li>
  *   <li>Slf4j (org.slf4j)</li>
  *   <li>Logback (ch.qos.logback.classic.Logger)</li>
- *   <li>Tinylog (org.pmw.tinylog.Logger)</li>
+ *   <li>Tinylog (org.tinylog.Logger)</li>
  * </ul>
  *
  * @author Jeroen Gremmen
@@ -75,7 +75,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
       case "org.apache.logging.log4j.Logger" -> Log4j2Logger.from(loggerField, obj);
       case "org.jboss.logging.Logger" -> JBossLogger.from(loggerField, obj);
       case "org.slf4j.Logger" -> Slf4jLogger.from(loggerField, obj);
-      case "org.pmw.tinylog.Logger" -> TinylogLogger.from(obj);
+      case "org.tinylog.Logger" -> TinylogLogger.INSTANCE;
       default -> NO_OP;
     };
   }

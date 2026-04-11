@@ -13,6 +13,7 @@ module de.sayayi.lib.methodlogging
   requires static org.jboss.logging;
   requires static org.jetbrains.annotations;
   requires static org.slf4j;
+  requires static org.tinylog.api;
   requires static spring.jcl;
 
   exports de.sayayi.lib.methodlogging;

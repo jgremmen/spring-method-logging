@@ -17,11 +17,8 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.pmw.tinylog.Logger;
-
-import static java.util.Objects.requireNonNull;
+import org.tinylog.Logger;
 
 
 /**
@@ -29,14 +26,9 @@ import static java.util.Objects.requireNonNull;
  * @since 0.5.0
  */
 @SuppressWarnings("DuplicatedCode")
-final class TinylogLogger implements MethodLogger
+enum TinylogLogger implements MethodLogger
 {
-  private final Class<?> objectType;
-
-
-  TinylogLogger(@NotNull Class<?> objectType) {
-    this.objectType = requireNonNull(objectType);
-  }
+  INSTANCE;
 
 
   @Override
@@ -55,33 +47,10 @@ final class TinylogLogger implements MethodLogger
   public boolean isLogEnabled(@NotNull Level level)
   {
     return switch(level) {
-      case TRACE -> isLevelEnabled(org.pmw.tinylog.Level.TRACE);
-      case DEBUG -> isLevelEnabled(org.pmw.tinylog.Level.DEBUG);
-      case INFO -> isLevelEnabled(org.pmw.tinylog.Level.INFO);
+      case TRACE -> Logger.isTraceEnabled();
+      case DEBUG -> Logger.isDebugEnabled();
+      case INFO -> Logger.isInfoEnabled();
       default -> false;
     };
-  }
-
-
-  @Contract(pure = true)
-  private boolean isLevelEnabled(org.pmw.tinylog.Level level)
-  {
-    final var tinylogLevel = Logger.getLevel(objectType);
-
-    return
-        tinylogLevel != null &&
-        tinylogLevel != org.pmw.tinylog.Level.OFF &&
-        level.compareTo(tinylogLevel) >= 0;
-  }
-
-
-  @Contract(pure = true)
-  static @NotNull MethodLogger from(@NotNull Object instance)
-  {
-    try {
-      return new TinylogLogger(instance.getClass());
-    } catch(NullPointerException ex) {
-      return NO_OP;
-    }
   }
 }
