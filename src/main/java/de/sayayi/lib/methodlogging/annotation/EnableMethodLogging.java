@@ -1,8 +1,9 @@
 package de.sayayi.lib.methodlogging.annotation;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
-import de.sayayi.lib.methodlogging.internal.EnableMethodLoggingSelector;
+import de.sayayi.lib.methodlogging.internal.MethodLoggingConfiguration;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.context.annotation.AutoProxyRegistrar;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
@@ -65,7 +66,10 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 @Target(TYPE)
 @Retention(RUNTIME)
 @Documented
-@Import(EnableMethodLoggingSelector.class)
+@Import({
+    AutoProxyRegistrar.class,
+    MethodLoggingConfiguration.class
+})
 public @interface EnableMethodLogging
 {
   /**
@@ -98,7 +102,8 @@ public @interface EnableMethodLogging
   /**
    * Indicate the ordering of the execution of the method logging advisor
    * when multiple advices are applied at a specific joinpoint.
-   * <p>The default is {@link Ordered#LOWEST_PRECEDENCE}.
+   * <p>
+   * The default is {@link Ordered#LOWEST_PRECEDENCE}.
    */
   int order() default LOWEST_PRECEDENCE;
 }
