@@ -53,6 +53,7 @@ public @interface ParamLog
    * @see #format()
    */
   @AliasFor("format")
+  @Language("MessageFormat")
   String value() default "";
 
 
