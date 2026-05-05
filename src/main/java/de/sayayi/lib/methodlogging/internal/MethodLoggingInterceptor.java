@@ -29,7 +29,6 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.util.StringJoiner;
 
-import static de.sayayi.lib.message.MessageFactory.NO_CACHE_INSTANCE;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
@@ -57,9 +56,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
     if ((messageSupport = methodLoggingConfigurer.messageSupport()) == null)
     {
-      messageSupport = MessageSupportFactory.create(
-          new DefaultFormatterService(resourceLoader.getClassLoader(), 128),
-          NO_CACHE_INSTANCE);
+      messageSupport = MessageSupportFactory
+          .create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
     }
 
     if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
