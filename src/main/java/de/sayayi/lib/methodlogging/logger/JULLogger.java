@@ -28,8 +28,12 @@ import static java.util.logging.Level.*;
 
 
 /**
+ * {@link MethodLogger} implementation that delegates to a Java Util Logging (JUL) {@link Logger}.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see JULLoggerFactory
  */
 final class JULLogger implements MethodLogger
 {
@@ -38,6 +42,11 @@ final class JULLogger implements MethodLogger
   private final @NotNull Logger logger;
 
 
+  /**
+   * Creates a new JUL method logger that delegates to the given {@code logger}.
+   *
+   * @param logger  JUL logger instance, not {@code null}
+   */
   JULLogger(Logger logger) {
     this.logger = requireNonNull(logger);
   }
@@ -55,6 +64,15 @@ final class JULLogger implements MethodLogger
   }
 
 
+  /**
+   * Creates a {@code JULLogger} by reading a JUL {@link Logger} from the given field on the target instance.
+   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   *
+   * @param loggerField  the field containing the JUL logger, not {@code null}
+   * @param instance     the object owning the field, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   @Contract(pure = true)
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {

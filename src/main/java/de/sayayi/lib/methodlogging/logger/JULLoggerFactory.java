@@ -31,6 +31,13 @@ import static java.util.logging.LogManager.getLogManager;
  */
 public final class JULLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /**
+   * Creates a new JUL logger factory.
+   *
+   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the
+   *                               target class; if {@code false}, an {@link IllegalStateException} is thrown in
+   *                               that case
+   */
   public JULLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
   }

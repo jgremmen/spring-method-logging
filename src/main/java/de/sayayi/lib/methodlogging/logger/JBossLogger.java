@@ -27,8 +27,12 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
+ * {@link MethodLogger} implementation that delegates to a JBoss Logging {@link Logger}.
+ *
  * @author Jeroen Gremmen
  * @since 0.5.0
+ *
+ * @see JBossLoggerFactory
  */
 @SuppressWarnings("DuplicatedCode")
 final class JBossLogger implements MethodLogger
@@ -36,6 +40,11 @@ final class JBossLogger implements MethodLogger
   private final @NotNull Logger logger;
 
 
+  /**
+   * Creates a new JBoss method logger that delegates to the given {@code logger}.
+   *
+   * @param logger  JBoss logger instance, not {@code null}
+   */
   JBossLogger(Logger logger) {
     this.logger = requireNonNull(logger);
   }
@@ -65,6 +74,15 @@ final class JBossLogger implements MethodLogger
   }
 
 
+  /**
+   * Creates a {@code JBossLogger} by reading a JBoss {@link Logger} from the given field on the target instance.
+   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   *
+   * @param loggerField  the field containing the JBoss logger, not {@code null}
+   * @param instance     the object owning the field, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   @Contract(pure = true)
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {

@@ -27,8 +27,12 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
+ * {@link MethodLogger} implementation that delegates to a Log4j2 {@link Logger}.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see Log4j2LoggerFactory
  */
 final class Log4j2Logger implements MethodLogger
 {
@@ -42,6 +46,11 @@ final class Log4j2Logger implements MethodLogger
   private final @NotNull Logger logger;
 
 
+  /**
+   * Creates a new Log4j2 method logger that delegates to the given {@code logger}.
+   *
+   * @param logger  Log4j2 logger instance, not {@code null}
+   */
   Log4j2Logger(Logger logger) {
     this.logger = requireNonNull(logger);
   }
@@ -59,6 +68,15 @@ final class Log4j2Logger implements MethodLogger
   }
 
 
+  /**
+   * Creates a {@code Log4j2Logger} by reading a Log4j2 {@link Logger} from the given field on the target instance.
+   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   *
+   * @param loggerField  the field containing the Log4j2 logger, not {@code null}
+   * @param instance     the object owning the field, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   @Contract(pure = true)
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {

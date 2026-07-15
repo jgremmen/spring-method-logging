@@ -27,8 +27,12 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
+ * {@link MethodLogger} implementation that delegates to an SLF4J {@link Logger}.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see Slf4jLoggerFactory
  */
 @SuppressWarnings("DuplicatedCode")
 final class Slf4jLogger implements MethodLogger
@@ -36,6 +40,11 @@ final class Slf4jLogger implements MethodLogger
   private final @NotNull Logger logger;
 
 
+  /**
+   * Creates a new SLF4J method logger that delegates to the given {@code logger}.
+   *
+   * @param logger  SLF4J logger instance, not {@code null}
+   */
   Slf4jLogger(Logger logger) {
     this.logger = requireNonNull(logger);
   }
@@ -65,6 +74,15 @@ final class Slf4jLogger implements MethodLogger
   }
 
 
+  /**
+   * Creates a {@code Slf4jLogger} by reading an SLF4J {@link Logger} from the given field on the target instance.
+   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   *
+   * @param loggerField  the field containing the SLF4J logger, not {@code null}
+   * @param instance     the object owning the field, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   @Contract(pure = true)
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {

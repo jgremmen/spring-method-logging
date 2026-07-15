@@ -29,6 +29,13 @@ import java.lang.reflect.Field;
  */
 public final class TinylogLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /**
+   * Creates a new Tinylog logger factory.
+   *
+   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the
+   *                               target class; if {@code false}, an {@link IllegalStateException} is thrown in
+   *                               that case
+   */
   public TinylogLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
   }

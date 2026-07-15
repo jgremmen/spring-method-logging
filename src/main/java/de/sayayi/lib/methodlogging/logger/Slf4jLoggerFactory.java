@@ -30,6 +30,13 @@ import java.lang.reflect.Field;
  */
 public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /**
+   * Creates a new SLF4J logger factory.
+   *
+   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the
+   *                               target class; if {@code false}, an {@link IllegalStateException} is thrown in
+   *                               that case
+   */
   public Slf4jLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
   }

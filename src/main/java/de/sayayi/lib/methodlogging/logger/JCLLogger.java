@@ -27,8 +27,12 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
+ * {@link MethodLogger} implementation that delegates to an Apache Commons Logging {@link Log}.
+ *
  * @author Jeroen Gremmen
  * @since 0.3.0
+ *
+ * @see JCLLoggerFactory
  */
 @SuppressWarnings("DuplicatedCode")
 final class JCLLogger implements MethodLogger
@@ -36,6 +40,11 @@ final class JCLLogger implements MethodLogger
   private final @NotNull Log logger;
 
 
+  /**
+   * Creates a new JCL method logger that delegates to the given {@code logger}.
+   *
+   * @param logger  Commons Logging logger instance, not {@code null}
+   */
   JCLLogger(Log logger) {
     this.logger = requireNonNull(logger);
   }
@@ -65,6 +74,15 @@ final class JCLLogger implements MethodLogger
   }
 
 
+  /**
+   * Creates a {@code JCLLogger} by reading a Commons Logging {@link Log} from the given field on the target instance.
+   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   *
+   * @param loggerField  the field containing the Commons Logging logger, not {@code null}
+   * @param instance     the object owning the field, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   */
   @Contract(pure = true)
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {

@@ -30,6 +30,13 @@ import java.lang.reflect.Field;
  */
 public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /**
+   * Creates a new JBoss logger factory.
+   *
+   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the
+   *                               target class; if {@code false}, an {@link IllegalStateException} is thrown in
+   *                               that case
+   */
   public JBossLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
   }

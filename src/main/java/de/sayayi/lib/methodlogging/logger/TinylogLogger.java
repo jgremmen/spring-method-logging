@@ -22,12 +22,20 @@ import org.tinylog.Logger;
 
 
 /**
+ * {@link MethodLogger} implementation that delegates to the Tinylog {@link Logger}.
+ * <p>
+ * Since Tinylog uses a static logger API without logger instances, this implementation is modelled
+ * as a singleton enum.
+ *
  * @author Jeroen Gremmen
  * @since 0.5.0
+ *
+ * @see TinylogLoggerFactory
  */
 @SuppressWarnings("DuplicatedCode")
 enum TinylogLogger implements MethodLogger
 {
+  /** Singleton instance. */
   INSTANCE;
 
 
