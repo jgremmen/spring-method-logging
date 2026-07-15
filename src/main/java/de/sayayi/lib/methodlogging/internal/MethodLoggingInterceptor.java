@@ -184,8 +184,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
 /*
     h|m|s|ms           h|m|s|ms
-    0|0|0|0 -> ms      1|0|0|0 -> h,m
-    0|0|0|1 -> ms      1|0|0|1 -> h,m
+    0|0|0|0 -> ms      1|0|0|0 -> h
+    0|0|0|1 -> ms      1|0|0|1 -> h
     0|0|1|0 -> s       1|0|1|0 -> h,m
     0|0|1|1 -> s,ms    1|0|1|1 -> h,m
     0|1|0|0 -> m       1|1|0|0 -> h,m
@@ -198,7 +198,12 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     final var min = (int)((millis / 60000L) % 60);
 
     if (hour > 0)
-      s.append(hour).append('h').append(min).append('m');
+    {
+      s.append(hour).append('h');
+
+      if (min > 0 || (millis % 60000) >= 30000)
+        s.append(min).append('m');
+    }
     else
     {
       if (min > 0)
