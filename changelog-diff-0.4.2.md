@@ -136,13 +136,13 @@ which returns `Visibility.SHOW`.
 
 ### Dependency Changes
 
-| Dependency | Type | 0.2.0 | 0.4.2 |
-|---|---|---|---|
-| `de.sayayi.lib:message-format` | runtime | `0.6.3` | `[0.8.0,)` |
-| `org.springframework:spring-context` | runtime | `5.3.23` | `[5.3.0,6.0.0)` |
-| `org.jetbrains:annotations-java5` | compile | `23.0.0` (as `org.jetbrains:annotations`) | `24.1.+` |
-| `org.slf4j:slf4j-api` | compile | `1.7.36` | `[2.0.0,2.1.0)` |
-| `org.apache.logging.log4j:log4j-api` | compile | `2.19.0` | `[2.17.1,3.0.0)` |
+| Dependency                           | Type    | 0.2.0                                     | 0.4.2            |
+|--------------------------------------|---------|-------------------------------------------|------------------|
+| `de.sayayi.lib:message-format`       | runtime | `0.6.3`                                   | `[0.8.0,)`       |
+| `org.springframework:spring-context` | runtime | `5.3.23`                                  | `[5.3.0,6.0.0)`  |
+| `org.jetbrains:annotations-java5`    | compile | `23.0.0` (as `org.jetbrains:annotations`) | `24.1.+`         |
+| `org.slf4j:slf4j-api`                | compile | `1.7.36`                                  | `[2.0.0,2.1.0)`  |
+| `org.apache.logging.log4j:log4j-api` | compile | `2.19.0`                                  | `[2.17.1,3.0.0)` |
 
 The JetBrains annotations artifact has changed from `org.jetbrains:annotations` to
 `org.jetbrains:annotations-java5`. The `message-format` library has been upgraded to version 0.8.0 or
