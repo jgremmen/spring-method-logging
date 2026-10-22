@@ -32,6 +32,7 @@ import org.springframework.core.annotation.AnnotationAttributes;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -263,14 +264,23 @@ public final class AnnotationMethodLoggingSource
     if (!loggerFieldName.isEmpty())
       for(; clazz != Object.class && clazz != null; clazz = clazz.getSuperclass())
       {
+        final Field field;
+
         try {
-          final var field = clazz.getDeclaredField(loggerFieldName);
-
-          field.setAccessible(true);
-
-          return field;
-        } catch(Exception ignored) {
+          field = clazz.getDeclaredField(loggerFieldName);
+        } catch(NoSuchFieldException ignored) {
+          continue;
         }
+
+        try {
+          field.setAccessible(true);
+        } catch(InaccessibleObjectException ex) {
+          throw new IllegalStateException("Logger field '" + loggerFieldName + "' of " + clazz +
+              " is not accessible; package " + clazz.getPackageName() + " must be opened to " +
+              AnnotationMethodLoggingSource.class.getModule(), ex);
+        }
+
+        return field;
       }
 
     return null;

@@ -44,16 +44,24 @@
  *   </li>
  * </ul>
  *
+ * <h2>Logger fields</h2>
+ * Method logging reads logger fields of the logged classes by reflection. If a logged class resides in a named
+ * module, its package must be opened to this module (e.g. {@code opens com.example.service to
+ * de.sayayi.lib.methodlogging;}). Otherwise, creating the bean fails with an {@link IllegalStateException}.
+ *
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
+@SuppressWarnings("requires-transitive-automatic")
 module de.sayayi.lib.methodlogging
 {
-  requires de.sayayi.lib.message;
+  requires transitive de.sayayi.lib.message;
+  requires transitive spring.context;
+  requires transitive spring.core;
+
   requires spring.aop;
   requires spring.beans;
-  requires spring.context;
-  requires spring.core;
+  requires spring.jcl;
 
   requires static java.logging;
   requires static ch.qos.logback.classic;
@@ -63,9 +71,11 @@ module de.sayayi.lib.methodlogging
   requires static org.jetbrains.annotations;
   requires static org.slf4j;
   requires static org.tinylog.api;
-  requires static spring.jcl;
 
   exports de.sayayi.lib.methodlogging;
   exports de.sayayi.lib.methodlogging.annotation;
   exports de.sayayi.lib.methodlogging.logger;
+
+  // spring instantiates the internal configuration and invokes its bean methods by reflection
+  opens de.sayayi.lib.methodlogging.internal to spring.beans, spring.context, spring.core;
 }

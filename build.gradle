@@ -37,6 +37,12 @@ compileTestJava {
 
 test {
   useJUnitPlatform()
+
+  // module path used by ModulePathTest
+  doFirst {
+    systemProperty 'methodlogging.modulePath',
+        (sourceSets.main.output.classesDirs + configurations.runtimeClasspath).asPath
+  }
 }
 
 

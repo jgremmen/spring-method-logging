@@ -119,6 +119,22 @@ public class LetsDoSomeLoggingConfiguration implements MethodLoggingConfigurer
 This way, the method entry/exit messages and your application log messages all go through the same logger, keeping the
 output consistent.
 
+### Java modules
+
+On the module path, method logging reads logger fields by reflection. Packages containing beans with a logger field
+must therefore be opened to `de.sayayi.lib.methodlogging`, in addition to the Spring modules:
+
+```java
+module com.example.app
+{
+  requires de.sayayi.lib.methodlogging;
+
+  opens com.example.service to spring.aop, spring.beans, spring.context, spring.core, de.sayayi.lib.methodlogging;
+}
+```
+
+If such a package is not opened, creating the bean fails with an `IllegalStateException` that names the package.
+
 ### License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
