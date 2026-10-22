@@ -94,6 +94,9 @@ public @interface ParamLog
   /**
    * Tells the name of the parameter. This attribute provides a way to name the parameter in cases where the class
    * bytecode does not provide compiled-in parameter name information.
+   * <p>
+   * If this attribute is empty and the parameter name cannot be discovered, the synthesized name provided by reflection
+   * ({@code arg0}, {@code arg1}, ...) is used.
    *
    * @return  the parameter name to use in log output, or empty to use the discovered name
    */

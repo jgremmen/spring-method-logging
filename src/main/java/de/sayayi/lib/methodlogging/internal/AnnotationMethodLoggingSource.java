@@ -109,24 +109,28 @@ public final class AnnotationMethodLoggingSource
   /**
    * Analyzes the method parameters. Parameter names and {@link ParamLog} annotations are taken from
    * {@code specificMethod}, falling back to {@code method} if {@code specificMethod} does not provide them.
+   * <p>
+   * The parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer or, if no name can be
+   * discovered, the synthesized reflection name ({@code arg0}, {@code arg1}, ...) in that order.
    */
   @Contract(pure = true)
   private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
                                                        @NotNull MethodLogging methodLogging)
   {
+    final var parameterCount = specificMethod.getParameterCount();
+    if (parameterCount == 0 || methodLogging.parameters() != SHOW)
+      return List.of();
+
     var parameterNames = nameDiscoverer.getParameterNames(specificMethod);
     if (parameterNames == null && specificMethod != method)
       parameterNames = nameDiscoverer.getParameterNames(method);
-
-    if (parameterNames == null || parameterNames.length == 0 || methodLogging.parameters() != SHOW)
-      return List.of();
 
     final var parameterDefs = new ArrayList<ParameterDef>(8);
     final var specificParameters = specificMethod.getParameters();
     final var parameters = method.getParameters();
     final var excludeParameters = asList(methodLogging.exclude());
 
-    for(int p = 0; p < parameterNames.length; p++)
+    for(int p = 0; p < parameterCount; p++)
     {
       var paramLog = getMergedAnnotation(specificParameters[p], ParamLog.class);
       if (paramLog == null && specificMethod != method)
@@ -135,7 +139,7 @@ public final class AnnotationMethodLoggingSource
       final var parameterDef = new ParameterDef();
 
       if (!hasLength(parameterDef.name = paramLog != null ? paramLog.name() : ""))
-        parameterDef.name = parameterNames[p];
+        parameterDef.name = parameterNames != null ? parameterNames[p] : specificParameters[p].getName();
 
       if (!excludeParameters.contains(parameterDef.name) &&
           (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p))))
