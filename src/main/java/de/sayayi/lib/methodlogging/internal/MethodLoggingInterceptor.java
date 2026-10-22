@@ -77,6 +77,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     final var thisType = ultimateTargetClass(_this);
     final var methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
 
+    // no definition if the target differs from the class matched by the pointcut (e.g. for a custom target source)
+    if (methodDef == null)
+      return invocation.proceed();
+
     final var methodLogger = getEnabledMethodLogger(methodDef, _this, thisType);
     if (methodLogger == null)
       return invocation.proceed();
