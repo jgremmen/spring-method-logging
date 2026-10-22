@@ -45,6 +45,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -74,6 +75,8 @@ public class MethodLoggingTest
   @Autowired private MyBean myBean;
   @Autowired private MyBeanIf myBeanIf;
   @Autowired private Supplier<String> mySupplier;
+  @Autowired private Greeter greeter;
+  @Autowired private Worker worker;
 
 
   @Test
@@ -124,9 +127,9 @@ public class MethodLoggingTest
     mySupplier.get();
 
     assertEquals(3, log.size());
-    assertEquals("INFO|> get", log.get(0));
+    assertTrue(log.get(0).matches("INFO\\|> get:\\d+"), log.get(0));
     assertEquals("DEBUG|result = Mr. Supplier", log.get(1));
-    assertEquals("INFO|< get", log.get(2));
+    assertTrue(log.get(2).matches("INFO\\|< get:\\d+"), log.get(2));
   }
 
 
@@ -240,6 +243,34 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("JDK proxy uses parameters, line number and logger field of implementation")
+  void testMethod_jdkProxy()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    assertTrue(Proxy.isProxyClass(greeter.getClass()));
+    assertEquals("Hello bob", greeter.greet("bob"));
+    assertTrue(factory.log.getFirst().matches("INFO\\|> greet\\(WHO=bob\\):\\d+"), factory.log.getFirst());
+    assertEquals(GreeterImpl.class, factory.fields.getFirst().getDeclaringClass());
+  }
+
+
+  @Test
+  @DisplayName("Logger field of target class is preferred over field of declaring class")
+  void testMethod_inheritedMethodLoggerField()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    worker.work();
+
+    assertEquals("INFO|> work", factory.log.getFirst());
+    assertEquals(Worker.class, factory.fields.getFirst().getDeclaringClass());
+  }
+
+
+  @Test
   @DisplayName("java.util.logging logger factory")
   void testJULLogger()
   {
@@ -304,6 +335,52 @@ public class MethodLoggingTest
 
 
 
+  public interface Greeter {
+    String greet(String who);
+  }
+
+
+
+
+  public static class GreeterImpl implements Greeter
+  {
+    @SuppressWarnings("unused")
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("greeter");
+
+
+    @Override
+    @MethodLogging(result = HIDE)
+    public String greet(@ParamLog(name = "WHO") String who) {
+      return "Hello " + who;
+    }
+  }
+
+
+
+
+  public abstract static class AbstractWorker
+  {
+    @SuppressWarnings("unused")
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("abstract-worker");
+
+
+    @MethodLogging(lineNumber = HIDE)
+    public void work() {
+    }
+  }
+
+
+
+
+  public static class Worker extends AbstractWorker
+  {
+    @SuppressWarnings("unused")
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("worker");
+  }
+
+
+
+
   @MethodLoggingConfig(lineNumber = HIDE)
   public interface MyBeanIf
   {
@@ -351,6 +428,18 @@ public class MethodLoggingTest
 
 
     @Bean
+    public Greeter greeter() {
+      return new GreeterImpl();
+    }
+
+
+    @Bean
+    public Worker worker() {
+      return new Worker();
+    }
+
+
+    @Bean
     @Scope(proxyMode = INTERFACES)
     public MyBeanIf myBeanIf() {
       return  () -> "Mr. Bean";
@@ -385,11 +474,14 @@ public class MethodLoggingTest
   public static final class ListMethodLoggerFactory implements MethodLoggerFactory
   {
     final List<String> log = new ArrayList<>();
+    final List<Field> fields = new ArrayList<>();
 
 
     @Override
     public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj, @NotNull Class<?> type)
     {
+      fields.add(loggerField);
+
       return new MethodLogger() {
         @Override
         public void log(@NotNull Level level, String message) {

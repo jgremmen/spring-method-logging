@@ -85,9 +85,11 @@ public final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   private MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
   {
+    // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
+    // providing parameter names/annotations and line numbers
+    final var specificMethod = getMostSpecificMethod(method, targetClass);
     final var methodLoggingAttributes =
-        findMergedAnnotationAttributes(getMostSpecificMethod(method, targetClass),
-            MethodLogging.class, false, true);
+        findMergedAnnotationAttributes(specificMethod, MethodLogging.class, false, true);
 
     if (methodLoggingAttributes == null)
       return null;
@@ -98,33 +100,45 @@ public final class AnnotationMethodLoggingSource
 
     return new MethodDef(
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
-        getParameterDefs(method, methodLogging), methodLogging, method,
-        methodLogging.lineNumber() == SHOW ? findMethodLineNumber(method) : -1,
-        findLoggerField(method.getDeclaringClass(), methodLogging));
+        getParameterDefs(specificMethod, method, methodLogging), methodLogging, method,
+        methodLogging.lineNumber() == SHOW ? findMethodLineNumber(specificMethod) : -1,
+        findLoggerField(targetClass, methodLogging));
   }
 
 
+  /**
+   * Analyzes the method parameters. Parameter names and {@link ParamLog} annotations are taken from
+   * {@code specificMethod}, falling back to {@code method} if {@code specificMethod} does not provide them.
+   */
   @Contract(pure = true)
-  private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method method, @NotNull MethodLogging methodLogging)
+  private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
+                                                       @NotNull MethodLogging methodLogging)
   {
-    final var parameterNames = nameDiscoverer.getParameterNames(method);
+    var parameterNames = nameDiscoverer.getParameterNames(specificMethod);
+    if (parameterNames == null && specificMethod != method)
+      parameterNames = nameDiscoverer.getParameterNames(method);
+
     if (parameterNames == null || parameterNames.length == 0 || methodLogging.parameters() != SHOW)
       return List.of();
 
     final var parameterDefs = new ArrayList<ParameterDef>(8);
+    final var specificParameters = specificMethod.getParameters();
     final var parameters = method.getParameters();
     final var excludeParameters = asList(methodLogging.exclude());
 
     for(int p = 0; p < parameterNames.length; p++)
     {
-      final var paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+      var paramLog = getMergedAnnotation(specificParameters[p], ParamLog.class);
+      if (paramLog == null && specificMethod != method)
+        paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+
       final var parameterDef = new ParameterDef();
 
       if (!hasLength(parameterDef.name = paramLog != null ? paramLog.name() : ""))
         parameterDef.name = parameterNames[p];
 
       if (!excludeParameters.contains(parameterDef.name) &&
-          (paramLog != null || isParameterIncluded(forMethodParameter(method, p))))
+          (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p))))
       {
         parameterDef.index = p;
         parameterDef.inline = paramLog == null || paramLog.inline();
