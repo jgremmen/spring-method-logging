@@ -20,6 +20,8 @@ import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import static java.lang.reflect.Modifier.FINAL;
@@ -40,7 +42,7 @@ import static java.lang.reflect.Modifier.STATIC;
  */
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
-  private final WeakHashMap<Class<?>,MethodLogger> loggerCache = new WeakHashMap<>();
+  private final WeakHashMap<Class<?>,Map<String,MethodLogger>> loggerCache = new WeakHashMap<>();
   private final boolean createLoggerOnNoField;
 
 
@@ -71,7 +73,9 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
       if ((loggerField.getModifiers() & (STATIC | FINAL)) == (STATIC | FINAL))
       {
         synchronized(loggerCache) {
-          return loggerCache.computeIfAbsent(type, cl -> createMethodLogger(loggerField, obj));
+          return loggerCache
+              .computeIfAbsent(loggerField.getDeclaringClass(), cl -> new HashMap<>())
+              .computeIfAbsent(loggerField.getName(), name -> createMethodLogger(loggerField, obj));
         }
       }
 

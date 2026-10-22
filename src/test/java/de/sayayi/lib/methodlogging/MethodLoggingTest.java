@@ -27,6 +27,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Delegate;
 import lombok.extern.java.Log;
@@ -76,6 +77,7 @@ public class MethodLoggingTest
 {
   @Autowired private JULLoggerBean julLoggerBean;
   @Autowired private JULNoFieldBean julNoFieldBean;
+  @Autowired private JULMultiLoggerBean julMultiLoggerBean;
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
   @Autowired private MyBean myBean;
   @Autowired private MyBeanIf myBeanIf;
@@ -315,6 +317,34 @@ public class MethodLoggingTest
   }
 
 
+  @Test
+  @DisplayName("Static logger fields of the same class are cached per field")
+  void testStaticLoggerFieldPerMethod()
+  {
+    val logMessages = new ArrayList<String>();
+    val auditMessages = new ArrayList<String>();
+    val logHandler = new ListHandler(logMessages);
+    val auditHandler = new ListHandler(auditMessages);
+
+    JULMultiLoggerBean.log.addHandler(logHandler);
+    JULMultiLoggerBean.auditLog.addHandler(auditHandler);
+    try {
+      methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(false));
+
+      // the logger used first must not be used for the other method
+      julMultiLoggerBean.audit();
+      julMultiLoggerBean.test();
+      julMultiLoggerBean.audit();
+    } finally {
+      JULMultiLoggerBean.log.removeHandler(logHandler);
+      JULMultiLoggerBean.auditLog.removeHandler(auditHandler);
+    }
+
+    assertEquals(List.of("INFO|> test", "INFO|< test"), logMessages);
+    assertEquals(List.of("INFO|> audit", "INFO|< audit", "INFO|> audit", "INFO|< audit"), auditMessages);
+  }
+
+
 
 
   @Component
@@ -450,9 +480,55 @@ public class MethodLoggingTest
 
 
 
+  @Component
+  @MethodLoggingConfig(lineNumber = HIDE)
+  public static class JULMultiLoggerBean
+  {
+    private static final Logger log = Logger.getLogger("multi-logger.log");
+    private static final Logger auditLog = Logger.getLogger("multi-logger.audit");
+
+
+    @MethodLogging
+    public void test() {
+    }
+
+
+    @MethodLogging(loggerFieldName = "auditLog")
+    public void audit() {
+    }
+  }
+
+
+
+
+  @RequiredArgsConstructor
+  private static final class ListHandler extends Handler
+  {
+    private final List<String> messages;
+
+
+    @Override
+    public void publish(LogRecord record) {
+      messages.add(record.getLevel() + "|" + record.getMessage());
+    }
+
+
+    @Override
+    public void flush() {
+    }
+
+
+    @Override
+    public void close() {
+    }
+  }
+
+
+
+
   @Configuration
   @EnableMethodLogging
-  @Import({ MyBean.class, JULLoggerBean.class, JULNoFieldBean.class })
+  @Import({ MyBean.class, JULLoggerBean.class, JULNoFieldBean.class, JULMultiLoggerBean.class })
   static class MyConfiguration implements MethodLoggingConfigurer
   {
     @Override
