@@ -259,7 +259,8 @@ public final class AnnotationMethodLoggingSource
           return methodDescriptor.equals(name.concat(descriptor)) ? methodVisitor : null;
         }
       }, SKIP_FRAMES);
-    } catch(NullPointerException | IOException ignored) {
+    } catch(IOException | RuntimeException ignored) {
+      // class file not available or not readable by ASM (e.g. unsupported class file version)
     }
 
     return lineNumber.get();
