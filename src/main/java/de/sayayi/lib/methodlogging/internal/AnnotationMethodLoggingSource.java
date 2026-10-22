@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -44,6 +45,8 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SH
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.Optional.ofNullable;
 import static org.springframework.aop.support.AopUtils.getMostSpecificMethod;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
@@ -60,9 +63,9 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 public final class AnnotationMethodLoggingSource
 {
-  private final @NotNull Map<MethodClassKey,MethodDef> methodLoggingDefinitionCache;
-  private final @NotNull ParameterNameDiscoverer nameDiscoverer;
+  final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
   final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
+  private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
 
   AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer)
@@ -77,9 +80,16 @@ public final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
-    return methodLoggingDefinitionCache.computeIfAbsent(
-        new MethodClassKey(method, targetClass),
-        methodClassKey -> analyseMethodDefinition(method, targetClass));
+    final var methodClassKey = new MethodClassKey(method, targetClass);
+
+    var methodDef = methodLoggingDefinitionCache.get(methodClassKey);
+    if (methodDef == null)
+    {
+      methodDef = ofNullable(analyseMethodDefinition(method, targetClass));
+      methodDef = requireNonNullElse(methodLoggingDefinitionCache.putIfAbsent(methodClassKey, methodDef), methodDef);
+    }
+
+    return methodDef.orElse(null);
   }
 
 
