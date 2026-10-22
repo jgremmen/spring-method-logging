@@ -10,7 +10,8 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 - **Method entry/exit logging** - automatically logs when a method is entered and exited
 - **Parameter logging** - logs method parameter names and values, either inline or on separate lines
 - **Result logging** - logs the return value of a method
-- **Elapsed time** - optionally logs how long a method took to execute
+- **Elapsed time** - optionally logs how long a method took to execute (until it returns; for async or reactive
+  results this excludes the time until the result is completed)
 - **Line numbers** - optionally includes the source line number in log messages
 - **Exception logging** - logs exception type and message when a method exits with an error
 - **Multiple logging frameworks** - supports SLF4J, Log4j2, Logback, JUL, JBoss Logging, Tinylog

@@ -20,7 +20,6 @@ import de.sayayi.lib.message.MessageSupport;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Serializable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-final class ParameterDef implements Serializable
+final class ParameterDef
 {
   private final Lock lock = new ReentrantLock();
 

@@ -24,7 +24,6 @@ import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-final class MethodDef implements Serializable
+final class MethodDef
 {
   final String methodEntryPrefix;
   final String methodExitPrefix;

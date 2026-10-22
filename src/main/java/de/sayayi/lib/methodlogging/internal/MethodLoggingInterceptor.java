@@ -213,7 +213,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
       if (throwable != null)
       {
-        exit.append(" -> ").append(throwable.getClass().getSimpleName());
+        exit.append(" -> ").append(exceptionName(throwable.getClass()));
 
         final var msg = throwable.getLocalizedMessage();
 
@@ -309,7 +309,27 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
   @Contract(pure = true)
   private static @NotNull String formatFailed(@NotNull Exception ex) {
-    return "<format failed: " + getMostSpecificCause(ex).getClass().getSimpleName() + '>';
+    return "<format failed: " + exceptionName(getMostSpecificCause(ex).getClass()) + '>';
+  }
+
+
+  /**
+   * Returns the name of the exception class without package. Nested classes include the enclosing classes
+   * ({@code Outer.Inner}); classes without canonical name, like anonymous classes, use the binary name
+   * ({@code Outer$1}).
+   *
+   * @param exceptionClass  exception class, not {@code null}
+   *
+   * @return  exception class name without package, never {@code null}
+   */
+  @Contract(pure = true)
+  static @NotNull String exceptionName(@NotNull Class<?> exceptionClass)
+  {
+    final var canonicalName = exceptionClass.getCanonicalName();
+    final var name = canonicalName != null ? canonicalName : exceptionClass.getName();
+    final var packageName = exceptionClass.getPackageName();
+
+    return packageName.isEmpty() ? name : name.substring(packageName.length() + 1);
   }
 
 

@@ -111,7 +111,7 @@ public final class AnnotationMethodLoggingSource
 
     return new MethodDef(
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
-        getParameterDefs(specificMethod, method, methodLogging), methodLogging, method,
+        getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method,
         methodLogging.lineNumber() == SHOW ? findMethodLineNumber(specificMethod) : -1,
         findLoggerField(targetClass, methodLogging));
   }
@@ -123,9 +123,13 @@ public final class AnnotationMethodLoggingSource
    * <p>
    * The parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer or, if no name can be
    * discovered, the synthesized reflection name ({@code arg0}, {@code arg1}, ...) in that order.
+   * <p>
+   * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
+   * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
    */
   @Contract(pure = true)
   private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
+                                                       @NotNull Class<?> targetClass,
                                                        @NotNull MethodLogging methodLogging)
   {
     final var parameterCount = specificMethod.getParameterCount();
@@ -153,7 +157,7 @@ public final class AnnotationMethodLoggingSource
         parameterDef.name = parameterNames != null ? parameterNames[p] : specificParameters[p].getName();
 
       if (!excludeParameters.contains(parameterDef.name) &&
-          (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p))))
+          (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p, targetClass))))
       {
         parameterDef.index = p;
         parameterDef.inline = paramLog == null || paramLog.inline();

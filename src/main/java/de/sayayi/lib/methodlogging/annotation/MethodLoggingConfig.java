@@ -112,6 +112,10 @@ public @interface MethodLoggingConfig
 
   /**
    * Indicate whether the elapsed time measured on a method is to be logged on method exit or not.
+   * <p>
+   * The elapsed time is measured until the method returns. For methods returning asynchronous or reactive results, like
+   * {@link java.util.concurrent.CompletableFuture CompletableFuture} or a Reactor {@code Mono}, it does not include the
+   * time until the result is completed.
    *
    * @return  {@link Visibility#SHOW} shows the elapsed time on method exit, {@link Visibility#HIDE} (the default)
    *          does not show the elapsed time
