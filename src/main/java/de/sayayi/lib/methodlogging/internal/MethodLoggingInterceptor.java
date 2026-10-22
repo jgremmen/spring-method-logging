@@ -23,6 +23,8 @@ import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.ResourceLoader;
@@ -32,6 +34,7 @@ import java.util.StringJoiner;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
+import static org.springframework.core.NestedExceptionUtils.getMostSpecificCause;
 import static org.springframework.util.StringUtils.hasLength;
 
 
@@ -41,6 +44,8 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 public final class MethodLoggingInterceptor implements MethodInterceptor
 {
+  private static final Log LOG = LogFactory.getLog(MethodLoggingInterceptor.class);
+
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
   private MessageSupport messageSupport;
@@ -72,8 +77,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     final var thisType = ultimateTargetClass(_this);
     final var methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
 
-    final var methodLogger = methodLoggerFactory.from(methodDef.loggerField, _this, thisType);
-    if (!methodLogger.isLogEnabled(methodDef.entryExitLevel))
+    final var methodLogger = getEnabledMethodLogger(methodDef, _this, thisType);
+    if (methodLogger == null)
       return invocation.proceed();
 
     final var startTime = currentTimeMillis();
@@ -81,9 +86,12 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
     logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
     try {
-      return methodDef.showResult
-          ? logResult(methodDef, methodLogger, invocation.proceed())
-          : invocation.proceed();
+      final var result = invocation.proceed();
+
+      if (methodDef.showResult)
+        logResult(methodDef, methodLogger, result);
+
+      return result;
     } catch(Throwable ex) {
       throw throwable = ex;
     } finally {
@@ -92,33 +100,57 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Returns the method logger for the given method definition, if logging for method entry/exit is enabled.
+   *
+   * @return  method logger or {@code null} if entry/exit logging is disabled or the method logger could not be
+   *          obtained
+   */
+  private MethodLogger getEnabledMethodLogger(@NotNull MethodDef methodDef, @NotNull Object obj,
+                                              @NotNull Class<?> type)
+  {
+    try {
+      final var methodLogger = methodLoggerFactory.from(methodDef.loggerField, obj, type);
+
+      return methodLogger.isLogEnabled(methodDef.entryExitLevel) ? methodLogger : null;
+    } catch(Exception ex) {
+      logFailure(methodDef, "logger lookup", ex);
+      return null;
+    }
+  }
+
+
   private void logMethodEntry(@NotNull MethodDef methodDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
-    final var printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
-    final var method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
+    try {
+      final var printParameters = methodLogger.isLogEnabled(methodDef.parameterLevel);
+      final var method = new StringBuilder(methodDef.methodEntryPrefix).append(methodDef.methodName);
 
-    if (printParameters && !methodDef.inlineParameters.isEmpty())
-    {
-      final var parameterList = new StringJoiner(",", "(", ")");
-
-      for(var parameterDef: methodDef.inlineParameters)
-        parameterList.add(logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
-
-      method.append(parameterList);
-    }
-
-    if (methodDef.line > 0)
-      method.append(':').append(methodDef.line);
-
-    methodLogger.log(methodDef.entryExitLevel, method.toString());
-
-    if (printParameters && !methodDef.inMethodParameters.isEmpty())
-      for(var parameterDef: methodDef.inMethodParameters)
+      if (printParameters && !methodDef.inlineParameters.isEmpty())
       {
-        methodLogger.log(methodDef.parameterLevel,
-            logMethodEntry_parameter(methodDef, parameterDef, arguments[parameterDef.index]));
+        final var parameterList = new StringJoiner(",", "(", ")");
+
+        for(var parameterDef: methodDef.inlineParameters)
+          parameterList.add(logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
+
+        method.append(parameterList);
       }
+
+      if (methodDef.line > 0)
+        method.append(':').append(methodDef.line);
+
+      methodLogger.log(methodDef.entryExitLevel, method.toString());
+
+      if (printParameters && !methodDef.inMethodParameters.isEmpty())
+        for(var parameterDef: methodDef.inMethodParameters)
+        {
+          methodLogger.log(methodDef.parameterLevel,
+              logMethodEntry_parameter(methodDef, parameterDef, arguments[parameterDef.index]));
+        }
+    } catch(Exception ex) {
+      logFailure(methodDef, "entry", ex);
+    }
   }
 
 
@@ -128,10 +160,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     return messageSupport
         .message(methodDef.getInlineParameterMessage(messageSupport))
         .with("parameter", parameterDef.name)
-        .with("value", messageSupport
-            .message(parameterDef.getFormatMessage(messageSupport))
-            .with("value", value)
-            .format())
+        .with("value", formatParameterValue(parameterDef, value))
         .format();
   }
 
@@ -143,40 +172,55 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     return messageSupport
         .message(methodDef.getParameterMessage(messageSupport))
         .with("parameter", parameterDef.name)
-        .with("value", messageSupport
-            .message(parameterDef.getFormatMessage(messageSupport))
-            .with("value", value)
-            .format())
+        .with("value", formatParameterValue(parameterDef, value))
         .format();
+  }
+
+
+  private @NotNull String formatParameterValue(@NotNull ParameterDef parameterDef, Object value)
+  {
+    try {
+      return messageSupport
+          .message(parameterDef.getFormatMessage(messageSupport))
+          .with("value", value)
+          .format();
+    } catch(Exception ex) {
+      // e.g. a failing toString() on the value; keep the remaining log output
+      return formatFailed(ex);
+    }
   }
 
 
   private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, long startTime,
                              Throwable throwable)
   {
-    final var exit = new StringBuilder(methodDef.methodExitPrefix).append(methodDef.methodName);
+    try {
+      final var exit = new StringBuilder(methodDef.methodExitPrefix).append(methodDef.methodName);
 
-    if (methodDef.line > 0)
-      exit.append(':').append(methodDef.line);
+      if (methodDef.line > 0)
+        exit.append(':').append(methodDef.line);
 
-    if (methodDef.showElapsedTime)
-    {
-      exit.append(" (elapsed ")
-          .append(logMethodExit_elapsed(currentTimeMillis() - startTime))
-          .append(')');
+      if (methodDef.showElapsedTime)
+      {
+        exit.append(" (elapsed ")
+            .append(logMethodExit_elapsed(currentTimeMillis() - startTime))
+            .append(')');
+      }
+
+      if (throwable != null)
+      {
+        exit.append(" -> ").append(throwable.getClass().getSimpleName());
+
+        final var msg = throwable.getLocalizedMessage();
+
+        if (hasLength(msg))
+          exit.append('(').append(msg).append(')');
+      }
+
+      methodLogger.log(methodDef.entryExitLevel, exit.toString());
+    } catch(Exception ex) {
+      logFailure(methodDef, "exit", ex);
     }
-
-    if (throwable != null)
-    {
-      exit.append(" -> ").append(throwable.getClass().getSimpleName());
-
-      final var msg = throwable.getLocalizedMessage();
-
-      if (hasLength(msg))
-        exit.append('(').append(msg).append(')');
-    }
-
-    methodLogger.log(methodDef.entryExitLevel, exit.toString());
   }
 
 
@@ -222,19 +266,39 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
-  @Contract("_, _, _ -> param3")
-  private Object logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
+  private void logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
   {
-    final var resultLevel = methodDef.resultLevel;
+    try {
+      final var resultLevel = methodDef.resultLevel;
 
-    if (methodLogger.isLogEnabled(resultLevel))
-    {
-      methodLogger.log(resultLevel, messageSupport
-          .message(methodDef.getResultMessage(messageSupport))
-          .with("result", result)
-          .format());
+      if (methodLogger.isLogEnabled(resultLevel))
+      {
+        final var resultMessage = methodDef.getResultMessage(messageSupport);
+        final var messageConfigurer = messageSupport.message(resultMessage);
+        String message;
+
+        try {
+          message = messageConfigurer.with("result", result).format();
+        } catch(Exception ex) {
+          // e.g. a failing toString() on the result
+          message = messageConfigurer.with("result", formatFailed(ex)).format();
+        }
+
+        methodLogger.log(resultLevel, message);
+      }
+    } catch(Exception ex) {
+      logFailure(methodDef, "result", ex);
     }
+  }
 
-    return result;
+
+  @Contract(pure = true)
+  private static @NotNull String formatFailed(@NotNull Exception ex) {
+    return "<format failed: " + getMostSpecificCause(ex).getClass().getSimpleName() + '>';
+  }
+
+
+  private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Exception ex) {
+    LOG.warn("Method logging (" + phase + ") failed for method '" + methodDef.methodName + '\'', ex);
   }
 }

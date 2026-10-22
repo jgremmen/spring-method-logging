@@ -188,6 +188,58 @@ public class MethodLoggingTest
 
 
   @Test
+  @DisplayName("Failing parameter/result formatting does not affect method invocation")
+  void testMethod_formattingFailure()
+  {
+    val factory = new ListMethodLoggerFactory();
+    methodLoggerFactoryDelegate.setFactory(factory);
+
+    val value = new Unprintable();
+
+    assertSame(value, myBean.unprintable(value));
+    assertEquals("INFO|> unprintable(value=<format failed: IllegalStateException>)", factory.log.get(0));
+    assertEquals("DEBUG|result = <format failed: IllegalStateException>", factory.log.get(1));
+    assertEquals("INFO|< unprintable", factory.log.get(2));
+  }
+
+
+  @Test
+  @DisplayName("Failing method logger does not affect method invocation")
+  void testMethod_loggerFailure()
+  {
+    methodLoggerFactoryDelegate.setFactory((loggerField, obj, type) -> new MethodLogger() {
+      @Override
+      public void log(@NotNull Level level, String message) {
+        throw new IllegalStateException("log failed");
+      }
+
+      @Override
+      public boolean isLogEnabled(@NotNull Level level) {
+        return true;
+      }
+    });
+
+    assertEquals("Mr. Bean", myBean.getName());
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class,
+        () -> myBean.exception(314)).getMessage());
+  }
+
+
+  @Test
+  @DisplayName("Failing method logger factory does not affect method invocation")
+  void testMethod_loggerFactoryFailure()
+  {
+    methodLoggerFactoryDelegate.setFactory((loggerField, obj, type) -> {
+      throw new IllegalStateException("no logger");
+    });
+
+    assertEquals("Mr. Bean", myBean.getName());
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class,
+        () -> myBean.exception(314)).getMessage());
+  }
+
+
+  @Test
   @DisplayName("java.util.logging logger factory")
   void testJULLogger()
   {
@@ -229,6 +281,23 @@ public class MethodLoggingTest
     @MethodLogging
     public void exception(int id) {
       throw new IllegalArgumentException(Integer.toString(id));
+    }
+
+
+    @MethodLogging
+    public Unprintable unprintable(Unprintable value) {
+      return value;
+    }
+  }
+
+
+
+
+  public static final class Unprintable
+  {
+    @Override
+    public String toString() {
+      throw new IllegalStateException("unprintable");
     }
   }
 
