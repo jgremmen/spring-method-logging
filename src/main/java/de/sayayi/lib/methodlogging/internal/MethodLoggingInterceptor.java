@@ -31,7 +31,7 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.util.StringJoiner;
 
-import static java.lang.System.currentTimeMillis;
+import static java.lang.System.nanoTime;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
 import static org.springframework.core.NestedExceptionUtils.getMostSpecificCause;
@@ -81,7 +81,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     if (methodLogger == null)
       return invocation.proceed();
 
-    final var startTime = currentTimeMillis();
+    final var startTime = nanoTime();
     Throwable throwable = null;
 
     logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
@@ -203,7 +203,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       if (methodDef.showElapsedTime)
       {
         exit.append(" (elapsed ")
-            .append(logMethodExit_elapsed(currentTimeMillis() - startTime))
+            .append(logMethodExit_elapsed((nanoTime() - startTime) / 1000000L))
             .append(')');
       }
 
@@ -224,39 +224,50 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
-  private @NotNull String logMethodExit_elapsed(long millis)
+  /**
+   * Formats an elapsed time. Durations below one hour are shown with minutes, seconds and milliseconds, omitting parts
+   * which are not significant. Durations of one hour or more are shown in hours and minutes, rounded to the nearest
+   * minute.
+   *
+   * @param millis  elapsed time in milliseconds, not negative
+   *
+   * @return  formatted elapsed time, never {@code null}
+   */
+  @Contract(pure = true)
+  static @NotNull String logMethodExit_elapsed(long millis)
   {
 /*
     h|m|s|ms           h|m|s|ms
     0|0|0|0 -> ms      1|0|0|0 -> h
     0|0|0|1 -> ms      1|0|0|1 -> h
-    0|0|1|0 -> s       1|0|1|0 -> h,m
-    0|0|1|1 -> s,ms    1|0|1|1 -> h,m
+    0|0|1|0 -> s       1|0|1|0 -> h,m if s >= 30 (rounded)
+    0|0|1|1 -> s,ms    1|0|1|1 -> h,m if s >= 30 (rounded)
     0|1|0|0 -> m       1|1|0|0 -> h,m
-    0|1|0|1 -> m,s     1|1|0|1 -> h,m
-    0|1|1|0 -> m,s     1|1|1|0 -> h,m
-    0|1|1|1 -> m,s     1|1|1|1 -> h,m
+    0|1|0|1 -> m       1|1|0|1 -> h,m
+    0|1|1|0 -> m,s     1|1|1|0 -> h,m (rounded)
+    0|1|1|1 -> m,s     1|1|1|1 -> h,m (rounded)
  */
     final var s = new StringBuilder();
-    final var hour = (int)((millis / 3600000L) % 60);
-    final var min = (int)((millis / 60000L) % 60);
 
-    if (hour > 0)
+    if (millis >= 3600000L)
     {
-      s.append(hour).append('h');
+      final var minutes = (millis + 30000L) / 60000L;
+      final var min = (int)(minutes % 60);
 
-      if (min > 0 || (millis % 60000) >= 30000)
+      s.append(minutes / 60).append('h');
+
+      if (min > 0)
         s.append(min).append('m');
     }
     else
     {
-      if (min > 0)
-        s.append(min).append('m');
-
+      final var min = (int)(millis / 60000L);
       final var sec = (int)((millis / 1000L) % 60);
       final var msec = (int)(millis % 1000);
 
-      if (sec > 0 || (min > 0 && msec > 0))
+      if (min > 0)
+        s.append(min).append('m');
+      if (sec > 0)
         s.append(sec).append('s');
       if (min == 0 && (sec == 0 || msec > 0))
         s.append(msec).append("ms");
