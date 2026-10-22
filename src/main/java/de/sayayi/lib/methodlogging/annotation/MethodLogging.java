@@ -30,9 +30,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * interceptor will log a message when the method is entered and when it exits, including optional details such as
  * parameter values, return values, elapsed time and line number.
  * <p>
- * Each attribute on this annotation can override the class-level defaults defined by {@link MethodLoggingConfig}.
- * If an attribute is left at its default value, the corresponding setting from {@code @MethodLoggingConfig}
- * (or the global configurer defaults) will be used.
+ * Each attribute on this annotation can override the class-level defaults defined by {@link MethodLoggingConfig}. If an
+ * attribute is left at its default value, the corresponding setting from {@code @MethodLoggingConfig} (or the global
+ * configurer defaults) will be used.
  *
  * <pre>
  *   &#064;MethodLogging(elapsedTime = Visibility.SHOW, entryExitLevel = Level.DEBUG)
@@ -58,8 +58,8 @@ public @interface MethodLogging
    * <p>
    * Generally the loggable instance is a slf4j/jul/log4j logger or a logger from another logging framework but
    * essentially there are no restrictions to the kind of object held by the field. The only constraint is that the
-   * method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle
-   * the contents of the field.
+   * method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle the
+   * contents of the field.
    *
    * @return  logger field name
    */
@@ -150,6 +150,9 @@ public @interface MethodLogging
 
   /**
    * The log level used for method entry and exit messages.
+   * <p>
+   * If this level is not enabled for the logger, nothing is logged for the method: parameters and result are not logged
+   * either, regardless of their log levels.
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfig#entryExitLevel()}
@@ -159,6 +162,8 @@ public @interface MethodLogging
 
   /**
    * The log level used for logging method parameters on separate lines.
+   * <p>
+   * Parameters are only logged if method entry and exit messages are logged as well (see {@link #entryExitLevel()}).
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfig#parameterLevel()}
@@ -168,6 +173,8 @@ public @interface MethodLogging
 
   /**
    * The log level used for logging the method return value.
+   * <p>
+   * Results are only logged if method entry and exit messages are logged as well (see {@link #entryExitLevel()}).
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from {@link MethodLoggingConfig#resultLevel()}
    */

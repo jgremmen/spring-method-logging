@@ -182,6 +182,9 @@ public @interface MethodLoggingConfig
 
   /**
    * The log level used for method entry and exit messages.
+   * <p>
+   * If this level is not enabled for the logger, nothing is logged for the method: parameters and result are not logged
+   * either, regardless of their log levels.
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfigurer#defaultEntryExitLevel()}
@@ -193,6 +196,8 @@ public @interface MethodLoggingConfig
 
   /**
    * The log level used for logging method parameters on separate lines.
+   * <p>
+   * Parameters are only logged if method entry and exit messages are logged as well (see {@link #entryExitLevel()}).
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfigurer#defaultParameterLevel()}
@@ -204,6 +209,8 @@ public @interface MethodLoggingConfig
 
   /**
    * The log level used for logging the method return value.
+   * <p>
+   * Results are only logged if method entry and exit messages are logged as well (see {@link #entryExitLevel()}).
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfigurer#defaultResultLevel()}

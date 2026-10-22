@@ -31,8 +31,8 @@ import org.springframework.core.ResolvableType;
 
 
 /**
- * Interface to be implemented by @{@link Configuration} classes annotated with @{@link EnableMethodLogging} that
- * wish or need to specify explicitly how messages are formatted and logged for annotation-driven method logging.
+ * Interface to be implemented by @{@link Configuration} classes annotated with @{@link EnableMethodLogging} that wish
+ * or need to specify explicitly how messages are formatted and logged for annotation-driven method logging.
  * <p>
  * All methods have sensible defaults so that only the settings that need customization have to be overridden.
  *
@@ -112,6 +112,9 @@ public interface MethodLoggingConfigurer
    * Returns the default log level for method entry and exit messages. This value is used when neither
    * {@link MethodLoggingConfig#entryExitLevel()} nor {@link MethodLogging#entryExitLevel()} specifies an explicit
    * level.
+   * <p>
+   * If this level is not enabled for the logger, nothing is logged for the method: parameters and result are not logged
+   * either, regardless of their log levels.
    *
    * @return  default entry/exit log level, never {@code null}. The default is {@link Level#INFO}
    *
@@ -127,6 +130,9 @@ public interface MethodLoggingConfigurer
    * Returns the default log level for parameter logging messages. This value is used when neither
    * {@link MethodLoggingConfig#parameterLevel()} nor {@link MethodLogging#parameterLevel()} specifies an explicit
    * level.
+   * <p>
+   * Parameters are only logged if method entry and exit messages are logged as well (see
+   * {@link #defaultEntryExitLevel()}).
    *
    * @return  default parameter log level, never {@code null}. The default is {@link Level#DEBUG}
    *
@@ -141,6 +147,9 @@ public interface MethodLoggingConfigurer
   /**
    * Returns the default log level for result logging messages. This value is used when neither
    * {@link MethodLoggingConfig#resultLevel()} nor {@link MethodLogging#resultLevel()} specifies an explicit level.
+   * <p>
+   * Results are only logged if method entry and exit messages are logged as well (see
+   * {@link #defaultEntryExitLevel()}).
    *
    * @return  default result log level, never {@code null}. The default is {@link Level#DEBUG}
    *
