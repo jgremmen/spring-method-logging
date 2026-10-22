@@ -1,3 +1,7 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+
 plugins {
   id 'java-library'
   id 'com.adarshr.test-logger' version '4.0.0'
@@ -14,6 +18,7 @@ layout.buildDirectory = '.build'
 
 configurations {
   optionalApi
+  ajc
 
   compileOnlyApi.extendsFrom(optionalApi)
 }
@@ -26,6 +31,47 @@ java {
 
   withSourcesJar()
   withJavadocJar()
+}
+
+
+interface InjectedExecOperations {
+  @Inject ExecOperations getExecOperations()
+}
+
+
+compileJava {
+  // the annotation style aspect compiled by javac lacks the aspectOf() method required by compile-time weaving;
+  // let ajc complete the aspect, as with aspects compiled by ajc directly
+  def execOperations = objects.newInstance(InjectedExecOperations).execOperations
+  def ajcLauncher = javaToolchains.launcherFor(java.toolchain)
+  def ajcClasspath = configurations.ajc
+  def aspectClasspath = classpath
+  def aspectClass = 'de/sayayi/lib/methodlogging/aspectj/MethodLoggingAspect.class'
+
+  doLast {
+    def classesDir = destinationDirectory.get().asFile
+    def inDir = new File(temporaryDir, 'ajc-in')
+    def outDir = new File(temporaryDir, 'ajc-out')
+
+    inDir.deleteDir()
+    outDir.deleteDir()
+
+    def aspectIn = new File(inDir, aspectClass)
+    aspectIn.parentFile.mkdirs()
+    Files.copy(new File(classesDir, aspectClass).toPath(), aspectIn.toPath())
+
+    execOperations.javaexec {
+      executable = ajcLauncher.get().executablePath.asFile
+      classpath = ajcClasspath
+      mainClass = 'org.aspectj.tools.ajc.Main'
+      args '-21', '-Xlint:ignore', '-inpath', inDir, '-classpath', (aspectClasspath + files(classesDir)).asPath, '-d', outDir
+    }
+
+    Files.copy(
+        new File(outDir, aspectClass).toPath(),
+        new File(classesDir, aspectClass).toPath(),
+        StandardCopyOption.REPLACE_EXISTING)
+  }
 }
 
 
@@ -66,6 +112,9 @@ dependencies {
   optionalApi libs.logback.classic
   optionalApi libs.tinylog.api
   optionalApi libs.jboss.logging
+  optionalApi libs.aspectj.runtime
+
+  ajc libs.aspectj.tools
 
   implementation libs.spring.context
   implementation libs.message.format
@@ -80,6 +129,9 @@ dependencies {
   testImplementation libs.junit.jupiter.api
   testImplementation libs.junit.jupiter.params
   testImplementation libs.spring.test
+  testImplementation libs.aspectj.tools
+
+  testRuntimeOnly libs.aspectj.weaver
 
   testRuntimeOnly libs.junit.jupiter.engine
   testRuntimeOnly libs.junit.platform.launcher

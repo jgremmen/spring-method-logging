@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<!--
+  AspectJ load-time weaving configuration for method logging with
+  @EnableMethodLogging(mode = AdviceMode.ASPECTJ).
+-->
+<aspectj>
+  <aspects>
+    <aspect name="de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect"/>
+  </aspects>
+</aspectj>

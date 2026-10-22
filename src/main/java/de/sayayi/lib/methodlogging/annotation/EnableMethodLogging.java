@@ -1,9 +1,9 @@
 package de.sayayi.lib.methodlogging.annotation;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
-import de.sayayi.lib.methodlogging.internal.MethodLoggingConfiguration;
+import de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect;
+import de.sayayi.lib.methodlogging.internal.MethodLoggingConfigurationSelector;
 import org.springframework.context.annotation.AdviceMode;
-import org.springframework.context.annotation.AutoProxyRegistrar;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
@@ -19,8 +19,8 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 
 
 /**
- * Enables Spring's annotation-driven method logging capability. To be used together
- * with @{@link Configuration} classes as follows:
+ * Enables Spring's annotation-driven method logging capability. To be used together with @{@link Configuration} classes
+ * as follows:
  *
  * <pre class="code">
  * &#064;Configuration
@@ -42,21 +42,21 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  *   }
  * }</pre>
  *
- * {@code @EnableMethodLogging} is responsible for registering the necessary Spring
- * components that power annotation-driven method logging, such as the
- * proxy- or AspectJ-based advice that weaves the interceptor into the call stack when
- * {@link MethodLogging @MethodLogging} methods are invoked.
- *
- * <p>The {@link #mode} attribute controls how advice is applied: If the mode is
- * {@link AdviceMode#PROXY} (the default), then the other attributes control the behavior
- * of the proxying. Please note that proxy mode allows for interception of calls through
- * the proxy only; local calls within the same class cannot get intercepted that way.
- *
- * <p>Note that if the {@linkplain #mode} is set to {@link AdviceMode#ASPECTJ}, then the
- * value of the {@link #proxyTargetClass} attribute will be ignored. Note also that in
- * this case the {@code spring-aspects} module JAR must be present on the classpath, with
- * compile-time weaving or load-time weaving applying the aspect to the affected classes.
- * There is no proxy involved in such a scenario; local calls will be intercepted as well.
+ * {@code @EnableMethodLogging} is responsible for registering the necessary Spring components that power
+ * annotation-driven method logging, such as the proxy- or AspectJ-based advice that weaves the interceptor into the
+ * call stack when {@link MethodLogging @MethodLogging} methods are invoked.
+ * <p>
+ * The {@link #mode} attribute controls how advice is applied: If the mode is {@link AdviceMode#PROXY} (the default),
+ * then the other attributes control the behavior of the proxying. Please note that proxy mode allows for interception
+ * of calls through the proxy only; local calls within the same class cannot get intercepted that way.
+ * <p>
+ * Note that if the {@linkplain #mode} is set to {@link AdviceMode#ASPECTJ}, then the values of the
+ * {@link #proxyTargetClass} and {@link #order} attributes will be ignored. Note also that in this case the AspectJ
+ * runtime ({@code aspectjrt} or {@code aspectjweaver}) must be present on the classpath, with compile-time weaving
+ * (with this library on the aspect path) or load-time weaving (this library provides a {@code META-INF/aop.xml}
+ * declaring the aspect) applying the {@link MethodLoggingAspect} to the affected classes. There is no proxy involved
+ * in such a scenario; local calls will be intercepted as well. As AspectJ does not inherit method annotations, only
+ * non-static methods which are annotated with {@code @MethodLogging} themselves are logged in this mode.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -66,42 +66,37 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 @Target(TYPE)
 @Retention(RUNTIME)
 @Documented
-@Import({
-    AutoProxyRegistrar.class,
-    MethodLoggingConfiguration.class
-})
+@Import(MethodLoggingConfigurationSelector.class)
 public @interface EnableMethodLogging
 {
   /**
-   * Indicate whether subclass-based (CGLIB) proxies are to be created as opposed
-   * to standard Java interface-based proxies. The default is {@code false}. <strong>
-   * Applicable only if {@link #mode()} is set to {@link AdviceMode#PROXY}</strong>.
-   * <p>Note that setting this attribute to {@code true} will affect <em>all</em>
-   * Spring-managed beans requiring proxying, not just those marked with {@code @MethodLogging}.
-   * For example, other beans marked with Spring's {@code @Transactional} annotation will
-   * be upgraded to subclass proxying at the same time. This approach has no negative
-   * impact in practice unless one is explicitly expecting one type of proxy vs another,
-   * e.g. in tests.
+   * Indicate whether subclass-based (CGLIB) proxies are to be created as opposed to standard Java interface-based
+   * proxies. The default is {@code false}. <strong>Applicable only if {@link #mode()} is set to
+   * {@link AdviceMode#PROXY}</strong>.
+   * <p>
+   * Note that setting this attribute to {@code true} will affect <em>all</em> Spring-managed beans requiring proxying,
+   * not just those marked with {@code @MethodLogging}. For example, other beans marked with Spring's
+   * {@code @Transactional} annotation will be upgraded to subclass proxying at the same time. This approach has no
+   * negative impact in practice unless one is explicitly expecting one type of proxy vs another, e.g. in tests.
    */
   boolean proxyTargetClass() default false;
 
 
   /**
    * Indicate how method logging advice should be applied.
-   * <p><b>The default is {@link AdviceMode#PROXY}.</b>
-   * Please note that proxy mode allows for interception of calls through the proxy
-   * only. Local calls within the same class cannot get intercepted that way;
-   * a method logging annotation on such a method within a local call will be ignored
-   * since Spring's interceptor does not even kick in for such a runtime scenario.
-   * For a more advanced mode of interception, consider switching this to
+   * <p>
+   * <b>The default is {@link AdviceMode#PROXY}.</b> Please note that proxy mode allows for interception of calls
+   * through the proxy only. Local calls within the same class cannot get intercepted that way; a method logging
+   * annotation on such a method within a local call will be ignored since Spring's interceptor does not even kick in
+   * for such a runtime scenario. For a more advanced mode of interception, consider switching this to
    * {@link AdviceMode#ASPECTJ}.
    */
   AdviceMode mode() default PROXY;
 
 
   /**
-   * Indicate the ordering of the execution of the method logging advisor
-   * when multiple advices are applied at a specific joinpoint.
+   * Indicate the ordering of the execution of the method logging advisor when multiple advices are applied at a
+   * specific joinpoint. <strong>Applicable only if {@link #mode()} is set to {@link AdviceMode#PROXY}</strong>.
    * <p>
    * The default is {@link Ordered#LOWEST_PRECEDENCE}.
    */

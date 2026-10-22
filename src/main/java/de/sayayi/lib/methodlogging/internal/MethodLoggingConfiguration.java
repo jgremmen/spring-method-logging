@@ -17,10 +17,6 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.Pointcut;
-import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
-import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,21 +26,24 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 
-import java.lang.reflect.Method;
-
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
 
 
 /**
+ * Base configuration providing the beans shared by the proxy and AspectJ based method logging.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see ProxyMethodLoggingConfiguration
+ * @see AspectJMethodLoggingConfiguration
  */
 @Configuration(proxyBeanMethods = false)
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")
-public class MethodLoggingConfiguration implements ImportAware
+public abstract class MethodLoggingConfiguration implements ImportAware
 {
-  private AnnotationAttributes enableMethodLogging;
+  protected AnnotationAttributes enableMethodLogging;
 
 
   @Override
@@ -67,31 +66,6 @@ public class MethodLoggingConfiguration implements ImportAware
   {
     return new AnnotationMethodLoggingSource(
         methodLoggingConfigurer == null ? new MethodLoggingConfigurer() {} : methodLoggingConfigurer);
-  }
-
-
-  @Bean @Role(ROLE_INFRASTRUCTURE)
-  AbstractBeanFactoryPointcutAdvisor internalMethodLoggingAdvisor(
-      AnnotationMethodLoggingSource annotationMethodLoggingSource,
-      MethodLoggingInterceptor methodLoggingInterceptor)
-  {
-    var advisor = new AbstractBeanFactoryPointcutAdvisor() {
-      @Override
-      public @NotNull Pointcut getPointcut()
-      {
-        return new StaticMethodMatcherPointcut() {
-          @Override
-          public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
-            return annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
-          }
-        };
-      }
-    };
-
-    advisor.setAdvice(methodLoggingInterceptor);
-    advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
-
-    return advisor;
   }
 
 

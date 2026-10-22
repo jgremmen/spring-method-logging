@@ -17,9 +17,9 @@
 /**
  * Spring Method Logging provides annotation-driven method entry/exit logging for Spring applications.
  * <p>
- * Annotate methods with {@code @MethodLogging} to automatically log method entry, exit, parameter values, return
- * values and elapsed time - without writing any logging boilerplate. The library integrates with Spring AOP and
- * supports multiple logging frameworks (SLF4J, Logback, Log4j2, JUL, JBoss Logging, Tinylog, and JCL).
+ * Annotate methods with {@code @MethodLogging} to automatically log method entry, exit, parameter values, return values
+ * and elapsed time - without writing any logging boilerplate. The library integrates with Spring AOP and supports
+ * multiple logging frameworks (SLF4J, Logback, Log4j2, JUL, JBoss Logging, Tinylog, and JCL).
  *
  * <h2>Packages</h2>
  * <ul>
@@ -39,15 +39,20 @@
  *     formatting.
  *   </li>
  *   <li>
+ *     {@code de.sayayi.lib.methodlogging.aspectj} - The
+ *     {@link de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect MethodLoggingAspect} used for AspectJ based method
+ *     logging ({@code @EnableMethodLogging(mode = AdviceMode.ASPECTJ)}).
+ *   </li>
+ *   <li>
  *     {@code de.sayayi.lib.methodlogging.logger} - Built-in {@link de.sayayi.lib.methodlogging.MethodLoggerFactory}
  *     implementations for each supported logging framework.
  *   </li>
  * </ul>
  *
  * <h2>Logger fields</h2>
- * Method logging reads logger fields of the logged classes by reflection. If a logged class resides in a named
- * module, its package must be opened to this module (e.g. {@code opens com.example.service to
- * de.sayayi.lib.methodlogging;}). Otherwise, creating the bean fails with an {@link IllegalStateException}.
+ * Method logging reads logger fields of the logged classes by reflection. If a logged class resides in a named module,
+ * its package must be opened to this module (e.g. {@code opens com.example.service to de.sayayi.lib.methodlogging;}).
+ * Otherwise, creating the bean fails with an {@link IllegalStateException}.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -64,6 +69,7 @@ module de.sayayi.lib.methodlogging
   requires spring.jcl;
 
   requires static java.logging;
+  requires static org.aspectj.runtime;
   requires static ch.qos.logback.classic;
   requires static ch.qos.logback.core;
   requires static org.apache.logging.log4j;
@@ -74,6 +80,7 @@ module de.sayayi.lib.methodlogging
 
   exports de.sayayi.lib.methodlogging;
   exports de.sayayi.lib.methodlogging.annotation;
+  exports de.sayayi.lib.methodlogging.aspectj;
   exports de.sayayi.lib.methodlogging.logger;
 
   // spring instantiates the internal configuration and invokes its bean methods by reflection
