@@ -50,6 +50,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
@@ -71,6 +75,7 @@ import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
 public class MethodLoggingTest
 {
   @Autowired private JULLoggerBean julLoggerBean;
+  @Autowired private JULNoFieldBean julNoFieldBean;
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
   @Autowired private MyBean myBean;
   @Autowired private MyBeanIf myBeanIf;
@@ -279,6 +284,37 @@ public class MethodLoggingTest
   }
 
 
+  @Test
+  @DisplayName("java.util.logging logger factory without logger field")
+  void testJULLoggerNoField()
+  {
+    // the bug only showed if no logger with the class name existed yet; so capture the records on an ancestor
+    val loggerName = JULNoFieldBean.class.getName();
+    assertNull(LogManager.getLogManager().getLogger(loggerName));
+
+    val ancestor = Logger.getLogger(JULNoFieldBean.class.getPackageName());
+    val messages = new ArrayList<String>();
+    val handler = new Handler() {
+      @Override public void publish(LogRecord record) {
+        if (loggerName.equals(record.getLoggerName()))
+          messages.add(record.getLevel() + "|" + record.getMessage());
+      }
+      @Override public void flush() {}
+      @Override public void close() {}
+    };
+
+    ancestor.addHandler(handler);
+    try {
+      methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(true));
+      julNoFieldBean.test();
+    } finally {
+      ancestor.removeHandler(handler);
+    }
+
+    assertEquals(List.of("INFO|> test", "INFO|< test"), messages);
+  }
+
+
 
 
   @Component
@@ -345,7 +381,7 @@ public class MethodLoggingTest
   public static class GreeterImpl implements Greeter
   {
     @SuppressWarnings("unused")
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("greeter");
+    private static final Logger log = Logger.getLogger("greeter");
 
 
     @Override
@@ -361,7 +397,7 @@ public class MethodLoggingTest
   public abstract static class AbstractWorker
   {
     @SuppressWarnings("unused")
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("abstract-worker");
+    private static final Logger log = Logger.getLogger("abstract-worker");
 
 
     @MethodLogging(lineNumber = HIDE)
@@ -375,7 +411,7 @@ public class MethodLoggingTest
   public static class Worker extends AbstractWorker
   {
     @SuppressWarnings("unused")
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("worker");
+    private static final Logger log = Logger.getLogger("worker");
   }
 
 
@@ -403,9 +439,20 @@ public class MethodLoggingTest
 
 
 
+  @Component
+  public static class JULNoFieldBean
+  {
+    @MethodLogging(lineNumber = HIDE)
+    public void test() {
+    }
+  }
+
+
+
+
   @Configuration
   @EnableMethodLogging
-  @Import({ MyBean.class, JULLoggerBean.class })
+  @Import({ MyBean.class, JULLoggerBean.class, JULNoFieldBean.class })
   static class MyConfiguration implements MethodLoggingConfigurer
   {
     @Override

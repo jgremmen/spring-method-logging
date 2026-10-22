@@ -19,8 +19,7 @@ import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-
-import static java.util.logging.LogManager.getLogManager;
+import java.util.logging.Logger;
 
 
 /**
@@ -45,7 +44,7 @@ public final class JULLoggerFactory extends AbstractMethodLoggerFactory
 
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new JULLogger(getLogManager().getLogger(clazz.getName()));
+    return new JULLogger(Logger.getLogger(clazz.getName()));
   }
 
 
