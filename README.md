@@ -64,12 +64,18 @@ result = Hello World
 ### Class-level defaults
 
 Use `@MethodLoggingConfig` on a class to define defaults for all `@MethodLogging`-annotated methods in that class.
-Individual methods can still override any of these settings.
+Individual methods can still override any of these settings. Besides the settings of `@MethodLogging` (log levels,
+visibility of line number, elapsed time, parameters and result, message formats and logger field name),
+`@MethodLoggingConfig` defines the prefixes of the method entry and exit messages.
 
 ### Parameter control
 
 The `@ParamLog` annotation can be placed on individual method parameters to control how they appear in the log output.
 It allows you to set a custom format, change the display name or log the parameter on a separate line instead of inline.
+
+Formats use the message syntax of the [message-format](https://central.sonatype.com/artifact/de.sayayi.lib/message-format)
+library, which is also used to format the log messages. The parameter value is available as `%{value}`, which is the
+default format.
 
 Parameters can also be excluded from logging by name using the `exclude` attribute on `@MethodLogging`.
 

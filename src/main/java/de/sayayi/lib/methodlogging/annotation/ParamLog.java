@@ -35,7 +35,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <p>
  * Parameters without this annotation may still be logged depending on their type and the
  * {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} configuration. Annotating a parameter with
- * {@code @ParamLog} always ensures it is included and allows fine-grained control over its log representation.
+ * {@code @ParamLog} ensures it is included regardless of that configuration and allows fine-grained control over its
+ * log representation. A parameter annotated with {@code @ParamLog} is not logged however, if it is excluded by name
+ * ({@link MethodLogging#exclude()}) or if parameter logging is disabled ({@link MethodLogging#parameters()}).
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

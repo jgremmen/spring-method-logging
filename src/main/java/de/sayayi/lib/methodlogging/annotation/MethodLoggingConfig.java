@@ -62,12 +62,17 @@ public @interface MethodLoggingConfig
 
 
   /**
-   * The field name in this class that contains a loggable instance. The default is {@code "log"}.
+   * The field name in this class that contains a loggable instance. The default ({@code "<DEFAULT>"}) uses the field
+   * name provided by {@link MethodLoggingConfigurer#defaultLoggerFieldName()}, which is {@code "log"} unless configured
+   * otherwise.
    * <p>
    * Generally the loggable instance is a slf4j/jul/log4j logger, but there are no restrictions to the kind of object
    * held by the field.<br>
    * The method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle
    * the contents of the field.
+   * <p>
+   * If the field contains {@code null} or an object not supported by the method logger factory, the method is not
+   * logged.
    *
    * @return  logger field name
    *
@@ -101,8 +106,10 @@ public @interface MethodLoggingConfig
    * <p>
    * If the class does not provide line number information, the visibility is reduced to {@link Visibility#HIDE}.
    *
-   * @return  {@link Visibility#SHOW} (the default) shows the line number if available,
-   *          {@link Visibility#HIDE} does not show the line number
+   * @return  {@link Visibility#SHOW} shows the line number if available,
+   *          {@link Visibility#HIDE} does not show the line number,
+   *          {@link Visibility#DEFAULT} (the default) uses the setting from
+   *          {@link MethodLoggingConfigurer#defaultLineNumber()}
    *
    * @see MethodLoggingConfigurer#defaultLineNumber()
    * @see MethodLogging#lineNumber()

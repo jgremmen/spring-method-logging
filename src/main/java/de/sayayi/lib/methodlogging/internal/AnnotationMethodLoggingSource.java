@@ -63,8 +63,25 @@ import static org.springframework.util.StringUtils.hasLength;
 
 
 /**
+ * Analyses methods annotated with {@link MethodLogging @MethodLogging} and provides their method logging definitions.
+ * <p>
+ * The definition of a method is resolved from the method annotation, the {@link MethodLoggingConfig} annotation of the
+ * target class and the {@link MethodLoggingConfigurer}, in that order: an attribute left at its default
+ * ({@code DEFAULT} or {@code "<DEFAULT>"}) on the method annotation is taken from the class annotation, and a level,
+ * line number or logger field name left at its default on the class annotation is taken from the configurer. If the
+ * target class has no {@code @MethodLoggingConfig} annotation, the annotation defaults are used.
+ * <p>
+ * Definitions are cached per method and target class, including the information that a method has no method logging.
+ * The analysis runs without holding a lock, so concurrent analysis of the same method is possible; the definition
+ * cached first is used.
+ * <p>
+ * This class also creates the message support used by the definitions and the interceptor: the one provided by
+ * {@link MethodLoggingConfigurer#messageSupport()} or, if none is provided, a default message support.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
+ *
+ * @see MethodDef
  */
 public final class AnnotationMethodLoggingSource
 {
@@ -89,6 +106,14 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Returns the method logging definition for {@code method} invoked on an instance of {@code targetClass}.
+   *
+   * @param method       invoked method, possibly an interface method, not {@code null}
+   * @param targetClass  class of the target instance, not {@code null}
+   *
+   * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation
+   */
   @Contract(pure = true)
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {

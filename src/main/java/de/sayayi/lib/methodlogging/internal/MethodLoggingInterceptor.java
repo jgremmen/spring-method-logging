@@ -36,6 +36,17 @@ import static org.springframework.util.StringUtils.hasLength;
 
 
 /**
+ * Method interceptor logging the entry, parameters, result and exit of methods with a method logging definition. It is
+ * used for both proxy and AspectJ based method logging.
+ * <p>
+ * Method logging never affects the invoked method: its result and exceptions are passed on unchanged. If a parameter
+ * value or the result cannot be formatted, it is logged as {@code <format failed: exception>}. Other failures are
+ * reported at WARN level through the JCL logger of this class: if the method logger cannot be obtained, the method is
+ * invoked without logging; if logging the entry, result or exit fails, the remaining messages are still logged.
+ * <p>
+ * Nothing is logged for an invocation if the method logger does not enable the entry/exit level; parameters and result
+ * are logged only together with the entry and exit messages.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
@@ -99,8 +110,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   /**
    * Returns the method logger for the given method definition, if logging for method entry/exit is enabled.
    *
-   * @return  method logger or {@code null} if entry/exit logging is disabled or the method logger could not be
-   *          obtained
+   * @return  method logger or {@code null} if entry/exit logging is disabled or the method logger could not be obtained
    */
   private MethodLogger getEnabledMethodLogger(@NotNull MethodDef methodDef, @NotNull Object obj,
                                               @NotNull Class<?> type)

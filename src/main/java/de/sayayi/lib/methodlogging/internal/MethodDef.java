@@ -35,6 +35,12 @@ import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
 
 
 /**
+ * Method logging definition of a method, with all settings resolved (see {@link AnnotationMethodLoggingSource}). The
+ * levels are never {@link Level#DEFAULT}.
+ * <p>
+ * Instances are immutable and shared by all threads invoking the method. The messages for parameters and the result
+ * are created on first use, as many of them are never needed when the corresponding log level is disabled.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
  */

@@ -21,6 +21,11 @@ import java.util.function.Supplier;
 
 
 /**
+ * Logging definition of a method parameter to be logged. Parameters which are not logged have no definition.
+ * <p>
+ * The fields are assigned during the analysis of the method only; the definition is safely published to other threads
+ * by the definition cache of {@link AnnotationMethodLoggingSource}.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
  */

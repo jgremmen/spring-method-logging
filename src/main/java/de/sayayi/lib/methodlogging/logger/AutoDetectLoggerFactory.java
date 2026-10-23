@@ -38,6 +38,8 @@ import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
  *   <li>Logback (ch.qos.logback.classic.Logger)</li>
  *   <li>Tinylog (org.tinylog.Logger)</li>
  * </ul>
+ * If the logger field contains {@code null} or a logger of another type, the method is not logged. If no logger field
+ * is available, a JCL logger for the target class is used.
  *
  * @author Jeroen Gremmen
  * @since 0.3.0

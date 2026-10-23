@@ -41,6 +41,36 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *   }
  * </pre>
  *
+ * <h2>Resolution of settings</h2>
+ * A setting left at its default ({@code DEFAULT} or {@code "<DEFAULT>"}) is taken from the next source on the right.
+ * If the class has no {@code @MethodLoggingConfig} annotation, the annotation defaults of {@code @MethodLoggingConfig}
+ * are used.
+ * <table class="striped">
+ *   <caption>Sources of method logging settings</caption>
+ *   <thead>
+ *     <tr>
+ *       <th>Setting</th><th>{@code @MethodLogging}</th><th>{@code @MethodLoggingConfig}</th>
+ *       <th>{@link MethodLoggingConfigurer}</th>
+ *     </tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr><td>logger field name</td><td>yes</td><td>yes</td><td>{@code defaultLoggerFieldName()}</td></tr>
+ *     <tr><td>entry/exit, parameter and result level</td><td>yes</td><td>yes</td>
+ *       <td>{@code defaultEntryExitLevel()}, {@code defaultParameterLevel()}, {@code defaultResultLevel()}</td></tr>
+ *     <tr><td>line number</td><td>yes</td><td>yes</td><td>{@code defaultLineNumber()}</td></tr>
+ *     <tr><td>elapsed time, parameters, result</td><td>yes</td><td>yes</td><td>-</td></tr>
+ *     <tr><td>inline parameter, parameter and result format</td><td>yes</td><td>yes</td><td>-</td></tr>
+ *     <tr><td>method entry and exit prefix</td><td>-</td><td>yes</td><td>-</td></tr>
+ *     <tr><td>excluded parameters</td><td>by name ({@link #exclude()})</td><td>-</td>
+ *       <td>by type ({@code excludeMethodParameter(ResolvableType)})</td></tr>
+ *   </tbody>
+ * </table>
+ *
+ * <h2>Effect on the logged method</h2>
+ * Method logging never affects the logged method: its result and exceptions are passed on unchanged. A parameter value
+ * or result which cannot be formatted is logged as {@code <format failed: exception>}. Other logging failures, for
+ * example of the method logger, are reported at WARN level by the method logging interceptor through JCL.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.0
  *
@@ -60,6 +90,9 @@ public @interface MethodLogging
    * essentially there are no restrictions to the kind of object held by the field. The only constraint is that the
    * method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle the
    * contents of the field.
+   * <p>
+   * If the field contains {@code null} or an object not supported by the method logger factory, the method is not
+   * logged.
    *
    * @return  logger field name
    */
@@ -184,6 +217,10 @@ public @interface MethodLogging
   /**
    * Provides an array of parameter names that are to be excluded from method logging. This can be useful for hiding
    * sensitive information such as passwords or tokens.
+   * <p>
+   * The names are matched against the logged parameter names, i.e. the name given by {@link ParamLog#name()} if
+   * present, otherwise the discovered parameter name (or {@code arg0}, {@code arg1}, ... if parameter names are not
+   * available). A parameter is excluded even if it is annotated with {@link ParamLog @ParamLog}.
    *
    * @return  parameter names to exclude, empty by default
    */

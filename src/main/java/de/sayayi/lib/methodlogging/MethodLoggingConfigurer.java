@@ -35,6 +35,11 @@ import org.springframework.core.ResolvableType;
  * or need to specify explicitly how messages are formatted and logged for annotation-driven method logging.
  * <p>
  * All methods have sensible defaults so that only the settings that need customization have to be overridden.
+ * <p>
+ * The configurer provides global defaults for the logger field name, the entry/exit, parameter and result log levels
+ * and the line number visibility. All other settings, like the elapsed time, parameter and result visibility, the
+ * message formats and the entry/exit prefixes, have no global default; they can only be configured per class with
+ * {@link MethodLoggingConfig @MethodLoggingConfig} or per method with {@link MethodLogging @MethodLogging}.
  *
  * @see EnableMethodLogging
  * @see MethodLoggingConfig
@@ -47,10 +52,11 @@ public interface MethodLoggingConfigurer
   /**
    * Construct the message support to be used with method/parameter/result logging.
    * <p>
-   * The default message support is constructed for the default locale and uses the shared message formatter service
-   * {@link DefaultFormatterService#getSharedInstance()} and a message factory without caching capabilities.
+   * If {@code null} is returned (the default), a message support is created with a new {@link DefaultFormatterService}
+   * for the class loader of the application context, using a formatter cache size of 128, and the default message
+   * factory.
    *
-   * @return  Message support or {@code null}
+   * @return  Message support or {@code null} to use the default message support
    */
   @Contract(pure = true)
   default MessageSupport messageSupport() {
@@ -116,7 +122,8 @@ public interface MethodLoggingConfigurer
    * If this level is not enabled for the logger, nothing is logged for the method: parameters and result are not logged
    * either, regardless of their log levels.
    *
-   * @return  default entry/exit log level, never {@code null}. The default is {@link Level#INFO}
+   * @return  default entry/exit log level, never {@code null} or {@link Level#DEFAULT}. The default is
+   *          {@link Level#INFO}
    *
    * @since 0.2.1
    */
@@ -134,7 +141,8 @@ public interface MethodLoggingConfigurer
    * Parameters are only logged if method entry and exit messages are logged as well (see
    * {@link #defaultEntryExitLevel()}).
    *
-   * @return  default parameter log level, never {@code null}. The default is {@link Level#DEBUG}
+   * @return  default parameter log level, never {@code null} or {@link Level#DEFAULT}. The default is
+   *          {@link Level#DEBUG}
    *
    * @since 0.2.1
    */
@@ -151,7 +159,7 @@ public interface MethodLoggingConfigurer
    * Results are only logged if method entry and exit messages are logged as well (see
    * {@link #defaultEntryExitLevel()}).
    *
-   * @return  default result log level, never {@code null}. The default is {@link Level#DEBUG}
+   * @return  default result log level, never {@code null} or {@link Level#DEFAULT}. The default is {@link Level#DEBUG}
    *
    * @since 0.2.1
    */

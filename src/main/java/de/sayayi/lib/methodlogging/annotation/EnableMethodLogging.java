@@ -28,17 +28,18 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  * public class AppConfig implements MethodLoggingConfigurer
  * {
  *   &#064;Override
- *   public MessageContext messageContext()
+ *   public MessageSupport messageSupport()
  *   {
- *     return new MessageContext(new DefaultFormatterService(),
- *         new MessageFactory(new LRUMessagePartNormalizer(64)));
+ *     return MessageSupportFactory.create(
+ *         new DefaultFormatterService(),
+ *         new MessageFactory(LRUMessagePartNormalizer.create(64)));
  *   }
  *
  *   &#064;Override
- *   public MethodLoggerFactoryDelegate methodLoggerFactory()
+ *   public MethodLoggerFactory methodLoggerFactory()
  *   {
  *     // this application only uses log4j2
- *     return Log4J2MethodLogger.FIELD_FACTORY;
+ *     return new Log4j2LoggerFactory(true);
  *   }
  * }</pre>
  *

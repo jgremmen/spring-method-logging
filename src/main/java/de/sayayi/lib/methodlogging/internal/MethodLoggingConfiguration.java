@@ -30,7 +30,9 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 
 
 /**
- * Base configuration providing the beans shared by the proxy and AspectJ based method logging.
+ * Base configuration providing the beans shared by the proxy and AspectJ based method logging: the
+ * {@link AnnotationMethodLoggingSource} and the {@link MethodLoggingInterceptor}. A {@link MethodLoggingConfigurer}
+ * bean is optional; without it, the configurer defaults are used.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

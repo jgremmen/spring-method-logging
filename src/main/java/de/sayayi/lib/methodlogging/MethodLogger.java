@@ -26,6 +26,9 @@ import java.lang.reflect.Field;
  * Adapter that bridges the method logging framework to an underlying logging implementation (e.g. SLF4J, Log4j2, JUL).
  * Instances are created by a {@link MethodLoggerFactory} and are used by the method logging interceptor to emit entry,
  * exit, parameter and result messages at the configured log level.
+ * <p>
+ * Exceptions thrown by a method logger do not affect the logged method; they are reported at WARN level by the method
+ * logging interceptor.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -48,8 +51,8 @@ public interface MethodLogger
   /**
    * Log a message with a specific level to the underlying logging framework.
    *
-   * @param level    logging level, not {@code null}
-   * @param message  message to log
+   * @param level    logging level, never {@code null} or {@link Level#DEFAULT}
+   * @param message  message to log, never {@code null}
    */
   void log(@NotNull Level level, String message);
 
@@ -57,7 +60,7 @@ public interface MethodLogger
   /**
    * Checks whether logging for messages with {@code level} is enabled.
    *
-   * @param level  logging level to check for, not {@code null}
+   * @param level  logging level to check for, never {@code null} or {@link Level#DEFAULT}
    *
    * @return  {@code true} if logging is enabled, {@code false} otherwise
    */
