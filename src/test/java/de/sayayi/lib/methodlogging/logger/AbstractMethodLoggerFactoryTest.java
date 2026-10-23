@@ -23,7 +23,12 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Future;
 
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -51,6 +56,55 @@ class AbstractMethodLoggerFactoryTest
 
 
   @Test
+  @DisplayName("Loggers from static final fields are cached per field")
+  void fieldLoggerCached() throws Exception
+  {
+    final var factory = new RecordingLoggerFactory();
+    final var logField = WithLoggers.class.getDeclaredField("log");
+    final var auditLogField = WithLoggers.class.getDeclaredField("auditLog");
+    final var bean = new WithLoggers();
+
+    final var logger1 = factory.from(logField, bean, WithLoggers.class);
+    final var logger2 = factory.from(WithLoggers.class.getDeclaredField("log"), bean, WithLoggers.class);
+    final var logger3 = factory.from(auditLogField, bean, WithLoggers.class);
+
+    assertSame(logger1, logger2);
+    assertNotSame(logger1, logger3);
+    assertEquals(List.of("log", "auditLog"), factory.fields);
+  }
+
+
+  @Test
+  @DisplayName("Concurrently requested static field loggers resolve to the same logger")
+  void fieldLoggerConcurrent() throws Exception
+  {
+    final var threads = 16;
+    final var factory = new RecordingLoggerFactory();
+    final var logField = WithLoggers.class.getDeclaredField("log");
+    final var bean = new WithLoggers();
+    final var barrier = new CyclicBarrier(threads);
+    final Callable<MethodLogger> task = () -> {
+      barrier.await();
+      return factory.from(logField, bean, WithLoggers.class);
+    };
+
+    try(var executor = newFixedThreadPool(threads)) {
+      final var futures = new ArrayList<Future<MethodLogger>>();
+
+      for(var n = 0; n < threads; n++)
+        futures.add(executor.submit(task));
+
+      final var first = futures.getFirst().get();
+
+      for(var future: futures)
+        assertSame(first, future.get());
+
+      assertSame(first, factory.from(logField, bean, WithLoggers.class));
+    }
+  }
+
+
+  @Test
   @DisplayName("Loggers for classes without logger field are cached per factory")
   void classLoggerCachedPerFactory()
   {
@@ -65,6 +119,7 @@ class AbstractMethodLoggerFactoryTest
   private static final class RecordingLoggerFactory extends AbstractMethodLoggerFactory
   {
     private final List<Class<?>> classes = new ArrayList<>();
+    private final List<String> fields = new CopyOnWriteArrayList<>();
 
 
     private RecordingLoggerFactory() {
@@ -81,8 +136,10 @@ class AbstractMethodLoggerFactoryTest
 
 
     @Override
-    protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-      throw new UnsupportedOperationException();
+    protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
+    {
+      fields.add(loggerField.getName());
+      return new JCLLoggerFactory(true).createMethodLogger(loggerField.getDeclaringClass());
     }
   }
 
@@ -96,5 +153,13 @@ class AbstractMethodLoggerFactoryTest
 
 
   static final class B {
+  }
+
+
+  @SuppressWarnings("unused")
+  static final class WithLoggers
+  {
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("log");
+    private static final java.util.logging.Logger auditLog = java.util.logging.Logger.getLogger("audit");
   }
 }

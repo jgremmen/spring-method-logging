@@ -20,9 +20,8 @@ import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.reflect.Modifier.FINAL;
 import static java.lang.reflect.Modifier.STATIC;
@@ -43,13 +42,20 @@ import static java.lang.reflect.Modifier.STATIC;
  */
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
-  private final WeakHashMap<Class<?>,Map<String,MethodLogger>> loggerCache = new WeakHashMap<>();
+  private final ClassValue<Map<String,MethodLogger>> fieldLoggerCache = new ClassValue<>() {
+    @Override
+    protected @NotNull Map<String,MethodLogger> computeValue(@NotNull Class<?> type) {
+      return new ConcurrentHashMap<>();
+    }
+  };
+
   private final ClassValue<MethodLogger> classLoggerCache = new ClassValue<>() {
     @Override
-    protected MethodLogger computeValue(@NotNull Class<?> type) {
+    protected @NotNull MethodLogger computeValue(@NotNull Class<?> type) {
       return createMethodLogger(type);
     }
   };
+
   private final boolean createLoggerOnNoField;
 
 
@@ -79,11 +85,21 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
     {
       if ((loggerField.getModifiers() & (STATIC | FINAL)) == (STATIC | FINAL))
       {
-        synchronized(loggerCache) {
-          return loggerCache
-              .computeIfAbsent(loggerField.getDeclaringClass(), cl -> new HashMap<>())
-              .computeIfAbsent(loggerField.getName(), name -> createMethodLogger(loggerField, obj));
+        final var fieldLoggers = fieldLoggerCache.get(loggerField.getDeclaringClass());
+        final var fieldName = loggerField.getName();
+
+        var methodLogger = fieldLoggers.get(fieldName);
+        if (methodLogger == null)
+        {
+          // create the logger without holding a lock; concurrently created loggers are equivalent
+          methodLogger = createMethodLogger(loggerField, obj);
+
+          var cachedMethodLogger = fieldLoggers.putIfAbsent(fieldName, methodLogger);
+          if (cachedMethodLogger != null)
+            methodLogger = cachedMethodLogger;
         }
+
+        return methodLogger;
       }
 
       return createMethodLogger(loggerField, obj);
