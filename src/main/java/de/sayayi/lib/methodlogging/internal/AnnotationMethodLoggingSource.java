@@ -15,6 +15,10 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.message.MessageSupport;
+import de.sayayi.lib.message.MessageSupportFactory;
+import de.sayayi.lib.message.formatter.DefaultFormatterService;
+import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
@@ -29,6 +33,7 @@ import org.springframework.core.MethodClassKey;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -65,12 +70,19 @@ public final class AnnotationMethodLoggingSource
 {
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
   final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
+  final @NotNull MessageSupport messageSupport;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
 
-  AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer)
+  AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
+                                @NotNull ResourceLoader resourceLoader)
   {
     this.methodLoggingConfigurer = methodLoggingConfigurer;
+
+    final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
+    messageSupport = configuredMessageSupport != null
+        ? configuredMessageSupport
+        : MessageSupportFactory.create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
@@ -109,7 +121,7 @@ public final class AnnotationMethodLoggingSource
     final var methodLogging =
         findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
 
-    return new MethodDef(
+    return new MethodDef(messageSupport.getMessageAccessor().getMessageFactory(),
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
         getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method,
         methodLogging.lineNumber() == SHOW ? findMethodLineNumber(specificMethod) : -1,
@@ -144,6 +156,7 @@ public final class AnnotationMethodLoggingSource
     final var specificParameters = specificMethod.getParameters();
     final var parameters = method.getParameters();
     final var excludeParameters = asList(methodLogging.exclude());
+    final var messageFactory = messageSupport.getMessageAccessor().getMessageFactory();
 
     for(int p = 0; p < parameterCount; p++)
     {
@@ -159,11 +172,11 @@ public final class AnnotationMethodLoggingSource
       if (!excludeParameters.contains(parameterDef.name) &&
           (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p, targetClass))))
       {
+        final var format = paramLog != null && hasLength(paramLog.format()) ? paramLog.format() : "%{value}";
+
         parameterDef.index = p;
         parameterDef.inline = paramLog == null || paramLog.inline();
-
-        if (!hasLength(parameterDef.format = paramLog != null ? paramLog.format() : ""))
-          parameterDef.format = "%{value}";
+        parameterDef.formatMessage = SupplierDelegate.of(() -> messageFactory.parseMessage(format));
 
         parameterDefs.add(parameterDef);
       }

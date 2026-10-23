@@ -22,6 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodClassKey;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.Optional;
 
@@ -39,11 +40,15 @@ class MethodDefinitionCacheTest
   @DisplayName("Methods without method logging are cached")
   void notAnnotated() throws Exception
   {
-    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {});
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader());
     final var method = Bean.class.getMethod("notLogged");
 
     assertNull(source.getMethodDefinition(method, Bean.class));
-    assertEquals(Optional.empty(), source.methodLoggingDefinitionCache.get(new MethodClassKey(method, Bean.class)));
+    assertEquals(
+        Optional.empty(),
+        source.methodLoggingDefinitionCache.get(new MethodClassKey(method, Bean.class)));
     assertNull(source.getMethodDefinition(method, Bean.class));
     assertEquals(1, source.methodLoggingDefinitionCache.size());
   }
@@ -53,7 +58,9 @@ class MethodDefinitionCacheTest
   @DisplayName("Methods with method logging are cached")
   void annotated() throws Exception
   {
-    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {});
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader());
     final var method = Bean.class.getMethod("logged", String.class);
     final var methodDef = source.getMethodDefinition(method, Bean.class);
 
@@ -70,13 +77,15 @@ class MethodDefinitionCacheTest
     final var otherMethod = Bean.class.getMethod("notLogged");
     final var source = new AnnotationMethodLoggingSource[1];
 
-    source[0] = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {
-      @Override
-      public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType) {
-        // e.g. a configurer delegating to a bean with method logging
-        return source[0].getMethodDefinition(otherMethod, Bean.class) != null;
-      }
-    });
+    source[0] = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType) {
+            // e.g. a configurer delegating to a bean with method logging
+            return source[0].getMethodDefinition(otherMethod, Bean.class) != null;
+          }
+        },
+        new DefaultResourceLoader());
 
     assertNotNull(source[0].getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class));
     assertEquals(2, source[0].methodLoggingDefinitionCache.size());

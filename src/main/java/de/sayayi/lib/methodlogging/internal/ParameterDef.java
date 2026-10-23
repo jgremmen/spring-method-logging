@@ -16,12 +16,8 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
-import de.sayayi.lib.message.MessageSupport;
-import org.intellij.lang.annotations.Language;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 
 /**
@@ -30,29 +26,10 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 final class ParameterDef
 {
-  private final Lock lock = new ReentrantLock();
-
   int index;
   String name;
   boolean inline;
 
-  @Language("MessageFormat") String format;
-  Message formatMessage;
-
-
-  @NotNull Message getFormatMessage(@NotNull MessageSupport messageContext)
-  {
-    lock.lock();
-    try {
-      if (formatMessage == null)
-      {
-        formatMessage = messageContext.getMessageAccessor().getMessageFactory().parseMessage(format);
-        format = null;
-      }
-
-      return formatMessage;
-    } finally {
-      lock.unlock();
-    }
-  }
+  /** Lazily created parameter format message. */
+  Supplier<Message> formatMessage;
 }

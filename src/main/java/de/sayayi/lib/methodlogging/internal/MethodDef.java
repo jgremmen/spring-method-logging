@@ -16,11 +16,11 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
-import de.sayayi.lib.message.MessageSupport;
+import de.sayayi.lib.message.MessageFactory;
+import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
-import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
@@ -43,9 +44,9 @@ final class MethodDef
   final String methodExitPrefix;
   final List<ParameterDef> inlineParameters;
   final List<ParameterDef> inMethodParameters;
-  @Language("MessageFormat") String inlineParameterFormat;
-  @Language("MessageFormat") String parameterFormat;
-  @Language("MessageFormat") String resultFormat;
+  final Supplier<Message> inlineParameterMessage;
+  final Supplier<Message> parameterMessage;
+  final Supplier<Message> resultMessage;
   final String methodName;
   final int line;
   final boolean showElapsedTime;
@@ -55,13 +56,10 @@ final class MethodDef
   final Level parameterLevel;
   final Level resultLevel;
 
-  Message inlineParameterMessage;
-  Message parameterMessage;
-  Message resultMessage;
 
-
-  MethodDef(@NotNull MethodLoggingConfig methodLoggingConfig, @NotNull List<ParameterDef> parameters,
-            @NotNull MethodLogging methodLogging, @NotNull Method method, int line, Field loggerField)
+  MethodDef(final @NotNull MessageFactory messageFactory, @NotNull MethodLoggingConfig methodLoggingConfig,
+            @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging, @NotNull Method method,
+            int line, Field loggerField)
   {
     methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
     methodExitPrefix = methodLoggingConfig.methodExitPrefix();
@@ -79,9 +77,12 @@ final class MethodDef
     this.line = line;
 
     methodName = method.getName();
-    inlineParameterFormat = notEmpty(methodLogging.inlineParameterFormat(), DEFAULT_INLINE_PARAMETER_FORMAT);
-    parameterFormat = notEmpty(methodLogging.parameterFormat(), DEFAULT_PARAMETER_FORMAT);
-    resultFormat = notEmpty(methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT);
+    inlineParameterMessage = SupplierDelegate.of(() -> messageFactory.parseMessage(
+        notEmpty(methodLogging.inlineParameterFormat(), DEFAULT_INLINE_PARAMETER_FORMAT)));
+    parameterMessage = SupplierDelegate.of(() -> messageFactory.parseMessage(
+        notEmpty(methodLogging.parameterFormat(), DEFAULT_PARAMETER_FORMAT)));
+    resultMessage = SupplierDelegate.of(() -> messageFactory.parseMessage(
+        notEmpty(methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT)));
     showElapsedTime = methodLogging.elapsedTime() == SHOW;
     showResult = method.getReturnType() != void.class && methodLogging.result() == SHOW;
     entryExitLevel = methodLogging.entryExitLevel();
@@ -90,50 +91,8 @@ final class MethodDef
   }
 
 
-  @NotNull Message getInlineParameterMessage(@NotNull MessageSupport messageSupport)
-  {
-    synchronized(this) {
-      if (inlineParameterMessage == null)
-      {
-        inlineParameterMessage = messageSupport.message(inlineParameterFormat).getMessage();
-        inlineParameterFormat = null;
-      }
-
-      return inlineParameterMessage;
-    }
-  }
-
-
-  @NotNull Message getParameterMessage(@NotNull MessageSupport messageSupport)
-  {
-    synchronized(this) {
-      if (parameterMessage == null)
-      {
-        parameterMessage = messageSupport.message(parameterFormat).getMessage();
-        parameterFormat = null;
-      }
-
-      return parameterMessage;
-    }
-  }
-
-
-  @NotNull Message getResultMessage(@NotNull MessageSupport messageSupport)
-  {
-    synchronized(this) {
-      if (resultMessage == null)
-      {
-        resultMessage = messageSupport.message(resultFormat).getMessage();
-        resultFormat = null;
-      }
-
-      return resultMessage;
-    }
-  }
-
-
   @Contract(pure = true)
-  private @NotNull String notEmpty(@NotNull String s, @NotNull String defaultValue) {
+  private static @NotNull String notEmpty(@NotNull String s, @NotNull String defaultValue) {
     return s.isEmpty() ? defaultValue : s;
   }
 }

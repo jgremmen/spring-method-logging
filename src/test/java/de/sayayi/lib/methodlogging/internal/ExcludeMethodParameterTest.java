@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,21 +42,29 @@ class ExcludeMethodParameterTest
   void genericParameterType() throws Exception
   {
     final var parameterTypes = new ArrayList<Class<?>>();
-    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {
-      @Override
-      public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
-      {
-        parameterTypes.add(methodParameterType.resolve());
-        return methodParameterType.toClass() == String.class;
-      }
-    });
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            parameterTypes.add(methodParameterType.resolve());
+            return methodParameterType.toClass() == String.class;
+          }
+        },
+        new DefaultResourceLoader());
 
     final var methodDef = source.getMethodDefinition(
-        AbstractRepository.class.getMethod("save", Object.class, Long.class), StringRepository.class);
+        AbstractRepository.class.getMethod("save", Object.class, Long.class),
+        StringRepository.class);
 
     assertEquals(List.of(String.class, Long.class), parameterTypes);
-    assertEquals(List.of("id"),
-        requireNonNull(methodDef).inlineParameters.stream().map(parameterDef -> parameterDef.name).toList());
+    assertEquals(
+        List.of("id"),
+        requireNonNull(methodDef)
+            .inlineParameters
+            .stream()
+            .map(parameterDef -> parameterDef.name)
+            .toList());
   }
 
 

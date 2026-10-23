@@ -38,7 +38,9 @@ class MethodLoggingInterceptorTest
   void noMethodDefinition()
   {
     final var interceptor = new MethodLoggingInterceptor(
-        new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}), new DefaultResourceLoader());
+        new AnnotationMethodLoggingSource(
+            new MethodLoggingConfigurer() {},
+            new DefaultResourceLoader()));
 
     // interceptor applied without pointcut, as in a manually built proxy
     final var proxyFactory = new ProxyFactory((Supplier<String>)() -> "result");

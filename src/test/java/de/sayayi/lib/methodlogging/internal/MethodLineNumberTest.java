@@ -20,6 +20,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.DefaultResourceLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -45,8 +46,9 @@ class MethodLineNumberTest
   @DisplayName("Line number is taken from the class file")
   void lineNumber() throws Exception
   {
-    final var methodDef = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {})
-        .getMethodDefinition(Bean.class.getMethod("logged"), Bean.class);
+    final var methodDef =
+        new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader())
+            .getMethodDefinition(Bean.class.getMethod("logged"), Bean.class);
 
     assertTrue(requireNonNull(methodDef).line > 0);
   }
@@ -57,7 +59,9 @@ class MethodLineNumberTest
   void unsupportedClassFileVersion() throws Exception
   {
     final var beanClass = new UnsupportedClassFileVersionLoader().loadClass(Bean.class.getName());
-    final var methodDef = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {})
+    final var methodDef = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader())
         .getMethodDefinition(beanClass.getMethod("logged"), beanClass);
 
     assertEquals(-1, requireNonNull(methodDef).line);

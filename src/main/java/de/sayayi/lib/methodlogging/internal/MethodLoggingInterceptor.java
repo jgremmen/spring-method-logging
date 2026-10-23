@@ -16,8 +16,6 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.MessageSupport;
-import de.sayayi.lib.message.MessageSupportFactory;
-import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
@@ -27,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.io.ResourceLoader;
 
 import java.util.StringJoiner;
 
@@ -48,25 +45,20 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
-  private MessageSupport messageSupport;
-  private MethodLoggerFactory methodLoggerFactory;
+  private final MessageSupport messageSupport;
+  private final MethodLoggerFactory methodLoggerFactory;
 
 
-  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource,
-                           @NotNull ResourceLoader resourceLoader)
+  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource)
   {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
-    final var methodLoggingConfigurer = annotationMethodLoggingSource.methodLoggingConfigurer;
+    messageSupport = annotationMethodLoggingSource.messageSupport;
 
-    if ((messageSupport = methodLoggingConfigurer.messageSupport()) == null)
-    {
-      messageSupport = MessageSupportFactory
-          .create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
-    }
-
-    if ((methodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory()) == null)
-      methodLoggerFactory = new AutoDetectLoggerFactory();
+    final var configuredMethodLoggerFactory =
+        annotationMethodLoggingSource.methodLoggingConfigurer.methodLoggerFactory();
+    methodLoggerFactory =
+        configuredMethodLoggerFactory != null ? configuredMethodLoggerFactory : new AutoDetectLoggerFactory();
   }
 
 
@@ -162,7 +154,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
                                                          @NotNull ParameterDef parameterDef, Object value)
   {
     return messageSupport
-        .message(methodDef.getInlineParameterMessage(messageSupport))
+        .message(methodDef.inlineParameterMessage.get())
         .with("parameter", parameterDef.name)
         .with("value", formatParameterValue(parameterDef, value))
         .format();
@@ -174,7 +166,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
                                                    Object value)
   {
     return messageSupport
-        .message(methodDef.getParameterMessage(messageSupport))
+        .message(methodDef.parameterMessage.get())
         .with("parameter", parameterDef.name)
         .with("value", formatParameterValue(parameterDef, value))
         .format();
@@ -185,7 +177,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     try {
       return messageSupport
-          .message(parameterDef.getFormatMessage(messageSupport))
+          .message(parameterDef.formatMessage.get())
           .with("value", value)
           .format();
     } catch(Exception ex) {
@@ -288,7 +280,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
       if (methodLogger.isLogEnabled(resultLevel))
       {
-        final var resultMessage = methodDef.getResultMessage(messageSupport);
+        final var resultMessage = methodDef.resultMessage.get();
         final var messageConfigurer = messageSupport.message(resultMessage);
         String message;
 
