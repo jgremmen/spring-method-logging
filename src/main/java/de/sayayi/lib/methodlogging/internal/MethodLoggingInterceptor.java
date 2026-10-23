@@ -41,7 +41,9 @@ import static org.springframework.util.StringUtils.hasLength;
  * value or the result cannot be formatted, it is logged as {@code <format failed: exception>}. Other failures are
  * reported at WARN level through the JCL logger of this class: if the method cannot be analyzed (for AspectJ based
  * method logging on first invocation) or the method logger cannot be obtained, the method is invoked without logging;
- * if logging the entry, result or exit fails, the remaining messages are still logged.
+ * if logging the entry, result or exit fails, the remaining messages are still logged. This includes errors like a
+ * {@link StackOverflowError} raised by a cyclic {@code toString()}; only virtual machine errors the application cannot
+ * recover from, like an {@link OutOfMemoryError}, are passed on.
  * <p>
  * Nothing is logged for an invocation if the method logger does not enable the entry/exit level; parameters and result
  * are logged only together with the entry and exit messages.
@@ -71,7 +73,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     try {
       // usually analyzed when the proxy is created; for AspectJ based method logging on first invocation
       methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
-    } catch(Exception ex) {
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
       LOG.warn("Method logging analysis failed for method '" + invocation.getMethod().getName() + '\'', ex);
       return invocation.proceed();
     }
@@ -117,7 +120,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
           .from(methodDef.loggerField, obj, type);
 
       return methodLogger.isLogEnabled(methodDef.entryExitLevel) ? methodLogger : null;
-    } catch(Exception ex) {
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
       logFailure(methodDef, "logger lookup", ex);
       return null;
     }
@@ -157,7 +161,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
               formatParameter(methodDef.parameterMessage.get(), parameterDef, arguments[parameterDef.index()]),
               methodDef.location);
         }
-    } catch(Exception ex) {
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
       logFailure(methodDef, "entry", ex);
     }
   }
@@ -187,7 +192,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
           .message(parameterDef.formatMessage().get())
           .with("value", value)
           .format();
-    } catch(Exception ex) {
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
       // e.g. a failing toString() on the value; keep the remaining log output
       return formatFailed(ex);
     }
@@ -221,7 +227,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       }
 
       methodLogger.log(methodDef.entryExitLevel, exit.toString(), methodDef.location);
-    } catch(Exception ex) {
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
       logFailure(methodDef, "exit", ex);
     }
   }
@@ -296,21 +303,23 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
         try {
           message = messageConfigurer.with("result", result).format();
-        } catch(Exception ex) {
+        } catch(Throwable ex) {
+          rethrowIfFatal(ex);
           // e.g. a failing toString() on the result
           message = messageConfigurer.with("result", formatFailed(ex)).format();
         }
 
         methodLogger.log(resultLevel, message, methodDef.location);
       }
-    } catch(Exception ex) {
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
       logFailure(methodDef, "result", ex);
     }
   }
 
 
   @Contract(pure = true)
-  private static @NotNull String formatFailed(@NotNull Exception ex) {
+  private static @NotNull String formatFailed(@NotNull Throwable ex) {
     return "<format failed: " + exceptionName(getMostSpecificCause(ex).getClass()) + '>';
   }
 
@@ -335,7 +344,22 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
-  private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Exception ex) {
+  private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Throwable ex) {
     LOG.warn("Method logging (" + phase + ") failed for method '" + methodDef.methodName + '\'', ex);
+  }
+
+
+  /**
+   * Rethrows {@code throwable} if it is a virtual machine error the application cannot recover from, like an
+   * {@link OutOfMemoryError}. All other throwables are handled as method logging failures, including a
+   * {@link StackOverflowError} (e.g. from a cyclic {@code toString()}) and linkage errors (e.g. from a logging
+   * framework not visible to this library).
+   *
+   * @param throwable  throwable caught while logging, not {@code null}
+   */
+  private static void rethrowIfFatal(@NotNull Throwable throwable)
+  {
+    if (throwable instanceof VirtualMachineError error && !(throwable instanceof StackOverflowError))
+      throw error;
   }
 }

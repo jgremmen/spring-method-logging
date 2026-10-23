@@ -122,6 +122,45 @@ class MethodLoggingInterceptorTest
 
 
   @Test
+  @DisplayName("Stack overflow in parameter/result formatting does not affect method invocation")
+  void formattingStackOverflow()
+  {
+    final var log = new ArrayList<String>();
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> listLogger(log));
+    final var value = new Cyclic();
+
+    assertSame(value, bean.cyclic(value));
+    assertEquals(
+        List.of(
+            "INFO|> cyclic(value=<format failed: StackOverflowError>)",
+            "DEBUG|result = <format failed: StackOverflowError>",
+            "INFO|< cyclic"),
+        log);
+  }
+
+
+  @Test
+  @DisplayName("Method logger raising an error does not affect method invocation")
+  void loggerError()
+  {
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> new MethodLogger() {
+      @Override
+      public void log(@NotNull Level level, String message) {
+        throw new NoClassDefFoundError("ch/qos/logback/classic/Logger");
+      }
+
+      @Override
+      public boolean isLogEnabled(@NotNull Level level) {
+        return true;
+      }
+    });
+
+    assertEquals("Mr. Bean", bean.getName());
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class, () -> bean.exception(314)).getMessage());
+  }
+
+
+  @Test
   @DisplayName("Failing method logger does not affect method invocation")
   void loggerFailure()
   {
@@ -214,6 +253,12 @@ class MethodLoggingInterceptorTest
     public Unprintable unprintable(Unprintable value) {
       return value;
     }
+
+
+    @MethodLogging
+    public Cyclic cyclic(Cyclic value) {
+      return value;
+    }
   }
 
 
@@ -224,6 +269,23 @@ class MethodLoggingInterceptorTest
     @Override
     public String toString() {
       throw new IllegalStateException("unprintable");
+    }
+  }
+
+
+
+
+  /**
+   * Object with a cyclic {@code toString()}, as found in entities with bidirectional associations.
+   */
+  public static final class Cyclic
+  {
+    private final List<Cyclic> children = List.of(this);
+
+
+    @Override
+    public String toString() {
+      return "Cyclic" + children;
     }
   }
 
