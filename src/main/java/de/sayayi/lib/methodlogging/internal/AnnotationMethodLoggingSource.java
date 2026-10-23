@@ -36,6 +36,7 @@ import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.function.SingletonSupplier;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -48,6 +49,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
@@ -91,42 +93,59 @@ import static org.springframework.util.StringUtils.hasLength;
 public final class AnnotationMethodLoggingSource
 {
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
-  final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
-  final @NotNull MessageSupport messageSupport;
-  final @NotNull MethodLoggerFactory methodLoggerFactory;
+  private final @NotNull SingletonSupplier<Configuration> configuration;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
-  // validated configurer defaults
-  private final @NotNull String defaultLoggerFieldName;
-  private final @NotNull Level defaultEntryExitLevel;
-  private final @NotNull Level defaultParameterLevel;
-  private final @NotNull Level defaultResultLevel;
-  private final @NotNull Visibility defaultLineNumber;
 
-
+  /**
+   * Creates a method logging source for the given configurer.
+   *
+   * @param methodLoggingConfigurer  method logging configurer, not {@code null}
+   * @param resourceLoader           resource loader providing the class loader for the default message support,
+   *                                 not {@code null}
+   */
   AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
+                                @NotNull ResourceLoader resourceLoader) {
+    this(() -> methodLoggingConfigurer, resourceLoader);
+  }
+
+
+  /**
+   * Creates a method logging source with a lazily resolved configurer. The configurer is obtained when the first
+   * method with method logging is analyzed, so the configurer bean and its dependencies are not created during the
+   * creation of the method logging infrastructure.
+   *
+   * @param methodLoggingConfigurer  supplier of the method logging configurer, not {@code null}
+   * @param resourceLoader           resource loader providing the class loader for the default message support,
+   *                                 not {@code null}
+   */
+  AnnotationMethodLoggingSource(@NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader)
   {
-    this.methodLoggingConfigurer = methodLoggingConfigurer;
-
-    defaultLoggerFieldName = requireDefault(methodLoggingConfigurer.defaultLoggerFieldName(), "defaultLoggerFieldName");
-    defaultEntryExitLevel = requireDefault(methodLoggingConfigurer.defaultEntryExitLevel(), "defaultEntryExitLevel");
-    defaultParameterLevel = requireDefault(methodLoggingConfigurer.defaultParameterLevel(), "defaultParameterLevel");
-    defaultResultLevel = requireDefault(methodLoggingConfigurer.defaultResultLevel(), "defaultResultLevel");
-    defaultLineNumber = requireDefault(methodLoggingConfigurer.defaultLineNumber(), "defaultLineNumber");
-
-    final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
-    messageSupport = configuredMessageSupport != null
-        ? configuredMessageSupport
-        : MessageSupportFactory.create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
-
-    final var configuredMethodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory();
-    methodLoggerFactory = configuredMethodLoggerFactory != null
-        ? configuredMethodLoggerFactory
-        : new AutoDetectLoggerFactory();
+    configuration = SingletonSupplier.of(() -> new Configuration(methodLoggingConfigurer.get(), resourceLoader));
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
+  }
+
+
+  /**
+   * Returns the message support provided by the configurer or the default message support.
+   *
+   * @return  message support, never {@code null}
+   */
+  @NotNull MessageSupport getMessageSupport() {
+    return configuration.obtain().messageSupport;
+  }
+
+
+  /**
+   * Returns the method logger factory provided by the configurer or the default method logger factory.
+   *
+   * @return  method logger factory, never {@code null}
+   */
+  @NotNull MethodLoggerFactory getMethodLoggerFactory() {
+    return configuration.obtain().methodLoggerFactory;
   }
 
 
@@ -189,15 +208,17 @@ public final class AnnotationMethodLoggingSource
     if (methodLoggingAttributes == null)
       return null;
 
-    final var methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(targetClass);
+    // the configurer is required for methods with method logging only
+    final var config = configuration.obtain();
+    final var methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(config, targetClass);
     final var methodLogging =
         findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
     final var location = findMethodLocation(specificMethod);
     final var loggerField = findLoggerField(targetClass, methodLogging);
 
-    methodLoggerFactory.validate(loggerField, targetClass);
+    config.methodLoggerFactory.validate(loggerField, targetClass);
 
-    return new MethodDef(messageSupport.getMessageAccessor().getMessageFactory(),
+    return new MethodDef(config.messageSupport.getMessageAccessor().getMessageFactory(),
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
         getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method, location,
         methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1, loggerField);
@@ -231,7 +252,7 @@ public final class AnnotationMethodLoggingSource
     final var specificParameters = specificMethod.getParameters();
     final var parameters = method.getParameters();
     final var excludeParameters = asList(methodLogging.exclude());
-    final var messageFactory = messageSupport.getMessageAccessor().getMessageFactory();
+    final var messageFactory = getMessageSupport().getMessageAccessor().getMessageFactory();
 
     for(int p = 0; p < parameterCount; p++)
     {
@@ -265,12 +286,13 @@ public final class AnnotationMethodLoggingSource
   {
     return
         (methodParameterType.toClass().isPrimitive() && !methodParameterType.isArray()) ||
-        !methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
+        !configuration.obtain().methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
   }
 
 
   @Contract(pure = true)
-  private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Class<?> type)
+  private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Configuration config,
+                                                                         @NotNull Class<?> type)
   {
     var attributes =
         findMergedAnnotationAttributes(type, MethodLoggingConfig.class, false, true);
@@ -279,19 +301,19 @@ public final class AnnotationMethodLoggingSource
       attributes = createDefaultMethodLoggingConfigAttributes();
 
     if (DEFAULT_VALUE.equals(attributes.getString("loggerFieldName")))
-      attributes.put("loggerFieldName", defaultLoggerFieldName);
+      attributes.put("loggerFieldName", config.defaultLoggerFieldName);
 
     if (attributes.getEnum("entryExitLevel") == Level.DEFAULT)
-      attributes.put("entryExitLevel", defaultEntryExitLevel);
+      attributes.put("entryExitLevel", config.defaultEntryExitLevel);
 
     if (attributes.getEnum("parameterLevel") == Level.DEFAULT)
-      attributes.put("parameterLevel", defaultParameterLevel);
+      attributes.put("parameterLevel", config.defaultParameterLevel);
 
     if (attributes.getEnum("resultLevel") == Level.DEFAULT)
-      attributes.put("resultLevel", defaultResultLevel);
+      attributes.put("resultLevel", config.defaultResultLevel);
 
     if (attributes.getEnum("lineNumber") == Visibility.DEFAULT)
-      attributes.put("lineNumber", defaultLineNumber);
+      attributes.put("lineNumber", config.defaultLineNumber);
 
     return attributes;
   }
@@ -400,5 +422,47 @@ public final class AnnotationMethodLoggingSource
       }
 
     return null;
+  }
+
+
+
+
+  /**
+   * Configuration provided by the method logging configurer, with validated defaults.
+   */
+  private static final class Configuration
+  {
+    private final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
+    private final @NotNull MessageSupport messageSupport;
+    private final @NotNull MethodLoggerFactory methodLoggerFactory;
+    private final @NotNull String defaultLoggerFieldName;
+    private final @NotNull Level defaultEntryExitLevel;
+    private final @NotNull Level defaultParameterLevel;
+    private final @NotNull Level defaultResultLevel;
+    private final @NotNull Visibility defaultLineNumber;
+
+
+    private Configuration(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
+                          @NotNull ResourceLoader resourceLoader)
+    {
+      this.methodLoggingConfigurer = methodLoggingConfigurer;
+
+      defaultLoggerFieldName =
+          requireDefault(methodLoggingConfigurer.defaultLoggerFieldName(), "defaultLoggerFieldName");
+      defaultEntryExitLevel = requireDefault(methodLoggingConfigurer.defaultEntryExitLevel(), "defaultEntryExitLevel");
+      defaultParameterLevel = requireDefault(methodLoggingConfigurer.defaultParameterLevel(), "defaultParameterLevel");
+      defaultResultLevel = requireDefault(methodLoggingConfigurer.defaultResultLevel(), "defaultResultLevel");
+      defaultLineNumber = requireDefault(methodLoggingConfigurer.defaultLineNumber(), "defaultLineNumber");
+
+      final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
+      messageSupport = configuredMessageSupport != null
+          ? configuredMessageSupport
+          : MessageSupportFactory.create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
+
+      final var configuredMethodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory();
+      methodLoggerFactory = configuredMethodLoggerFactory != null
+          ? configuredMethodLoggerFactory
+          : new AutoDetectLoggerFactory();
+    }
   }
 }

@@ -78,7 +78,7 @@ class AnnotationAttributesTest
 
 
   private @NotNull String format(@NotNull ParameterDef parameterDef, @NotNull String value) {
-    return source.messageSupport.message(parameterDef.formatMessage.get()).with("value", value).format();
+    return source.getMessageSupport().message(parameterDef.formatMessage.get()).with("value", value).format();
   }
 
 

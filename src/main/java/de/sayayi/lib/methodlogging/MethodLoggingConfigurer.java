@@ -34,6 +34,12 @@ import org.springframework.core.ResolvableType;
  * <p>
  * All methods have sensible defaults so that only the settings that need customization have to be overridden.
  * <p>
+ * At most one configurer bean is used. If the application context contains more than one, one of them must be marked
+ * as primary (e.g. with {@code @Primary}); otherwise, the application context fails with a
+ * {@code NoUniqueBeanDefinitionException}. The configurer bean is obtained lazily, when the first method with method
+ * logging is analyzed, so it is not created early together with the method logging infrastructure. The configurer
+ * methods are invoked once.
+ * <p>
  * The configurer provides global defaults for the logger field name, the entry/exit, parameter and result log levels
  * and the line number visibility. All other settings, like the elapsed time, parameter and result visibility, the
  * message formats and the entry/exit prefixes, have no global default; they can only be configured per class with

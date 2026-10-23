@@ -16,8 +16,8 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
+import org.springframework.aop.support.DefaultBeanFactoryPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,22 +45,54 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
       AnnotationMethodLoggingSource annotationMethodLoggingSource,
       MethodLoggingInterceptor methodLoggingInterceptor)
   {
-    final var advisor = new AbstractBeanFactoryPointcutAdvisor() {
-      @Override
-      public @NotNull Pointcut getPointcut()
-      {
-        return new StaticMethodMatcherPointcut() {
-          @Override
-          public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
-            return annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
-          }
-        };
-      }
-    };
+    final var advisor = new DefaultBeanFactoryPointcutAdvisor();
 
+    advisor.setPointcut(new MethodLoggingPointcut(annotationMethodLoggingSource));
     advisor.setAdvice(methodLoggingInterceptor);
     advisor.setOrder(enableMethodLogging.<Integer>getNumber("order"));
 
     return advisor;
+  }
+
+
+
+
+  /**
+   * Pointcut matching the methods with a method logging definition.
+   */
+  static final class MethodLoggingPointcut extends StaticMethodMatcherPointcut
+  {
+    private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
+
+
+    MethodLoggingPointcut(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
+      this.annotationMethodLoggingSource = annotationMethodLoggingSource;
+    }
+
+
+    @Override
+    public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
+      return annotationMethodLoggingSource.getMethodDefinition(method, targetClass) != null;
+    }
+
+
+    @Override
+    public boolean equals(Object o)
+    {
+      return this == o || o instanceof MethodLoggingPointcut that &&
+          annotationMethodLoggingSource == that.annotationMethodLoggingSource;
+    }
+
+
+    @Override
+    public int hashCode() {
+      return annotationMethodLoggingSource.hashCode();
+    }
+
+
+    @Override
+    public String toString() {
+      return getClass().getName() + ": " + annotationMethodLoggingSource;
+    }
   }
 }

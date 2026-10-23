@@ -18,6 +18,7 @@ package de.sayayi.lib.methodlogging.internal;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.Visibility;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class ConfigurerValidationTest
 {
   @Test
   @DisplayName("Logger field name must not be null")
-  void loggerFieldNameNull()
+  void loggerFieldNameNull() throws Exception
   {
     assertInvalid("defaultLoggerFieldName() must not return null", new MethodLoggingConfigurer() {
       @Override public @NotNull String defaultLoggerFieldName() {
@@ -49,7 +50,7 @@ class ConfigurerValidationTest
 
   @Test
   @DisplayName("Entry/exit level must not be null or DEFAULT")
-  void entryExitLevel()
+  void entryExitLevel() throws Exception
   {
     assertInvalid("defaultEntryExitLevel() must not return null", new MethodLoggingConfigurer() {
       @Override public @NotNull Level defaultEntryExitLevel() {
@@ -66,7 +67,7 @@ class ConfigurerValidationTest
 
   @Test
   @DisplayName("Parameter level must not be null or DEFAULT")
-  void parameterLevel()
+  void parameterLevel() throws Exception
   {
     assertInvalid("defaultParameterLevel() must not return null", new MethodLoggingConfigurer() {
       @Override public @NotNull Level defaultParameterLevel() {
@@ -83,7 +84,7 @@ class ConfigurerValidationTest
 
   @Test
   @DisplayName("Result level must not be null or DEFAULT")
-  void resultLevel()
+  void resultLevel() throws Exception
   {
     assertInvalid("defaultResultLevel() must not return null", new MethodLoggingConfigurer() {
       @Override public @NotNull Level defaultResultLevel() {
@@ -100,7 +101,7 @@ class ConfigurerValidationTest
 
   @Test
   @DisplayName("Line number visibility must not be null or DEFAULT")
-  void lineNumber()
+  void lineNumber() throws Exception
   {
     assertInvalid("defaultLineNumber() must not return null", new MethodLoggingConfigurer() {
       @Override public @NotNull Visibility defaultLineNumber() {
@@ -116,8 +117,23 @@ class ConfigurerValidationTest
 
 
   private static void assertInvalid(@NotNull String message, @NotNull MethodLoggingConfigurer configurer)
+      throws NoSuchMethodException
   {
+    final var source = new AnnotationMethodLoggingSource(configurer, new DefaultResourceLoader());
+    final var method = Bean.class.getMethod("logged");
+
+    // the configurer is validated when the first method with method logging is analyzed
     assertEquals("MethodLoggingConfigurer#" + message, assertThrowsExactly(IllegalStateException.class,
-        () -> new AnnotationMethodLoggingSource(configurer, new DefaultResourceLoader())).getMessage());
+        () -> source.getMethodDefinition(method, Bean.class)).getMessage());
+  }
+
+
+
+
+  public static class Bean
+  {
+    @MethodLogging
+    public void logged() {
+    }
   }
 }

@@ -15,9 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
-import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
@@ -56,16 +54,9 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
-  private final MessageSupport messageSupport;
-  private final MethodLoggerFactory methodLoggerFactory;
 
-
-  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource)
-  {
+  MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
-
-    messageSupport = annotationMethodLoggingSource.messageSupport;
-    methodLoggerFactory = annotationMethodLoggingSource.methodLoggerFactory;
   }
 
 
@@ -120,7 +111,9 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
                                               @NotNull Class<?> type)
   {
     try {
-      final var methodLogger = methodLoggerFactory.from(methodDef.loggerField, obj, type);
+      final var methodLogger = annotationMethodLoggingSource
+          .getMethodLoggerFactory()
+          .from(methodDef.loggerField, obj, type);
 
       return methodLogger.isLogEnabled(methodDef.entryExitLevel) ? methodLogger : null;
     } catch(Exception ex) {
@@ -167,7 +160,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodDef methodDef,
                                                          @NotNull ParameterDef parameterDef, Object value)
   {
-    return messageSupport
+    return annotationMethodLoggingSource
+        .getMessageSupport()
         .message(methodDef.inlineParameterMessage.get())
         .with("parameter", parameterDef.name)
         .with("value", formatParameterValue(parameterDef, value))
@@ -179,7 +173,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
                                                    @NotNull ParameterDef parameterDef,
                                                    Object value)
   {
-    return messageSupport
+    return annotationMethodLoggingSource
+        .getMessageSupport()
         .message(methodDef.parameterMessage.get())
         .with("parameter", parameterDef.name)
         .with("value", formatParameterValue(parameterDef, value))
@@ -190,7 +185,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private @NotNull String formatParameterValue(@NotNull ParameterDef parameterDef, Object value)
   {
     try {
-      return messageSupport
+      return annotationMethodLoggingSource
+          .getMessageSupport()
           .message(parameterDef.formatMessage.get())
           .with("value", value)
           .format();
@@ -294,8 +290,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
       if (methodLogger.isLogEnabled(resultLevel))
       {
-        final var resultMessage = methodDef.resultMessage.get();
-        final var messageConfigurer = messageSupport.message(resultMessage);
+        final var messageConfigurer = annotationMethodLoggingSource
+            .getMessageSupport()
+            .message(methodDef.resultMessage.get());
+
         String message;
 
         try {

@@ -17,7 +17,7 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportAware;
@@ -32,7 +32,7 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 /**
  * Base configuration providing the beans shared by the proxy and AspectJ based method logging: the
  * {@link AnnotationMethodLoggingSource} and the {@link MethodLoggingInterceptor}. A {@link MethodLoggingConfigurer}
- * bean is optional; without it, the configurer defaults are used.
+ * bean is optional; without it, the configurer defaults are used. The configurer bean is resolved lazily.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -64,13 +64,11 @@ public abstract class MethodLoggingConfiguration implements ImportAware
 
   @Bean @Role(ROLE_INFRASTRUCTURE)
   AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
-      @Autowired(required = false) MethodLoggingConfigurer methodLoggingConfigurer,
-      ResourceLoader resourceLoader)
+      ObjectProvider<MethodLoggingConfigurer> methodLoggingConfigurer, ResourceLoader resourceLoader)
   {
+    // resolve the configurer lazily, so it is not created together with the method logging infrastructure
     return new AnnotationMethodLoggingSource(
-        methodLoggingConfigurer == null
-            ? new MethodLoggingConfigurer() {}
-            : methodLoggingConfigurer,
+        () -> methodLoggingConfigurer.getIfAvailable(() -> new MethodLoggingConfigurer() {}),
         resourceLoader);
   }
 
