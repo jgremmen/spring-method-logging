@@ -104,9 +104,9 @@ test {
 }
 
 
-// classpath like the given classpath, with the Spring Framework version forced to the given version range
-def springClasspath = { String classpathName, String springVersion, Configuration classpath,
-                        List<Configuration> declarations ->
+// classpath like the given classpath, with the versions of the given groups forced to the given version ranges
+def forcedVersionClasspath = { String classpathName, Map<String,String> groupVersions, Configuration classpath,
+                               List<Configuration> declarations ->
   configurations.create(classpathName) {
     canBeConsumed = false
     extendsFrom(*declarations)
@@ -119,12 +119,12 @@ def springClasspath = { String classpathName, String springVersion, Configuratio
 
     resolutionStrategy {
       eachDependency {
-        if (requested.group == 'org.springframework')
-          useVersion springVersion
+        if (groupVersions.containsKey(requested.group))
+          useVersion groupVersions[requested.group]
       }
 
       componentSelection.all {
-        if (candidate.group == 'org.springframework' && candidate.version =~ /-(M|RC)\d+$/)
+        if (groupVersions.containsKey(candidate.group) && candidate.version =~ /-(M|RC)\d+$/)
           reject('pre-release')
       }
     }
@@ -133,24 +133,34 @@ def springClasspath = { String classpathName, String springVersion, Configuratio
 
 
 def springTaskVersions = [
-  spring6: '[6.0.0,7.0.0)',
-  spring7: '[7.0.0,8.0.0)'
+  spring6: [
+    description: 'Spring Framework 6',
+    groupVersions: [ 'org.springframework': '[6.0.0,7.0.0)' ]
+  ],
+  spring7: [
+    description: 'Spring Framework 7 and Logback 1.5',
+    groupVersions: [
+        'org.springframework': '[7.0.0,8.0.0)',
+        'ch.qos.logback': '[1.5.0,1.6.0)'
+    ]
+  ]
 ]
 
-def springTests = springTaskVersions.collect { name, springVersion ->
-  def springRuntimeClasspath = springClasspath(
+def springTests = springTaskVersions.collect { name, springTask ->
+  def groupVersions = springTask.groupVersions as Map<String,String>
+  def springRuntimeClasspath = forcedVersionClasspath(
       "${name}RuntimeClasspath",
-      springVersion,
+      groupVersions,
       configurations.runtimeClasspath,
       [ configurations.implementation, configurations.runtimeOnly ])
-  def springTestRuntimeClasspath = springClasspath(
+  def springTestRuntimeClasspath = forcedVersionClasspath(
       "${name}TestRuntimeClasspath",
-      springVersion,
+      groupVersions,
       configurations.testRuntimeClasspath,
       [ configurations.testImplementation, configurations.testRuntimeOnly ])
 
   tasks.register("test${name.capitalize()}", Test) {
-    description = "Runs the tests with Spring Framework ${name.substring(6)}."
+    description = "Runs the tests with ${springTask.description}."
     group = 'verification'
 
     testClassesDirs = sourceSets.test.output.classesDirs
