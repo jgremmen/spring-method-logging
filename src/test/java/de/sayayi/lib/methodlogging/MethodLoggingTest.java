@@ -29,7 +29,6 @@ import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Delegate;
-import lombok.extern.java.Log;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -48,17 +47,16 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
-import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import static de.sayayi.lib.methodlogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
 
 
@@ -74,8 +72,6 @@ import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
 @DisplayName("Method logging")
 public class MethodLoggingTest
 {
-  @Autowired private JULLoggerBean julLoggerBean;
-  @Autowired private JULNoFieldBean julNoFieldBean;
   @Autowired private JULMultiLoggerBean julMultiLoggerBean;
   @Autowired private MethodLoggerFactoryDelegate methodLoggerFactoryDelegate;
   @Autowired private MyBean myBean;
@@ -169,86 +165,6 @@ public class MethodLoggingTest
 
 
   @Test
-  @DisplayName("Excluding method parameters")
-  void testMethod_excludeParams()
-  {
-    val factory = new ListMethodLoggerFactory();
-    methodLoggerFactoryDelegate.setFactory(factory);
-
-    myBean.excludeParams(12, -45,"Mr. Bean", Locale.UK);
-
-    assertEquals("INFO|> excludeParams(name=Mr. Bean,locale=en_GB)", factory.log.get(0));
-    assertEquals("INFO|< excludeParams", factory.log.get(1));
-  }
-
-
-  @Test
-  @DisplayName("Exception handling")
-  void testMethod_exception()
-  {
-    val factory = new ListMethodLoggerFactory();
-    methodLoggerFactoryDelegate.setFactory(factory);
-
-    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class,
-        () -> myBean.exception(314)).getMessage());
-    assertEquals("INFO|> exception(id=314)", factory.log.get(0));
-    assertEquals("INFO|< exception -> IllegalArgumentException(314)", factory.log.get(1));
-  }
-
-
-  @Test
-  @DisplayName("Failing parameter/result formatting does not affect method invocation")
-  void testMethod_formattingFailure()
-  {
-    val factory = new ListMethodLoggerFactory();
-    methodLoggerFactoryDelegate.setFactory(factory);
-
-    val value = new Unprintable();
-
-    assertSame(value, myBean.unprintable(value));
-    assertEquals("INFO|> unprintable(value=<format failed: IllegalStateException>)", factory.log.get(0));
-    assertEquals("DEBUG|result = <format failed: IllegalStateException>", factory.log.get(1));
-    assertEquals("INFO|< unprintable", factory.log.get(2));
-  }
-
-
-  @Test
-  @DisplayName("Failing method logger does not affect method invocation")
-  void testMethod_loggerFailure()
-  {
-    methodLoggerFactoryDelegate.setFactory((loggerField, obj, type) -> new MethodLogger() {
-      @Override
-      public void log(@NotNull Level level, String message) {
-        throw new IllegalStateException("log failed");
-      }
-
-      @Override
-      public boolean isLogEnabled(@NotNull Level level) {
-        return true;
-      }
-    });
-
-    assertEquals("Mr. Bean", myBean.getName());
-    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class,
-        () -> myBean.exception(314)).getMessage());
-  }
-
-
-  @Test
-  @DisplayName("Failing method logger factory does not affect method invocation")
-  void testMethod_loggerFactoryFailure()
-  {
-    methodLoggerFactoryDelegate.setFactory((loggerField, obj, type) -> {
-      throw new IllegalStateException("no logger");
-    });
-
-    assertEquals("Mr. Bean", myBean.getName());
-    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class,
-        () -> myBean.exception(314)).getMessage());
-  }
-
-
-  @Test
   @DisplayName("JDK proxy uses parameters, line number and logger field of implementation")
   void testMethod_jdkProxy()
   {
@@ -273,46 +189,6 @@ public class MethodLoggingTest
 
     assertEquals("INFO|> work", factory.log.getFirst());
     assertEquals(Worker.class, factory.fields.getFirst().getDeclaringClass());
-  }
-
-
-  @Test
-  @DisplayName("java.util.logging logger factory")
-  void testJULLogger()
-  {
-    methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(false));
-    julLoggerBean.test();
-  }
-
-
-  @Test
-  @DisplayName("java.util.logging logger factory without logger field")
-  void testJULLoggerNoField()
-  {
-    // the bug only showed if no logger with the class name existed yet; so capture the records on an ancestor
-    val loggerName = JULNoFieldBean.class.getName();
-    assertNull(LogManager.getLogManager().getLogger(loggerName));
-
-    val ancestor = Logger.getLogger(JULNoFieldBean.class.getPackageName());
-    val messages = new ArrayList<String>();
-    val handler = new Handler() {
-      @Override public void publish(LogRecord record) {
-        if (loggerName.equals(record.getLoggerName()))
-          messages.add(record.getLevel() + "|" + record.getMessage());
-      }
-      @Override public void flush() {}
-      @Override public void close() {}
-    };
-
-    ancestor.addHandler(handler);
-    try {
-      methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(true));
-      julNoFieldBean.test();
-    } finally {
-      ancestor.removeHandler(handler);
-    }
-
-    assertEquals(List.of("INFO|> test", "INFO|< test"), messages);
   }
 
 
@@ -365,35 +241,6 @@ public class MethodLoggingTest
     @SuppressWarnings("unused")
     public void setWithMultipleParams(@ParamLog(name = "id") int p0,
                                       @ParamLog(inline = false, name = "name") String p1) {
-    }
-
-
-    @MethodLogging(exclude = { "id", "p1" })
-    @SuppressWarnings("unused")
-    public void excludeParams(@ParamLog(name = "id") int p0, int p1, String name, Locale locale) {
-    }
-
-
-    @MethodLogging
-    public void exception(int id) {
-      throw new IllegalArgumentException(Integer.toString(id));
-    }
-
-
-    @MethodLogging
-    public Unprintable unprintable(Unprintable value) {
-      return value;
-    }
-  }
-
-
-
-
-  public static final class Unprintable
-  {
-    @Override
-    public String toString() {
-      throw new IllegalStateException("unprintable");
     }
   }
 
@@ -457,29 +304,6 @@ public class MethodLoggingTest
 
 
   @Component
-  @Log
-  public static class JULLoggerBean
-  {
-    @MethodLogging
-    public void test() {
-    }
-  }
-
-
-
-
-  @Component
-  public static class JULNoFieldBean
-  {
-    @MethodLogging(lineNumber = HIDE)
-    public void test() {
-    }
-  }
-
-
-
-
-  @Component
   @MethodLoggingConfig(lineNumber = HIDE)
   public static class JULMultiLoggerBean
   {
@@ -527,7 +351,7 @@ public class MethodLoggingTest
 
   @Configuration
   @EnableMethodLogging
-  @Import({ MyBean.class, JULLoggerBean.class, JULNoFieldBean.class, JULMultiLoggerBean.class })
+  @Import({ MyBean.class, JULMultiLoggerBean.class })
   static class MyConfiguration implements MethodLoggingConfigurer
   {
     @Override

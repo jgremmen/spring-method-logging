@@ -15,19 +15,25 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -82,6 +88,143 @@ class MethodLoggingInterceptorTest
     final var proxy = (Supplier<String>)proxyFactory.getProxy();
 
     assertEquals("result", proxy.get());
+  }
+
+
+  @Test
+  @DisplayName("Exception is passed on and logged on exit")
+  void exception()
+  {
+    final var log = new ArrayList<String>();
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> listLogger(log));
+
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class, () -> bean.exception(314)).getMessage());
+    assertEquals(List.of("INFO|> exception(id=314)", "INFO|< exception -> IllegalArgumentException(314)"), log);
+  }
+
+
+  @Test
+  @DisplayName("Failing parameter/result formatting does not affect method invocation")
+  void formattingFailure()
+  {
+    final var log = new ArrayList<String>();
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> listLogger(log));
+    final var value = new Unprintable();
+
+    assertSame(value, bean.unprintable(value));
+    assertEquals(
+        List.of(
+            "INFO|> unprintable(value=<format failed: IllegalStateException>)",
+            "DEBUG|result = <format failed: IllegalStateException>",
+            "INFO|< unprintable"),
+        log);
+  }
+
+
+  @Test
+  @DisplayName("Failing method logger does not affect method invocation")
+  void loggerFailure()
+  {
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> new MethodLogger() {
+      @Override
+      public void log(@NotNull Level level, String message) {
+        throw new IllegalStateException("log failed");
+      }
+
+      @Override
+      public boolean isLogEnabled(@NotNull Level level) {
+        return true;
+      }
+    });
+
+    assertEquals("Mr. Bean", bean.getName());
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class, () -> bean.exception(314)).getMessage());
+  }
+
+
+  @Test
+  @DisplayName("Failing method logger factory does not affect method invocation")
+  void loggerFactoryFailure()
+  {
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> {
+      throw new IllegalStateException("no logger");
+    });
+
+    assertEquals("Mr. Bean", bean.getName());
+    assertEquals("314", assertThrowsExactly(IllegalArgumentException.class, () -> bean.exception(314)).getMessage());
+  }
+
+
+  /**
+   * Creates a class based proxy for {@code target}, logging with the given method logger factory.
+   */
+  @SuppressWarnings("unchecked")
+  private static <T> @NotNull T proxy(@NotNull T target, @NotNull MethodLoggerFactory methodLoggerFactory)
+  {
+    final var proxyFactory = new ProxyFactory(target);
+
+    proxyFactory.setProxyTargetClass(true);
+    proxyFactory.addAdvice(new MethodLoggingInterceptor(new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public MethodLoggerFactory methodLoggerFactory() {
+            return methodLoggerFactory;
+          }
+        },
+        new DefaultResourceLoader())));
+
+    return (T)proxyFactory.getProxy();
+  }
+
+
+  private static @NotNull MethodLogger listLogger(@NotNull List<String> log)
+  {
+    return new MethodLogger() {
+      @Override
+      public void log(@NotNull Level level, String message) {
+        log.add(level.name() + '|' + message);
+      }
+
+      @Override
+      public boolean isLogEnabled(@NotNull Level level) {
+        return true;
+      }
+    };
+  }
+
+
+
+
+  @MethodLoggingConfig(lineNumber = HIDE)
+  public static class Bean
+  {
+    @MethodLogging
+    public String getName() {
+      return "Mr. Bean";
+    }
+
+
+    @MethodLogging
+    public void exception(int id) {
+      throw new IllegalArgumentException(Integer.toString(id));
+    }
+
+
+    @MethodLogging
+    public Unprintable unprintable(Unprintable value) {
+      return value;
+    }
+  }
+
+
+
+
+  public static final class Unprintable
+  {
+    @Override
+    public String toString() {
+      throw new IllegalStateException("unprintable");
+    }
   }
 
 

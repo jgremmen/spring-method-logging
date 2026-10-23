@@ -21,8 +21,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static de.sayayi.lib.methodlogging.Level.INFO;
 import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -76,6 +82,48 @@ class LoggerFactoryTest
     assertSame(NO_OP, factory.from(field(ObjectFields.class, "system"), bean, ObjectFields.class));
     assertSame(NO_OP, JULLogger.of(null));
     assertSame(NO_OP, Slf4jLogger.of("logger"));
+  }
+
+
+  @Test
+  @DisplayName("java.util.logging logger factory uses the logger field")
+  void julLoggerField() throws Exception
+  {
+    assertInstanceOf(JULLogger.class,
+        JULLoggerFactory.strict().from(field(TypedFields.class, "jul"), new TypedFields(), TypedFields.class));
+  }
+
+
+  @Test
+  @DisplayName("java.util.logging logger factory without logger field")
+  void julWithoutLoggerField()
+  {
+    // the bug only showed if no logger with the class name existed yet; so capture the records on an ancestor
+    final var loggerName = NoLoggerField.class.getName();
+    assertNull(LogManager.getLogManager().getLogger(loggerName));
+
+    final var ancestor = Logger.getLogger(NoLoggerField.class.getPackageName());
+    final var messages = new ArrayList<String>();
+    final var handler = new Handler() {
+      @Override public void publish(LogRecord record) {
+        if (loggerName.equals(record.getLoggerName()))
+          messages.add(record.getLevel() + "|" + record.getMessage());
+      }
+      @Override public void flush() {}
+      @Override public void close() {}
+    };
+
+    ancestor.addHandler(handler);
+    try {
+      final var methodLogger = JULLoggerFactory.withFallback().from(null, new NoLoggerField(), NoLoggerField.class);
+
+      assertTrue(methodLogger.isLogEnabled(INFO));
+      methodLogger.log(INFO, "> test");
+    } finally {
+      ancestor.removeHandler(handler);
+    }
+
+    assertEquals(List.of("INFO|> test"), messages);
   }
 
 
@@ -135,6 +183,12 @@ class LoggerFactoryTest
     private Object logback = new LoggerContext().getLogger("logger-factory-test");
     private Object unsupported = "not a logger";
     private Object none = null;
+  }
+
+
+
+
+  static final class NoLoggerField {
   }
 
 
