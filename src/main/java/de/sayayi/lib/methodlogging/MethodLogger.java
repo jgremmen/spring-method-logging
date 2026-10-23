@@ -58,6 +58,26 @@ public interface MethodLogger
 
 
   /**
+   * Log a message with a specific level and the source location of the logged method to the underlying logging
+   * framework.
+   * <p>
+   * Logging frameworks supporting an explicit source location use {@code location} for location-aware output, like
+   * class, method, file and line number patterns. Otherwise, the location of the method logging implementation is
+   * reported. The default implementation ignores the location and invokes {@link #log(Level, String)}.
+   *
+   * @param level     logging level, never {@code null} or {@link Level#DEFAULT}
+   * @param message   message to log, never {@code null}
+   * @param location  source location of the logged method, never {@code null}. The file name is {@code null} and the
+   *                  line number is negative, if not available
+   *
+   * @since 0.5.1
+   */
+  default void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
+    log(level, message);
+  }
+
+
+  /**
    * Checks whether logging for messages with {@code level} is enabled.
    *
    * @param level  logging level to check for, never {@code null} or {@link Level#DEFAULT}

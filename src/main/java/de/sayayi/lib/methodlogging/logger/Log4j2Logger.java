@@ -63,6 +63,12 @@ final class Log4j2Logger implements MethodLogger
 
 
   @Override
+  public void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
+    logger.atLevel(LEVELS[level.ordinal()]).withLocation(location).log(message);
+  }
+
+
+  @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isEnabled(LEVELS[level.ordinal()]);
   }

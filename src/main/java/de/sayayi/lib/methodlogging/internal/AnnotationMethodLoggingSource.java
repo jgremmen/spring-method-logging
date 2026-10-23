@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
 import static java.util.Arrays.asList;
@@ -90,11 +91,24 @@ public final class AnnotationMethodLoggingSource
   final @NotNull MessageSupport messageSupport;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
+  // validated configurer defaults
+  private final @NotNull String defaultLoggerFieldName;
+  private final @NotNull Level defaultEntryExitLevel;
+  private final @NotNull Level defaultParameterLevel;
+  private final @NotNull Level defaultResultLevel;
+  private final @NotNull Visibility defaultLineNumber;
+
 
   AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader)
   {
     this.methodLoggingConfigurer = methodLoggingConfigurer;
+
+    defaultLoggerFieldName = requireDefault(methodLoggingConfigurer.defaultLoggerFieldName(), "defaultLoggerFieldName");
+    defaultEntryExitLevel = requireDefault(methodLoggingConfigurer.defaultEntryExitLevel(), "defaultEntryExitLevel");
+    defaultParameterLevel = requireDefault(methodLoggingConfigurer.defaultParameterLevel(), "defaultParameterLevel");
+    defaultResultLevel = requireDefault(methodLoggingConfigurer.defaultResultLevel(), "defaultResultLevel");
+    defaultLineNumber = requireDefault(methodLoggingConfigurer.defaultLineNumber(), "defaultLineNumber");
 
     final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
     messageSupport = configuredMessageSupport != null
@@ -103,6 +117,29 @@ public final class AnnotationMethodLoggingSource
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
+  }
+
+
+  /**
+   * Validates a default value provided by the method logging configurer.
+   *
+   * @param value       default value returned by the configurer
+   * @param methodName  name of the configurer method, not {@code null}
+   *
+   * @return  {@code value}, never {@code null}
+   *
+   * @throws IllegalStateException  if {@code value} is {@code null} or {@code DEFAULT}
+   */
+  @Contract(value = "null, _ -> fail", pure = true)
+  private static <T> @NotNull T requireDefault(T value, @NotNull String methodName)
+  {
+    if (value == null || value == Level.DEFAULT || value == Visibility.DEFAULT)
+    {
+      throw new IllegalStateException("MethodLoggingConfigurer#" + methodName + "() must not return " +
+          (value == null ? "null" : "DEFAULT"));
+    }
+
+    return value;
   }
 
 
@@ -145,11 +182,12 @@ public final class AnnotationMethodLoggingSource
     final var methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(targetClass);
     final var methodLogging =
         findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
+    final var location = findMethodLocation(specificMethod);
 
     return new MethodDef(messageSupport.getMessageAccessor().getMessageFactory(),
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
-        getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method,
-        methodLogging.lineNumber() == SHOW ? findMethodLineNumber(specificMethod) : -1,
+        getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method, location,
+        methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1,
         findLoggerField(targetClass, methodLogging));
   }
 
@@ -229,19 +267,19 @@ public final class AnnotationMethodLoggingSource
       attributes = createDefaultMethodLoggingConfigAttributes();
 
     if ("<DEFAULT>".equals(attributes.getString("loggerFieldName")))
-      attributes.put("loggerFieldName", methodLoggingConfigurer.defaultLoggerFieldName());
+      attributes.put("loggerFieldName", defaultLoggerFieldName);
 
     if (attributes.getEnum("entryExitLevel") == Level.DEFAULT)
-      attributes.put("entryExitLevel", methodLoggingConfigurer.defaultEntryExitLevel());
+      attributes.put("entryExitLevel", defaultEntryExitLevel);
 
     if (attributes.getEnum("parameterLevel") == Level.DEFAULT)
-      attributes.put("parameterLevel", methodLoggingConfigurer.defaultParameterLevel());
+      attributes.put("parameterLevel", defaultParameterLevel);
 
     if (attributes.getEnum("resultLevel") == Level.DEFAULT)
-      attributes.put("resultLevel", methodLoggingConfigurer.defaultResultLevel());
+      attributes.put("resultLevel", defaultResultLevel);
 
     if (attributes.getEnum("lineNumber") == Visibility.DEFAULT)
-      attributes.put("lineNumber", methodLoggingConfigurer.defaultLineNumber());
+      attributes.put("lineNumber", defaultLineNumber);
 
     return attributes;
   }
@@ -278,13 +316,19 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Determines the source location of {@code method}: its declaring class, name, source file and the line of the
+   * first statement. Source file and line are taken from the class file and are {@code null} and {@code -1}
+   * respectively, if not available.
+   */
   @Contract(pure = true)
-  private int findMethodLineNumber(@NotNull Method method)
+  private @NotNull StackTraceElement findMethodLocation(@NotNull Method method)
   {
     final var declaringClass = method.getDeclaringClass();
     final var classResourceName = declaringClass.getName().replace('.', '/') + ".class";
     final var methodDescriptor = method.getName().concat(Type.getMethodDescriptor(method));
 
+    final var sourceFile = new AtomicReference<String>();
     final var lineNumber = new AtomicInteger(-1);
     final var methodVisitor = new MethodVisitor(ASM_VERSION) {
       @Override
@@ -295,17 +339,24 @@ public final class AnnotationMethodLoggingSource
 
     try(var classInputStream = requireNonNull(
         declaringClass.getClassLoader().getResourceAsStream(classResourceName))) {
-      new ClassReader(classInputStream).accept(new ClassVisitor(ASM_VERSION) {
-        @Override
-        public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] ex) {
-          return methodDescriptor.equals(name.concat(descriptor)) ? methodVisitor : null;
-        }
-      }, SKIP_FRAMES);
+      new ClassReader(classInputStream).accept(
+          new ClassVisitor(ASM_VERSION) {
+            @Override
+            public void visitSource(String source, String debug) {
+              sourceFile.set(source);
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] ex) {
+              return methodDescriptor.equals(name.concat(descriptor)) ? methodVisitor : null;
+            }
+          },
+          SKIP_FRAMES);
     } catch(IOException | RuntimeException ignored) {
       // class file not available or not readable by ASM (e.g. unsupported class file version)
     }
 
-    return lineNumber.get();
+    return new StackTraceElement(declaringClass.getName(), method.getName(), sourceFile.get(), lineNumber.get());
   }
 
 

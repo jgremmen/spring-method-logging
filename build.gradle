@@ -84,6 +84,9 @@ compileTestJava {
 test {
   useJUnitPlatform()
 
+  // provider for log4j-api
+  systemProperty 'log4j2.loggerContextFactory', 'org.apache.logging.log4j.simple.SimpleLoggerContextFactory'
+
   // module path used by ModulePathTest
   doFirst {
     systemProperty 'methodlogging.modulePath',
@@ -130,6 +133,8 @@ dependencies {
   testImplementation libs.junit.jupiter.params
   testImplementation libs.spring.test
   testImplementation libs.aspectj.tools
+  testImplementation libs.log4j.api
+  testImplementation libs.logback.classic
 
   testRuntimeOnly libs.aspectj.weaver
 

@@ -146,13 +146,13 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       if (methodDef.line > 0)
         method.append(':').append(methodDef.line);
 
-      methodLogger.log(methodDef.entryExitLevel, method.toString());
+      methodLogger.log(methodDef.entryExitLevel, method.toString(), methodDef.location);
 
       if (printParameters && !methodDef.inMethodParameters.isEmpty())
         for(var parameterDef: methodDef.inMethodParameters)
         {
           methodLogger.log(methodDef.parameterLevel,
-              logMethodEntry_parameter(methodDef, parameterDef, arguments[parameterDef.index]));
+              logMethodEntry_parameter(methodDef, parameterDef, arguments[parameterDef.index]), methodDef.location);
         }
     } catch(Exception ex) {
       logFailure(methodDef, "entry", ex);
@@ -223,7 +223,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
           exit.append('(').append(msg).append(')');
       }
 
-      methodLogger.log(methodDef.entryExitLevel, exit.toString());
+      methodLogger.log(methodDef.entryExitLevel, exit.toString(), methodDef.location);
     } catch(Exception ex) {
       logFailure(methodDef, "exit", ex);
     }
@@ -301,7 +301,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
           message = messageConfigurer.with("result", formatFailed(ex)).format();
         }
 
-        methodLogger.log(resultLevel, message);
+        methodLogger.log(resultLevel, message, methodDef.location);
       }
     } catch(Exception ex) {
       logFailure(methodDef, "result", ex);

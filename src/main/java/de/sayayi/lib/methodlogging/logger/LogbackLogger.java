@@ -16,6 +16,7 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.LoggingEvent;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import org.jetbrains.annotations.Contract;
@@ -58,6 +59,31 @@ final class LogbackLogger implements MethodLogger
       case TRACE -> logger.trace(message);
       case DEBUG -> logger.debug(message);
       case INFO -> logger.info(message);
+    }
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The location is passed to Logback as caller data of the logging event.
+   */
+  @Override
+  public void log(@NotNull Level level, String message, @NotNull StackTraceElement location)
+  {
+    final var logbackLevel = switch(level) {
+      case TRACE -> ch.qos.logback.classic.Level.TRACE;
+      case DEBUG -> ch.qos.logback.classic.Level.DEBUG;
+      case INFO -> ch.qos.logback.classic.Level.INFO;
+      default -> null;
+    };
+
+    if (logbackLevel != null && logger.isEnabledFor(logbackLevel))
+    {
+      final var event = new LoggingEvent(LogbackLogger.class.getName(), logger, logbackLevel, message, null, null);
+      event.setCallerData(new StackTraceElement[] { location });
+
+      logger.callAppenders(event);
     }
   }
 

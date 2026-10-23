@@ -58,6 +58,17 @@ final class JULLogger implements MethodLogger
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * JUL records the class and method name of the location; the line number is not supported.
+   */
+  @Override
+  public void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
+    logger.logp(LEVELS[level.ordinal()], location.getClassName(), location.getMethodName(), message);
+  }
+
+
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isLoggable(LEVELS[level.ordinal()]);

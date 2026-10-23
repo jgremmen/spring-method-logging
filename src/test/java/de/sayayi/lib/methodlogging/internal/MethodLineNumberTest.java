@@ -51,6 +51,12 @@ class MethodLineNumberTest
             .getMethodDefinition(Bean.class.getMethod("logged"), Bean.class);
 
     assertTrue(requireNonNull(methodDef).line > 0);
+
+    // the source location passed to method loggers
+    assertEquals(Bean.class.getName(), methodDef.location.getClassName());
+    assertEquals("logged", methodDef.location.getMethodName());
+    assertEquals("MethodLineNumberTest.java", methodDef.location.getFileName());
+    assertEquals(methodDef.line, methodDef.location.getLineNumber());
   }
 
 

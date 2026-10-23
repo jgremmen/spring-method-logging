@@ -55,6 +55,8 @@ final class MethodDef
   final Supplier<Message> resultMessage;
   final String methodName;
   final int line;
+  /** Source location of the method, passed to the method logger. */
+  final @NotNull StackTraceElement location;
   final boolean showElapsedTime;
   final boolean showResult;
   final Field loggerField;
@@ -65,7 +67,7 @@ final class MethodDef
 
   MethodDef(final @NotNull MessageFactory messageFactory, @NotNull MethodLoggingConfig methodLoggingConfig,
             @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging, @NotNull Method method,
-            int line, Field loggerField)
+            @NotNull StackTraceElement location, int line, Field loggerField)
   {
     methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
     methodExitPrefix = methodLoggingConfig.methodExitPrefix();
@@ -80,6 +82,7 @@ final class MethodDef
     ((ArrayList<ParameterDef>)inMethodParameters).trimToSize();
 
     this.loggerField = loggerField;
+    this.location = location;
     this.line = line;
 
     methodName = method.getName();

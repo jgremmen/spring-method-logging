@@ -71,7 +71,7 @@ public interface MethodLoggingConfigurer
    * type of the logger field. If no logger field is available, it falls back to a JCL (Java Commons Logging) based
    * logger.
    *
-   * @return  Method logger factory or {@code null}
+   * @return  Method logger factory or {@code null} to use the default method logger factory
    *
    * @see MethodLogger
    */
@@ -86,6 +86,8 @@ public interface MethodLoggingConfigurer
    * <p>
    * This value can be overridden on a class level (see {@link MethodLoggingConfig#loggerFieldName()}) or on a method
    * level (see {@link MethodLogging#loggerFieldName()}).
+   * <p>
+   * An empty name disables the logger field lookup, so the method logger factory is invoked without logger field.
    *
    * @return  logger field name, never {@code null}
    */
@@ -128,7 +130,7 @@ public interface MethodLoggingConfigurer
    * @since 0.2.1
    */
   @Contract(pure = true)
-  default Level defaultEntryExitLevel() {
+  default @NotNull Level defaultEntryExitLevel() {
     return Level.INFO;
   }
 
@@ -147,7 +149,7 @@ public interface MethodLoggingConfigurer
    * @since 0.2.1
    */
   @Contract(pure = true)
-  default Level defaultParameterLevel() {
+  default @NotNull Level defaultParameterLevel() {
     return Level.DEBUG;
   }
 
@@ -164,7 +166,7 @@ public interface MethodLoggingConfigurer
    * @since 0.2.1
    */
   @Contract(pure = true)
-  default Level defaultResultLevel() {
+  default @NotNull Level defaultResultLevel() {
     return Level.DEBUG;
   }
 
@@ -173,12 +175,13 @@ public interface MethodLoggingConfigurer
    * Returns the default visibility for the method line number. This value is used when neither
    * {@link MethodLoggingConfig#lineNumber()} nor {@link MethodLogging#lineNumber()} specifies an explicit visibility.
    *
-   * @return  default line number visibility, never {@code null}. The default is {@link Visibility#SHOW}
+   * @return  default line number visibility, never {@code null} or {@link Visibility#DEFAULT}. The default is
+   *          {@link Visibility#SHOW}
    *
    * @since 0.2.1
    */
   @Contract(pure = true)
-  default Visibility defaultLineNumber() {
+  default @NotNull Visibility defaultLineNumber() {
     return Visibility.SHOW;
   }
 }

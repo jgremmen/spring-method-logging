@@ -72,7 +72,7 @@ public @interface MethodLoggingConfig
    * the contents of the field.
    * <p>
    * If the field contains {@code null} or an object not supported by the method logger factory, the method is not
-   * logged.
+   * logged. An empty name disables the logger field lookup.
    *
    * @return  logger field name
    *
