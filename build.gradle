@@ -119,8 +119,8 @@ dependencies {
 
   ajc libs.aspectj.tools
 
-  implementation libs.spring.context
-  implementation libs.message.format
+  api libs.spring.context
+  api libs.message.format
 
 
   // test
