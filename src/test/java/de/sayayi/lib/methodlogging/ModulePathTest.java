@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * classpath and is provided by the Gradle build in system property {@code methodlogging.modulePath}.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("Module path")
 class ModulePathTest
@@ -66,8 +66,8 @@ class ModulePathTest
           import de.sayayi.lib.methodlogging.MethodLogger;
           import de.sayayi.lib.methodlogging.MethodLoggerFactory;
           import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+          import de.sayayi.lib.methodlogging.Level;
           import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
-          import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
           import org.springframework.context.annotation.AnnotationConfigApplicationContext;
           import org.springframework.context.annotation.Configuration;
           import org.springframework.core.ResolvableType;

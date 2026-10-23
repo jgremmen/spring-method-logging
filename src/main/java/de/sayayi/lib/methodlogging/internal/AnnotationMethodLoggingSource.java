@@ -21,8 +21,8 @@ import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
+import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import org.jetbrains.annotations.Contract;
@@ -47,7 +47,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+import static de.sayayi.lib.methodlogging.Visibility.SHOW;
+import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
@@ -68,9 +69,10 @@ import static org.springframework.util.StringUtils.hasLength;
  * <p>
  * The definition of a method is resolved from the method annotation, the {@link MethodLoggingConfig} annotation of the
  * target class and the {@link MethodLoggingConfigurer}, in that order: an attribute left at its default
- * ({@code DEFAULT} or {@code "<DEFAULT>"}) on the method annotation is taken from the class annotation, and a level,
- * line number or logger field name left at its default on the class annotation is taken from the configurer. If the
- * target class has no {@code @MethodLoggingConfig} annotation, the annotation defaults are used.
+ * ({@code DEFAULT} or {@link MethodLogging#DEFAULT_VALUE}) on the method annotation is taken from the class
+ * annotation, and a level, line number or logger field name left at its default on the class annotation is taken from
+ * the configurer. If the target class has no {@code @MethodLoggingConfig} annotation, the annotation defaults are
+ * used.
  * <p>
  * Definitions are cached per method and target class, including the information that a method has no method logging.
  * The analysis runs without holding a lock, so concurrent analysis of the same method is possible; the definition
@@ -266,7 +268,7 @@ public final class AnnotationMethodLoggingSource
     if (attributes == null)
       attributes = createDefaultMethodLoggingConfigAttributes();
 
-    if ("<DEFAULT>".equals(attributes.getString("loggerFieldName")))
+    if (DEFAULT_VALUE.equals(attributes.getString("loggerFieldName")))
       attributes.put("loggerFieldName", defaultLoggerFieldName);
 
     if (attributes.getEnum("entryExitLevel") == Level.DEFAULT)
@@ -308,7 +310,7 @@ public final class AnnotationMethodLoggingSource
 
       if (value == Visibility.DEFAULT || value == Level.DEFAULT)
         methodAttribute.setValue(methodLoggingConfigAttributes.getEnum(methodAttribute.getKey()));
-      else if ("<DEFAULT>".equals(value))
+      else if (DEFAULT_VALUE.equals(value))
         methodAttribute.setValue(methodLoggingConfigAttributes.getString(methodAttribute.getKey()));
     }
 

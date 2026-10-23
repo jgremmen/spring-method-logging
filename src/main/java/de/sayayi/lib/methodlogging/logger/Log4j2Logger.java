@@ -16,7 +16,7 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

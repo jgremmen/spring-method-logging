@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.methodlogging;
 
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -70,7 +69,7 @@ public interface MethodLogger
    * @param location  source location of the logged method, never {@code null}. The file name is {@code null} and the
    *                  line number is negative, if not available
    *
-   * @since 0.5.1
+   * @since 0.6.0
    */
   default void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
     log(level, message);

@@ -35,14 +35,15 @@ import org.springframework.context.annotation.AdviceMode;
  * calls within the same class are logged as well.
  * <p>
  * Only non-static methods with a {@code @MethodLogging} annotation on the method itself are logged; annotations on
- * interface or superclass methods are not considered, as AspectJ does not inherit method annotations. Until the
- * aspect has been configured by the Spring application context, annotated methods are invoked without logging.
+ * interface or superclass methods are not considered, as AspectJ does not inherit method annotations. Composed
+ * annotations, which are meta-annotated with {@code @MethodLogging}, are not supported either. Until the aspect has
+ * been configured by the Spring application context, annotated methods are invoked without logging.
  * <p>
  * The aspect is a singleton. If multiple application contexts enable method logging in AspectJ mode, the context
  * created last configures the aspect.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  *
  * @see AdviceMode#ASPECTJ
  */

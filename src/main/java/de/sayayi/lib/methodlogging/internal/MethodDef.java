@@ -19,7 +19,7 @@ import de.sayayi.lib.message.Message;
 import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
 
 

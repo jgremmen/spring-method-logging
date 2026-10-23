@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("Exception name")
 class ExceptionNameTest

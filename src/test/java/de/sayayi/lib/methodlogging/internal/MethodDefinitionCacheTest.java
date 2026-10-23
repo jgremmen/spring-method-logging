@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("Method definition cache")
 class MethodDefinitionCacheTest

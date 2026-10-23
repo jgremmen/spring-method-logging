@@ -57,7 +57,8 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  * (with this library on the aspect path) or load-time weaving (this library provides a {@code META-INF/aop.xml}
  * declaring the aspect) applying the {@link MethodLoggingAspect} to the affected classes. There is no proxy involved
  * in such a scenario; local calls will be intercepted as well. As AspectJ does not inherit method annotations, only
- * non-static methods which are annotated with {@code @MethodLogging} themselves are logged in this mode.
+ * non-static methods which are annotated with {@code @MethodLogging} themselves are logged in this mode; composed
+ * annotations meta-annotated with {@code @MethodLogging} are not supported.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

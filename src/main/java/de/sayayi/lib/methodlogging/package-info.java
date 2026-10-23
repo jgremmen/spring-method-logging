@@ -20,7 +20,9 @@
  * A {@link de.sayayi.lib.methodlogging.MethodLoggingConfigurer MethodLoggingConfigurer} bean customizes method logging
  * globally. A {@link de.sayayi.lib.methodlogging.MethodLoggerFactory MethodLoggerFactory} provides the
  * {@link de.sayayi.lib.methodlogging.MethodLogger MethodLogger} for the invocation of a logged method, which bridges to
- * the underlying logging framework.
+ * the underlying logging framework. {@link de.sayayi.lib.methodlogging.Level Level} and
+ * {@link de.sayayi.lib.methodlogging.Visibility Visibility} are used by the annotations, the configurer and the method
+ * loggers.
  *
  * @see de.sayayi.lib.methodlogging.annotation.EnableMethodLogging
  */

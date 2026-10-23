@@ -18,7 +18,6 @@ package de.sayayi.lib.methodlogging;
 import de.sayayi.lib.methodlogging.MethodLoggingTest.ListMethodLoggerFactory;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect;
 import lombok.val;
 import org.aspectj.bridge.IMessage;
@@ -44,7 +43,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -57,7 +56,7 @@ import static org.springframework.context.annotation.AdviceMode.ASPECTJ;
  * weaving.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("AspectJ mode")
 class AspectJTest
@@ -75,7 +74,7 @@ class AspectJTest
 
       import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 
-      import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
+      import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 
       public class Service
       {

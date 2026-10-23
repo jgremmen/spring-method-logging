@@ -16,8 +16,8 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
+import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.Visibility;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 /**
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("Configurer validation")
 @SuppressWarnings("DataFlowIssue")

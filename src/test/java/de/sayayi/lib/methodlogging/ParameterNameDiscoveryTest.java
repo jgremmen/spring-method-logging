@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * compiler options required for each variant.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("Parameter name discovery")
 class ParameterNameDiscoveryTest
@@ -70,7 +70,7 @@ class ParameterNameDiscoveryTest
       import de.sayayi.lib.methodlogging.annotation.MethodLogging;
       import de.sayayi.lib.methodlogging.annotation.ParamLog;
 
-      import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
+      import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 
       public class Bean
       {
@@ -86,7 +86,7 @@ class ParameterNameDiscoveryTest
       import de.sayayi.lib.methodlogging.annotation.MethodLogging;
       import de.sayayi.lib.methodlogging.annotation.ParamLog;
 
-      import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
+      import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 
       public class Impl implements If
       {
@@ -169,7 +169,7 @@ class ParameterNameDiscoveryTest
 
         import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 
-        import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
+        import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 
         public class Bean
         {

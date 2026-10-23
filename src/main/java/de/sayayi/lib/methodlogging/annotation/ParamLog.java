@@ -71,6 +71,7 @@ public @interface ParamLog
    * @see MethodLoggingConfigurer#messageSupport()
    * @see MessageFactory#parseMessage(String)
    */
+  @AliasFor("value")
   @Language("MessageFormat")
   String format() default "";
 

@@ -16,16 +16,16 @@
 package de.sayayi.lib.methodlogging.annotation;
 
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
+import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.Visibility;
 import org.intellij.lang.annotations.Language;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEFAULT;
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+import static de.sayayi.lib.methodlogging.Level.DEFAULT;
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -62,9 +62,9 @@ public @interface MethodLoggingConfig
 
 
   /**
-   * The field name in this class that contains a loggable instance. The default ({@code "<DEFAULT>"}) uses the field
-   * name provided by {@link MethodLoggingConfigurer#defaultLoggerFieldName()}, which is {@code "log"} unless configured
-   * otherwise.
+   * The field name in this class that contains a loggable instance. The default ({@link MethodLogging#DEFAULT_VALUE})
+   * uses the field name provided by {@link MethodLoggingConfigurer#defaultLoggerFieldName()}, which is {@code "log"}
+   * unless configured otherwise.
    * <p>
    * Generally the loggable instance is a slf4j/jul/log4j logger, but there are no restrictions to the kind of object
    * held by the field.<br>
@@ -78,7 +78,7 @@ public @interface MethodLoggingConfig
    *
    * @see MethodLoggingConfigurer#defaultLoggerFieldName()
    */
-  String loggerFieldName() default "<DEFAULT>";
+  String loggerFieldName() default MethodLogging.DEFAULT_VALUE;
 
 
   /**

@@ -31,14 +31,14 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.INFO;
+import static de.sayayi.lib.methodlogging.Level.DEBUG;
+import static de.sayayi.lib.methodlogging.Level.INFO;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @DisplayName("Location aware method loggers")
 class LocationAwareLoggerTest

@@ -18,7 +18,7 @@ package de.sayayi.lib.methodlogging.logger;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import de.sayayi.lib.methodlogging.MethodLogger;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
+import de.sayayi.lib.methodlogging.Level;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 

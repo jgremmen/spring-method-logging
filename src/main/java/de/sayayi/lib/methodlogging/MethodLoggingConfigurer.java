@@ -19,8 +19,6 @@ import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;

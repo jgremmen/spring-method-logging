@@ -15,12 +15,15 @@
  */
 package de.sayayi.lib.methodlogging.annotation;
 
+import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import de.sayayi.lib.methodlogging.Visibility;
 import org.intellij.lang.annotations.Language;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -42,7 +45,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </pre>
  *
  * <h2>Resolution of settings</h2>
- * A setting left at its default ({@code DEFAULT} or {@code "<DEFAULT>"}) is taken from the next source on the right.
+ * A setting left at its default ({@code DEFAULT} or {@link #DEFAULT_VALUE}) is taken from the next source on the right.
  * If the class has no {@code @MethodLoggingConfig} annotation, the annotation defaults of {@code @MethodLoggingConfig}
  * are used.
  * <table class="striped">
@@ -78,10 +81,20 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * @see ParamLog
  * @see EnableMethodLogging
  */
-@Target(METHOD)
+@Target({ METHOD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 public @interface MethodLogging
 {
+  /**
+   * Value of string attributes indicating that the setting is taken from the next source, e.g. the class-level
+   * {@link MethodLoggingConfig} annotation.
+   *
+   * @since 0.6.0
+   */
+  @Language("MessageFormat")
+  String DEFAULT_VALUE = "<DEFAULT>";
+
+
   /**
    * The field name in this class that contains a loggable instance. The default is the value provided by
    * {@link MethodLoggingConfig#loggerFieldName()}.
@@ -96,7 +109,7 @@ public @interface MethodLogging
    *
    * @return  logger field name
    */
-  String loggerFieldName() default "<DEFAULT>";
+  String loggerFieldName() default DEFAULT_VALUE;
 
 
   /**
@@ -150,35 +163,35 @@ public @interface MethodLogging
    * The message format used for inline parameters that are displayed as part of the method entry log line
    * (e.g. {@code > method(param=value)}).
    *
-   * @return  a message format string, or {@code "<DEFAULT>"} to use the format from
+   * @return  a message format string, or {@link #DEFAULT_VALUE} to use the format from
    *          {@link MethodLoggingConfig#inlineParameterFormat()}
    *
    * @see ParamLog#inline()
    */
   @Language("MessageFormat")
-  String inlineParameterFormat() default "<DEFAULT>";
+  String inlineParameterFormat() default DEFAULT_VALUE;
 
 
   /**
    * The message format used for parameters that are logged on separate lines after the method entry log line.
    *
-   * @return  a message format string, or {@code "<DEFAULT>"} to use the format from
+   * @return  a message format string, or {@link #DEFAULT_VALUE} to use the format from
    *          {@link MethodLoggingConfig#parameterFormat()}
    *
    * @see ParamLog#inline()
    */
   @Language("MessageFormat")
-  String parameterFormat() default "<DEFAULT>";
+  String parameterFormat() default DEFAULT_VALUE;
 
 
   /**
    * The message format used for logging the method return value.
    *
-   * @return  a message format string, or {@code "<DEFAULT>"} to use the format from
+   * @return  a message format string, or {@link #DEFAULT_VALUE} to use the format from
    *          {@link MethodLoggingConfig#resultFormat()}
    */
   @Language("MessageFormat")
-  String resultFormat() default "<DEFAULT>";
+  String resultFormat() default DEFAULT_VALUE;
 
 
   /**
@@ -225,46 +238,4 @@ public @interface MethodLogging
    * @return  parameter names to exclude, empty by default
    */
   String[] exclude() default {};
-
-
-
-
-  /**
-   * Controls the visibility of an optional feature in method logging. Each feature can be explicitly shown or hidden,
-   * or left at {@link #DEFAULT} to inherit the setting from the class-level {@link MethodLoggingConfig} or the global
-   * configurer defaults.
-   */
-  enum Visibility
-  {
-    /** Inherit the visibility from the class-level or global configuration. */
-    DEFAULT,
-
-    /** Explicitly enable the feature. */
-    SHOW,
-
-    /** Explicitly disable the feature. */
-    HIDE;
-  }
-
-
-
-
-  /**
-   * Defines the log level for method logging messages. Each level can be set explicitly, or left at {@link #DEFAULT}
-   * to inherit the setting from the class-level {@link MethodLoggingConfig} or the global configurer defaults.
-   */
-  enum Level
-  {
-    /** Inherit the log level from the class-level or global configuration. */
-    DEFAULT,
-
-    /** Trace log level */
-    TRACE,
-
-    /** Debug log level */
-    DEBUG,
-
-    /** Info log level */
-    INFO
-  }
 }

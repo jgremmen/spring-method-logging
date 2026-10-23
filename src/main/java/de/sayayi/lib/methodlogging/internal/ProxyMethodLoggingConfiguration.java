@@ -33,7 +33,7 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
  * methods annotated with {@code @MethodLogging}.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 @Configuration(proxyBeanMethods = false)
 @Role(ROLE_INFRASTRUCTURE)

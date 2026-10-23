@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
  * interceptor can be used for both proxy and AspectJ based method logging.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 final class JoinPointMethodInvocation implements MethodInvocation
 {

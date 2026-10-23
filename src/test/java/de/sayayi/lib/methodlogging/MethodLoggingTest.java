@@ -23,7 +23,6 @@ import de.sayayi.lib.message.formatter.post.runtime.ClipPostFormatter;
 import de.sayayi.lib.message.part.normalizer.LRUMessagePartNormalizer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
@@ -56,9 +55,9 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Level.DEBUG;
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.HIDE;
-import static de.sayayi.lib.methodlogging.annotation.MethodLogging.Visibility.SHOW;
+import static de.sayayi.lib.methodlogging.Level.DEBUG;
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
 

@@ -26,7 +26,7 @@ import org.springframework.context.annotation.AutoProxyRegistrar;
  * Selects the method logging configuration to import, depending on {@link EnableMethodLogging#mode()}.
  *
  * @author Jeroen Gremmen
- * @since 0.5.1
+ * @since 0.6.0
  */
 public final class MethodLoggingConfigurationSelector extends AdviceModeImportSelector<EnableMethodLogging>
 {
