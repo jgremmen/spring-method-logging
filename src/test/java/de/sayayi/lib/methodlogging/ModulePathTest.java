@@ -195,8 +195,11 @@ class ModulePathTest
     val output = run("closed");
 
     assertEquals(1, output.size(), output::toString);
-    assertTrue(output.get(0).startsWith("FAILED|Logger field 'log' of class test.closed.Closed is not accessible; " +
-        "package test.closed must be opened to module de.sayayi.lib.methodlogging"), output.get(0));
+    assertTrue(
+        output.getFirst().startsWith(
+            "FAILED|Logger field 'log' of class test.closed.Closed is not accessible; " +
+            "package test.closed must be opened to module de.sayayi.lib.methodlogging"),
+        output.getFirst());
   }
 
 
@@ -206,6 +209,8 @@ class ModulePathTest
     val process = new ProcessBuilder(
         ProcessHandle.current().info().command().orElseThrow(),
         "--module-path", modulePath,
+        // Spring 7 requires the commons logging module, which is not required by the automatic Spring modules
+        "--add-modules", "ALL-MODULE-PATH",
         "-m", "test.app/test.app.App", mode)
         .redirectError(errorFile.toFile())
         .start();

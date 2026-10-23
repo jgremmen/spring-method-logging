@@ -29,6 +29,15 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 </dependency>
 ```
 
+### Requirements
+
+- Java 21 or later
+- Spring Framework 5.3, 6 or 7
+
+Parameter names are logged as they are discovered by Spring. Compile your classes with `-parameters`, as Spring
+Framework 6.1 and later no longer read parameter names from the debug information. Otherwise, synthesized names
+(`arg0`, `arg1`, …) are logged, unless a name is given with `@ParamLog(name = …)`.
+
 ### Getting started
 
 Enable the method logging functionality by adding `@EnableMethodLogging` to a Spring configuration class:
@@ -141,6 +150,10 @@ module com.example.app
 ```
 
 If such a package is not opened, creating the bean fails with an `IllegalStateException` that names the package.
+
+With Spring Framework 7, logging uses the `org.apache.commons.logging` module, which Spring requires on the module path
+as well. As it is not required by the (automatic) Spring modules, it must be added to the module graph, for example with
+`requires org.apache.commons.logging` in the application module or `--add-modules org.apache.commons.logging`.
 
 ### License
 

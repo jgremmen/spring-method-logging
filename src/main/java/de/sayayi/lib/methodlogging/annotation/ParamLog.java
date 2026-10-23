@@ -99,7 +99,8 @@ public @interface ParamLog
    * bytecode does not provide compiled-in parameter name information.
    * <p>
    * If this attribute is empty and the parameter name cannot be discovered, the synthesized name provided by reflection
-   * ({@code arg0}, {@code arg1}, ...) is used.
+   * ({@code arg0}, {@code arg1}, ...) is used. Parameter names are discovered from classes compiled with
+   * {@code -parameters}; Spring Framework versions before 6.1 also discover them from the debug information.
    *
    * @return  the parameter name to use in log output, or empty to use the discovered name
    */

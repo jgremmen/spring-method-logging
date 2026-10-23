@@ -66,7 +66,10 @@ module de.sayayi.lib.methodlogging
 
   requires spring.aop;
   requires spring.beans;
-  requires spring.jcl;
+
+  // JCL is provided by the automatic module spring.jcl (Spring 5.3/6), which is read through the automatic Spring
+  // modules, or by the named module org.apache.commons.logging (Spring 7)
+  requires static org.apache.commons.logging;
 
   requires static java.logging;
   requires static org.aspectj.runtime;

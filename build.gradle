@@ -21,6 +21,9 @@ configurations {
   ajc
 
   compileOnlyApi.extendsFrom(optionalApi)
+
+  // spring-jcl and commons-logging both provide the JCL packages
+  compileClasspath.exclude group: 'org.springframework', module: 'spring-jcl'
 }
 
 
@@ -81,16 +84,86 @@ compileTestJava {
 }
 
 
-test {
+tasks.withType(Test).configureEach {
   useJUnitPlatform()
 
   // provider for log4j-api
   systemProperty 'log4j2.loggerContextFactory', 'org.apache.logging.log4j.simple.SimpleLoggerContextFactory'
 
-  // module path used by ModulePathTest
+  // module path used by ModulePathTest; the runtime classpath of the library is set by each test task
   doFirst {
+    //noinspection SpellCheckingInspection
     systemProperty 'methodlogging.modulePath',
-        (sourceSets.main.output.classesDirs + configurations.runtimeClasspath).asPath
+        (sourceSets.main.output.classesDirs + (ext.modulePathRuntimeClasspath as FileCollection)).asPath
+  }
+}
+
+
+test {
+  ext.modulePathRuntimeClasspath = configurations.runtimeClasspath
+}
+
+
+// classpath like the given classpath, with the Spring Framework version forced to the given version range
+def springClasspath = { String classpathName, String springVersion, Configuration classpath,
+                        List<Configuration> declarations ->
+  configurations.create(classpathName) {
+    canBeConsumed = false
+    extendsFrom(*declarations)
+
+    attributes { attributes ->
+      classpath.attributes.keySet().each {
+        attributes.attribute(it, classpath.attributes.getAttribute(it))
+      }
+    }
+
+    resolutionStrategy {
+      eachDependency {
+        if (requested.group == 'org.springframework')
+          useVersion springVersion
+      }
+
+      componentSelection.all {
+        if (candidate.group == 'org.springframework' && candidate.version =~ /-(M|RC)\d+$/)
+          reject('pre-release')
+      }
+    }
+  }
+}
+
+
+def springTaskVersions = [
+  spring6: '[6.0.0,7.0.0)',
+  spring7: '[7.0.0,8.0.0)'
+]
+
+def springTests = springTaskVersions.collect { name, springVersion ->
+  def springRuntimeClasspath = springClasspath(
+      "${name}RuntimeClasspath",
+      springVersion,
+      configurations.runtimeClasspath,
+      [ configurations.implementation, configurations.runtimeOnly ])
+  def springTestRuntimeClasspath = springClasspath(
+      "${name}TestRuntimeClasspath",
+      springVersion,
+      configurations.testRuntimeClasspath,
+      [ configurations.testImplementation, configurations.testRuntimeOnly ])
+
+  tasks.register("test${name.capitalize()}", Test) {
+    description = "Runs the tests with Spring Framework ${name.substring(6)}."
+    group = 'verification'
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.output + sourceSets.main.output + springTestRuntimeClasspath
+
+    ext.modulePathRuntimeClasspath = springRuntimeClasspath
+  }
+}
+
+test.finalizedBy springTests
+springTests.collate(2, 1, false).each { previous, next ->
+  next.configure {
+    mustRunAfter previous
   }
 }
 
@@ -118,6 +191,9 @@ dependencies {
   optionalApi libs.aspectj.runtime
 
   ajc libs.aspectj.tools
+
+  // compile against the JCL module of Spring 7 (see module-info)
+  compileOnly libs.commons.logging
 
   api libs.spring.context
   api libs.message.format
@@ -161,7 +237,7 @@ tasks.withType(Jar).configureEach {
     from files('LICENSE')
   }
 
-  dependsOn test
+  dependsOn tasks.withType(Test)
 }
 
 

@@ -45,6 +45,7 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.util.ClassUtils.isPresent;
 
 
 /**
@@ -129,6 +130,13 @@ class ParameterNameDiscoveryTest
   }
 
 
+  /** Spring 6.1 removed the parameter name discovery from the local variable table. */
+  private static final boolean LOCAL_VARIABLE_TABLE_DISCOVERY =
+      isPresent("org.springframework.core.LocalVariableTableParameterNameDiscoverer", null);
+
+  private static final String SYNTHESIZED_NAMES_ENTRY = "INFO|> call(arg0=1,arg1=x,renamed=true)";
+
+
   @ParameterizedTest(name = "{0}", quoteTextArguments = false)
   @CsvSource({
       "METHOD_PARAMETERS,    'INFO|> call(id=1,name=x,renamed=true)'",
@@ -149,7 +157,14 @@ class ParameterNameDiscoveryTest
       case METHOD_PARAMETERS -> assertTrue(stream(call.getParameters()).allMatch(Parameter::isNamePresent));
       case LOCAL_VARIABLE_TABLE -> {
         assertTrue(stream(call.getParameters()).noneMatch(Parameter::isNamePresent));
-        assertNotNull(discoveredNames);
+
+        if (LOCAL_VARIABLE_TABLE_DISCOVERY)
+          assertNotNull(discoveredNames);
+        else
+        {
+          assertNull(discoveredNames);
+          expectedEntry = SYNTHESIZED_NAMES_ENTRY;
+        }
       }
       case NONE -> assertNull(discoveredNames);
     }
@@ -203,6 +218,11 @@ class ParameterNameDiscoveryTest
   {
     compile("test.If", INTERFACE_SOURCE, interfaceNameInfo);
     compile("test.Impl", IMPLEMENTATION_SOURCE, implementationNameInfo);
+
+    // without local variable table discovery, the implementation provides no names
+    if (!LOCAL_VARIABLE_TABLE_DISCOVERY && interfaceNameInfo == NameInfo.NONE &&
+        implementationNameInfo == NameInfo.LOCAL_VARIABLE_TABLE)
+      expectedEntry = SYNTHESIZED_NAMES_ENTRY;
 
     invoke("test.Impl", "test.If", 1, "x", true);
 

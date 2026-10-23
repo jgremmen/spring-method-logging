@@ -62,9 +62,9 @@ class MethodLineNumberTest
 
   @Test
   @DisplayName("Class file not readable by ASM results in no line number")
-  void unsupportedClassFileVersion() throws Exception
+  void unreadableClassFile() throws Exception
   {
-    final var beanClass = new UnsupportedClassFileVersionLoader().loadClass(Bean.class.getName());
+    final var beanClass = new UnreadableClassFileLoader().loadClass(Bean.class.getName());
     final var methodDef = new AnnotationMethodLoggingSource(
         new MethodLoggingConfigurer() {},
         new DefaultResourceLoader())
@@ -87,15 +87,14 @@ class MethodLineNumberTest
 
 
   /**
-   * Defines {@link Bean} from its original class file, but provides the class file with an unsupported major version as
-   * resource.
+   * Defines {@link Bean} from its original class file, but provides a truncated class file as resource.
    */
-  private static final class UnsupportedClassFileVersionLoader extends ClassLoader
+  private static final class UnreadableClassFileLoader extends ClassLoader
   {
     private final byte[] classFile;
 
 
-    private UnsupportedClassFileVersionLoader()
+    private UnreadableClassFileLoader()
     {
       super(MethodLineNumberTest.class.getClassLoader());
 
@@ -130,13 +129,9 @@ class MethodLineNumberTest
       if (!BEAN_RESOURCE.equals(name))
         return super.getResourceAsStream(name);
 
-      final var unsupportedClassFile = classFile.clone();
-
-      // major version 32767; ASM rejects class files newer than it supports with an IllegalArgumentException
-      unsupportedClassFile[6] = (byte)0x7f;
-      unsupportedClassFile[7] = (byte)0xff;
-
-      return new ByteArrayInputStream(unsupportedClassFile);
+      // the constant pool is incomplete, so ASM fails with a runtime exception (an unsupported class file version is
+      // not suitable, as recent ASM versions parse newer class files leniently)
+      return new ByteArrayInputStream(classFile, 0, 64);
     }
   }
 }
