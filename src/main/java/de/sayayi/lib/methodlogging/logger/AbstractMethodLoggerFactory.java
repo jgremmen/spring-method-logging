@@ -30,7 +30,8 @@ import static java.lang.reflect.Modifier.STATIC;
 
 /**
  * Base class for {@link MethodLoggerFactory} implementations that provides caching for loggers obtained from
- * static final fields and handles the case where no logger field is available on the target class.
+ * static final fields and handles the case where no logger field is available on the target class. Loggers created
+ * for a class without logger field are cached per class.
  * <p>
  * Subclasses only need to implement the two {@code createMethodLogger} methods to bridge to a specific logging
  * framework.
@@ -43,6 +44,12 @@ import static java.lang.reflect.Modifier.STATIC;
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
   private final WeakHashMap<Class<?>,Map<String,MethodLogger>> loggerCache = new WeakHashMap<>();
+  private final ClassValue<MethodLogger> classLoggerCache = new ClassValue<>() {
+    @Override
+    protected MethodLogger computeValue(@NotNull Class<?> type) {
+      return createMethodLogger(type);
+    }
+  };
   private final boolean createLoggerOnNoField;
 
 
@@ -66,7 +73,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
       if (!createLoggerOnNoField)
         throw new IllegalStateException("Class " + type + " or one of its superclasses must provide a logger field");
 
-      return createMethodLogger(type);
+      return classLoggerCache.get(type);
     }
     else
     {
@@ -85,7 +92,8 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 
 
   /**
-   * Creates a method logger for the given class when no logger field is available.
+   * Creates a method logger for the given class when no logger field is available. The method logger is cached, so
+   * this method is invoked once per class.
    *
    * @param clazz  the target class, not {@code null}
    *
