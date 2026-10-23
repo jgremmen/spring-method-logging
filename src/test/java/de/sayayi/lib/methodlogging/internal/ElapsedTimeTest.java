@@ -19,7 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import static de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor.logMethodExit_elapsed;
+import static de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor.formatElapsedTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -58,8 +58,7 @@ class ElapsedTimeTest
       "219660000, 61h1m"
   })
   @DisplayName("Elapsed time")
-  void elapsedTime(long millis, String expected)
-  {
-    assertEquals(expected, logMethodExit_elapsed(millis));
+  void elapsedTime(long millis, String expected) {
+    assertEquals(expected, formatElapsedTime(millis));
   }
 }

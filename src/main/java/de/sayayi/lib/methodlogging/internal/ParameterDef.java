@@ -16,6 +16,7 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
@@ -23,18 +24,16 @@ import java.util.function.Supplier;
 /**
  * Logging definition of a method parameter to be logged. Parameters which are not logged have no definition.
  * <p>
- * The fields are assigned during the analysis of the method only; the definition is safely published to other threads
- * by the definition cache of {@link AnnotationMethodLoggingSource}.
+ * Instances are immutable and shared by all threads invoking the method. The parameter format message is created on
+ * first use.
+ *
+ * @param index          index of the parameter
+ * @param name           name of the parameter, not {@code null}
+ * @param inline         {@code true} if the parameter is logged inline with the method entry
+ * @param formatMessage  lazily created parameter format message, not {@code null}
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-final class ParameterDef
-{
-  int index;
-  String name;
-  boolean inline;
-
-  /** Lazily created parameter format message. */
-  Supplier<Message> formatMessage;
+record ParameterDef(int index, @NotNull String name, boolean inline, @NotNull Supplier<Message> formatMessage) {
 }

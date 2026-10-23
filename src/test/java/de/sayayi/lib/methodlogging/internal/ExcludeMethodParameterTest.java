@@ -63,7 +63,7 @@ class ExcludeMethodParameterTest
         requireNonNull(methodDef)
             .inlineParameters
             .stream()
-            .map(parameterDef -> parameterDef.name)
+            .map(ParameterDef::name)
             .toList());
   }
 

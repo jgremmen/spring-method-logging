@@ -62,8 +62,8 @@ class LazyMessageTest
     assertCreatedOnce(methodDef.inlineParameterMessage);
     assertCreatedOnce(methodDef.parameterMessage);
     assertCreatedOnce(methodDef.resultMessage);
-    assertCreatedOnce(methodDef.inlineParameters.getFirst().formatMessage);
-    assertCreatedOnce(methodDef.inMethodParameters.getFirst().formatMessage);
+    assertCreatedOnce(methodDef.inlineParameters.getFirst().formatMessage());
+    assertCreatedOnce(methodDef.inMethodParameters.getFirst().formatMessage());
   }
 
 

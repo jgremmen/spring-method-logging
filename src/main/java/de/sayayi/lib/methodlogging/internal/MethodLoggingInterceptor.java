@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.message.Message;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -135,7 +136,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
         final var parameterList = new StringJoiner(",", "(", ")");
 
         for(var parameterDef: methodDef.inlineParameters)
-          parameterList.add(logMethodEntry_inlineParameter(methodDef, parameterDef, arguments[parameterDef.index]));
+        {
+          parameterList.add(
+              formatParameter(methodDef.inlineParameterMessage.get(), parameterDef, arguments[parameterDef.index()]));
+        }
 
         method.append(parameterList);
       }
@@ -148,8 +152,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       if (printParameters && !methodDef.inMethodParameters.isEmpty())
         for(var parameterDef: methodDef.inMethodParameters)
         {
-          methodLogger.log(methodDef.parameterLevel,
-              logMethodEntry_parameter(methodDef, parameterDef, arguments[parameterDef.index]), methodDef.location);
+          methodLogger.log(
+              methodDef.parameterLevel,
+              formatParameter(methodDef.parameterMessage.get(), parameterDef, arguments[parameterDef.index()]),
+              methodDef.location);
         }
     } catch(Exception ex) {
       logFailure(methodDef, "entry", ex);
@@ -157,26 +163,17 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
-  private @NotNull String logMethodEntry_inlineParameter(@NotNull MethodDef methodDef,
-                                                         @NotNull ParameterDef parameterDef, Object value)
+  /**
+   * Formats a parameter using the inline or in-method parameter message.
+   */
+  @Contract(pure = true)
+  private @NotNull String formatParameter(@NotNull Message parameterMessage, @NotNull ParameterDef parameterDef,
+                                          Object value)
   {
     return annotationMethodLoggingSource
         .getMessageSupport()
-        .message(methodDef.inlineParameterMessage.get())
-        .with("parameter", parameterDef.name)
-        .with("value", formatParameterValue(parameterDef, value))
-        .format();
-  }
-
-
-  private @NotNull String logMethodEntry_parameter(@NotNull MethodDef methodDef,
-                                                   @NotNull ParameterDef parameterDef,
-                                                   Object value)
-  {
-    return annotationMethodLoggingSource
-        .getMessageSupport()
-        .message(methodDef.parameterMessage.get())
-        .with("parameter", parameterDef.name)
+        .message(parameterMessage)
+        .with("parameter", parameterDef.name())
         .with("value", formatParameterValue(parameterDef, value))
         .format();
   }
@@ -187,7 +184,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     try {
       return annotationMethodLoggingSource
           .getMessageSupport()
-          .message(parameterDef.formatMessage.get())
+          .message(parameterDef.formatMessage().get())
           .with("value", value)
           .format();
     } catch(Exception ex) {
@@ -209,7 +206,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
       if (methodDef.showElapsedTime)
       {
         exit.append(" (elapsed ")
-            .append(logMethodExit_elapsed((nanoTime() - startTime) / 1000000L))
+            .append(formatElapsedTime((nanoTime() - startTime) / 1000000L))
             .append(')');
       }
 
@@ -240,20 +237,21 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @return  formatted elapsed time, never {@code null}
    */
   @Contract(pure = true)
-  static @NotNull String logMethodExit_elapsed(long millis)
+  static @NotNull String formatElapsedTime(long millis)
   {
-/*
-    h|m|s|ms           h|m|s|ms
-    0|0|0|0 -> ms      1|0|0|0 -> h
-    0|0|0|1 -> ms      1|0|0|1 -> h
-    0|0|1|0 -> s       1|0|1|0 -> h,m if s >= 30 (rounded)
-    0|0|1|1 -> s,ms    1|0|1|1 -> h,m if s >= 30 (rounded)
-    0|1|0|0 -> m       1|1|0|0 -> h,m
-    0|1|0|1 -> m       1|1|0|1 -> h,m
-    0|1|1|0 -> m,s     1|1|1|0 -> h,m (rounded)
-    0|1|1|1 -> m,s     1|1|1|1 -> h,m (rounded)
- */
     final var s = new StringBuilder();
+
+    /*
+      h|m|s|ms           h|m|s|ms
+      0|0|0|0 -> ms      1|0|0|0 -> h
+      0|0|0|1 -> ms      1|0|0|1 -> h
+      0|0|1|0 -> s       1|0|1|0 -> h,m if s >= 30 (rounded)
+      0|0|1|1 -> s,ms    1|0|1|1 -> h,m if s >= 30 (rounded)
+      0|1|0|0 -> m       1|1|0|0 -> h,m
+      0|1|0|1 -> m       1|1|0|1 -> h,m
+      0|1|1|0 -> m,s     1|1|1|0 -> h,m (rounded)
+      0|1|1|1 -> m,s     1|1|1|1 -> h,m (rounded)
+    */
 
     if (millis >= 3600000L)
     {

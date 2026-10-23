@@ -62,7 +62,6 @@ public interface MethodLoggingConfigurer
    *
    * @return  Message support or {@code null} to use the default message support
    */
-  @Contract(pure = true)
   default MessageSupport messageSupport() {
     return null;
   }
@@ -79,7 +78,6 @@ public interface MethodLoggingConfigurer
    *
    * @see MethodLogger
    */
-  @Contract(pure = true)
   default MethodLoggerFactory methodLoggerFactory() {
     return null;
   }

@@ -27,6 +27,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.asm.*;
@@ -180,7 +181,6 @@ public final class AnnotationMethodLoggingSource
    *
    * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation
    */
-  @Contract(pure = true)
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
     final var methodClassKey = new MethodClassKey(method, targetClass);
@@ -196,7 +196,6 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  @Contract(pure = true)
   private MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
   {
     // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
@@ -235,7 +234,6 @@ public final class AnnotationMethodLoggingSource
    * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
    * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
    */
-  @Contract(pure = true)
   private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
                                                        @NotNull Class<?> targetClass,
                                                        @NotNull MethodLogging methodLogging)
@@ -260,21 +258,18 @@ public final class AnnotationMethodLoggingSource
       if (paramLog == null && specificMethod != method)
         paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
 
-      final var parameterDef = new ParameterDef();
+      var name = paramLog != null ? paramLog.name() : "";
+      if (!hasLength(name))
+        name = parameterNames != null ? parameterNames[p] : specificParameters[p].getName();
 
-      if (!hasLength(parameterDef.name = paramLog != null ? paramLog.name() : ""))
-        parameterDef.name = parameterNames != null ? parameterNames[p] : specificParameters[p].getName();
-
-      if (!excludeParameters.contains(parameterDef.name) &&
+      if (!excludeParameters.contains(name) &&
           (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p, targetClass))))
       {
+        @Language("MessageFormat")
         final var format = paramLog != null && hasLength(paramLog.format()) ? paramLog.format() : "%{value}";
 
-        parameterDef.index = p;
-        parameterDef.inline = paramLog == null || paramLog.inline();
-        parameterDef.formatMessage = SupplierDelegate.of(() -> messageFactory.parseMessage(format));
-
-        parameterDefs.add(parameterDef);
+        parameterDefs.add(new ParameterDef(p, name, paramLog == null || paramLog.inline(),
+            SupplierDelegate.of(() -> messageFactory.parseMessage(format))));
       }
     }
 
@@ -332,7 +327,6 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  @Contract(pure = true)
   private @NotNull MethodLogging findMergedMethodLogging(@NotNull AnnotationAttributes methodLoggingConfigAttributes,
                                                          @NotNull AnnotationAttributes methodLoggingAttributes)
   {
@@ -355,7 +349,6 @@ public final class AnnotationMethodLoggingSource
    * first statement. Source file and line are taken from the class file and are {@code null} and {@code -1}
    * respectively, if not available.
    */
-  @Contract(pure = true)
   private @NotNull StackTraceElement findMethodLocation(@NotNull Method method)
   {
     final var declaringClass = method.getDeclaringClass();
@@ -394,7 +387,6 @@ public final class AnnotationMethodLoggingSource
   }
 
 
-  @Contract(pure = true)
   private Field findLoggerField(Class<?> clazz, @NotNull MethodLogging methodLogging)
   {
     final var loggerFieldName = methodLogging.loggerFieldName();

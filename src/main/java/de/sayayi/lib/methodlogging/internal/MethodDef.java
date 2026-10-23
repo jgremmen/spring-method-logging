@@ -18,20 +18,20 @@ package de.sayayi.lib.methodlogging.internal;
 import de.sayayi.lib.message.Message;
 import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.message.util.SupplierDelegate;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig.*;
+import static java.util.stream.Collectors.partitioningBy;
 
 
 /**
@@ -72,14 +72,12 @@ final class MethodDef
     methodEntryPrefix = methodLoggingConfig.methodEntryPrefix();
     methodExitPrefix = methodLoggingConfig.methodExitPrefix();
 
-    inlineParameters = new ArrayList<>();
-    inMethodParameters = new ArrayList<>();
+    final var partitionedParameters = parameters
+        .stream()
+        .collect(partitioningBy(ParameterDef::inline));
 
-    parameters.forEach(parameterDef ->
-        (parameterDef.inline ? inlineParameters : inMethodParameters).add(parameterDef));
-
-    ((ArrayList<ParameterDef>)inlineParameters).trimToSize();
-    ((ArrayList<ParameterDef>)inMethodParameters).trimToSize();
+    inlineParameters = List.copyOf(partitionedParameters.get(true));
+    inMethodParameters = List.copyOf(partitionedParameters.get(false));
 
     this.loggerField = loggerField;
     this.location = location;
