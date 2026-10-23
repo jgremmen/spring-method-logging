@@ -39,7 +39,7 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  *   public MethodLoggerFactory methodLoggerFactory()
  *   {
  *     // this application only uses log4j2
- *     return new Log4j2LoggerFactory(true);
+ *     return Log4j2LoggerFactory.withFallback();
  *   }
  * }</pre>
  *

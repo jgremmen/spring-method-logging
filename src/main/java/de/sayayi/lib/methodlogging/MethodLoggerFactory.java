@@ -44,9 +44,9 @@ public interface MethodLoggerFactory
    * This method is invoked every time a method requires logging. In order to reduce performance overhead, the factory
    * may return cached method loggers.
    * <p>
-   * If the logger field contains {@code null} or an object the factory does not support, it should return
-   * {@link MethodLogger#NO_OP}, which disables logging for the method. An exception thrown by this method does not
-   * affect the logged method; it is reported at WARN level and the method is invoked without logging.
+   * If the logger field contains {@code null} or an object the factory does not support, it should return a fallback
+   * method logger or {@link MethodLogger#NO_OP}, which disables logging for the method. An exception thrown by this
+   * method does not affect the logged method; it is reported at WARN level and the method is invoked without logging.
    *
    * @param loggerField  logger field or {@code null} if no logger field was found
    * @param obj          spring bean to create a method logger for, not {@code null}
@@ -57,4 +57,20 @@ public interface MethodLoggerFactory
    * @see AbstractMethodLoggerFactory
    */
   @NotNull MethodLogger from(Field loggerField, @NotNull Object obj, @NotNull Class<?> type);
+
+
+  /**
+   * Validates the logger field found for a method of {@code type}. This method is invoked once, when a method with
+   * method logging is analyzed, and allows the factory to fail fast on configuration errors instead of on each
+   * invocation. The default implementation accepts any logger field.
+   *
+   * @param loggerField  logger field or {@code null} if no logger field was found
+   * @param type         target type, not {@code null}
+   *
+   * @throws IllegalStateException  if no method logger can be provided for the logger field
+   *
+   * @since 0.6.0
+   */
+  default void validate(Field loggerField, @NotNull Class<?> type) {
+  }
 }

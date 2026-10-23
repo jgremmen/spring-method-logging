@@ -17,6 +17,7 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -79,7 +80,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
       if (!createLoggerOnNoField)
         throw new IllegalStateException("Class " + type + " or one of its superclasses must provide a logger field");
 
-      return classLoggerCache.get(type);
+      return getClassMethodLogger(type);
     }
     else
     {
@@ -108,8 +109,68 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 
 
   /**
-   * Creates a method logger for the given class when no logger field is available. The method logger is cached, so
-   * this method is invoked once per class.
+   * Validates the logger field: fails if no logger field is available and this factory requires one, or if the declared
+   * type of the logger field can never hold a logger of the type returned by {@link #getLoggerType()}.
+   *
+   * @param loggerField  logger field or {@code null} if no logger field was found
+   * @param type         target type, not {@code null}
+   *
+   * @throws IllegalStateException  if no method logger can be provided for the logger field
+   *
+   * @since 0.6.0
+   */
+  @Override
+  public void validate(Field loggerField, @NotNull Class<?> type)
+  {
+    if (loggerField == null)
+    {
+      if (!createLoggerOnNoField)
+        throw new IllegalStateException("Class " + type + " or one of its superclasses must provide a logger field");
+    }
+    else
+    {
+      final var loggerType = getLoggerType();
+      final var fieldType = loggerField.getType();
+
+      if (loggerType != null && !loggerType.isAssignableFrom(fieldType) && !fieldType.isAssignableFrom(loggerType))
+      {
+        throw new IllegalStateException("Logger field '" + loggerField.getName() + "' of " +
+            loggerField.getDeclaringClass() + " must be of type " + loggerType.getName());
+      }
+    }
+  }
+
+
+  /**
+   * Returns the type of logger instances supported by this factory, used for validating logger fields.
+   *
+   * @return  supported logger type or {@code null} (the default) if the logger field type is not restricted
+   *
+   * @since 0.6.0
+   */
+  @Contract(pure = true)
+  protected Class<?> getLoggerType() {
+    return null;
+  }
+
+
+  /**
+   * Returns the cached method logger for {@code type}, as created by {@link #createMethodLogger(Class)}.
+   *
+   * @param type  the target class, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
+   *
+   * @since 0.6.0
+   */
+  protected final @NotNull MethodLogger getClassMethodLogger(@NotNull Class<?> type) {
+    return classLoggerCache.get(type);
+  }
+
+
+  /**
+   * Creates a method logger for the given class when no logger field is available. The method logger is cached, so this
+   * method is invoked once per class.
    *
    * @param clazz  the target class, not {@code null}
    *

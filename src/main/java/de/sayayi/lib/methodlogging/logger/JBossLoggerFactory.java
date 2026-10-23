@@ -17,6 +17,7 @@ package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jboss.logging.Logger;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -33,12 +34,44 @@ public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
   /**
    * Creates a new JBoss logger factory.
    *
-   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the
-   *                               target class; if {@code false}, an {@link IllegalStateException} is thrown in
-   *                               that case
+   * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the target
+   *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
   public JBossLoggerFactory(boolean createLoggerOnNoField) {
     super(createLoggerOnNoField);
+  }
+
+
+  /**
+   * Creates a new JBoss logger factory which uses a logger for the target class if no logger field is available.
+   *
+   * @return  new JBoss logger factory, never {@code null}
+   *
+   * @since 0.6.0
+   */
+  @Contract(value = "-> new", pure = true)
+  public static @NotNull JBossLoggerFactory withFallback() {
+    return new JBossLoggerFactory(true);
+  }
+
+
+  /**
+   * Creates a new JBoss logger factory which requires a logger field. Method logging for a class without logger field
+   * fails when the method is analyzed.
+   *
+   * @return  new JBoss logger factory, never {@code null}
+   *
+   * @since 0.6.0
+   */
+  @Contract(value = "-> new", pure = true)
+  public static @NotNull JBossLoggerFactory strict() {
+    return new JBossLoggerFactory(false);
+  }
+
+
+  @Override
+  protected @NotNull Class<?> getLoggerType() {
+    return Logger.class;
   }
 
 

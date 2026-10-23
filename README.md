@@ -114,7 +114,7 @@ To use the `logger` field, configure the method logger factory and the field nam
 public class LetsDoSomeLoggingConfiguration implements MethodLoggingConfigurer 
 {
    public MethodLoggerFactory methodLoggerFactory() {
-     return new Log4j2LoggerFactory(true);
+     return Log4j2LoggerFactory.withFallback();
    }
 
    public String defaultLoggerFieldName() {

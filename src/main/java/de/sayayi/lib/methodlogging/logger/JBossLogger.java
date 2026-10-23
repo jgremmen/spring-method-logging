@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jboss.logging.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -76,7 +76,7 @@ final class JBossLogger implements MethodLogger
 
   /**
    * Creates a {@code JBossLogger} by reading a JBoss {@link Logger} from the given field on the target instance.
-   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   * Returns {@link #NO_OP} if the field is not accessible, its value is {@code null} or not a JBoss logger.
    *
    * @param loggerField  the field containing the JBoss logger, not {@code null}
    * @param instance     the object owning the field, not {@code null}
@@ -87,9 +87,23 @@ final class JBossLogger implements MethodLogger
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {
     try {
-      return new JBossLogger((Logger)loggerField.get(instance));
-    } catch(IllegalAccessException | NullPointerException ex) {
+      return of(loggerField.get(instance));
+    } catch(IllegalAccessException ex) {
       return NO_OP;
     }
+  }
+
+
+  /**
+   * Creates a {@code JBossLogger} for the given logger instance.
+   *
+   * @param logger  logger instance, may be {@code null}
+   *
+   * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a JBoss logger, never
+   *          {@code null}
+   */
+  @Contract(pure = true)
+  static @NotNull MethodLogger of(Object logger) {
+    return logger instanceof Logger l ? new JBossLogger(l) : NO_OP;
   }
 }

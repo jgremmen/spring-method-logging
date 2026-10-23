@@ -19,12 +19,14 @@ import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
 import de.sayayi.lib.message.util.SupplierDelegate;
-import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
-import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLoggerFactory;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Visibility;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
+import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.asm.*;
@@ -91,6 +93,7 @@ public final class AnnotationMethodLoggingSource
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
   final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
   final @NotNull MessageSupport messageSupport;
+  final @NotNull MethodLoggerFactory methodLoggerFactory;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
   // validated configurer defaults
@@ -116,6 +119,11 @@ public final class AnnotationMethodLoggingSource
     messageSupport = configuredMessageSupport != null
         ? configuredMessageSupport
         : MessageSupportFactory.create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
+
+    final var configuredMethodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory();
+    methodLoggerFactory = configuredMethodLoggerFactory != null
+        ? configuredMethodLoggerFactory
+        : new AutoDetectLoggerFactory();
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
@@ -185,12 +193,14 @@ public final class AnnotationMethodLoggingSource
     final var methodLogging =
         findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
     final var location = findMethodLocation(specificMethod);
+    final var loggerField = findLoggerField(targetClass, methodLogging);
+
+    methodLoggerFactory.validate(loggerField, targetClass);
 
     return new MethodDef(messageSupport.getMessageAccessor().getMessageFactory(),
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
         getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method, location,
-        methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1,
-        findLoggerField(targetClass, methodLogging));
+        methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1, loggerField);
   }
 
 

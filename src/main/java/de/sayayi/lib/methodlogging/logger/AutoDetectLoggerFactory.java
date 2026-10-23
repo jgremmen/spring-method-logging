@@ -16,36 +16,57 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 
 import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 
 /**
- * Method logger factory implementation which dynamically selects the appropriate logger based on the type of the
- * logger field.
+ * Method logger factory implementation which dynamically selects the appropriate logger based on the logger instance
+ * held by the logger field.
  * <p>
- * Currently it supports the following logger frameworks:
+ * Currently it supports loggers of the following logging frameworks, including subtypes:
  * <ul>
- *   <li>Apache logging (org.apache.commons.logging)</li>
- *   <li>JBoss logging (org.jboss.logging)</li>
- *   <li>JDK logging (java.util.logging)</li>
- *   <li>Log4j2 (org.apache.logging.log4j)</li>
- *   <li>Slf4j (org.slf4j)</li>
- *   <li>Logback (ch.qos.logback.classic.Logger)</li>
- *   <li>Tinylog (org.tinylog.Logger)</li>
+ *   <li>Apache commons logging ({@code org.apache.commons.logging.Log})</li>
+ *   <li>JBoss logging ({@code org.jboss.logging.Logger})</li>
+ *   <li>JDK logging ({@code java.util.logging.Logger})</li>
+ *   <li>JDK platform logging ({@code java.lang.System.Logger})</li>
+ *   <li>Log4j2 ({@code org.apache.logging.log4j.Logger})</li>
+ *   <li>Logback ({@code ch.qos.logback.classic.Logger})</li>
+ *   <li>Slf4j ({@code org.slf4j.Logger})</li>
+ *   <li>Tinylog ({@code org.tinylog.TaggedLogger})</li>
  * </ul>
- * If the logger field contains {@code null} or a logger of another type, the method is not logged. If no logger field
- * is available, a JCL logger for the target class is used.
+ * If no logger field is available or the logger field contains a logger of another type, a JCL logger for the target
+ * class is used; an unsupported logger type is reported once per logger field at WARN level. If the logger field
+ * contains {@code null}, the method is not logged.
  *
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
 public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 {
+  private static final Log LOG = LogFactory.getLog(AutoDetectLoggerFactory.class);
+
+  /** Supported logger kind, by logger instance class. */
+  private static final ClassValue<LoggerKind> LOGGER_KIND = new ClassValue<>() {
+    @Override
+    protected @NotNull LoggerKind computeValue(@NotNull Class<?> type) {
+      return LoggerKind.of(type);
+    }
+  };
+
+  /** Logger fields with an unsupported logger type which have been reported already. */
+  private final Set<String> reportedLoggerFields = newKeySet();
+
+
   /** Creates a new auto-detecting method logger factory. */
   public AutoDetectLoggerFactory() {
     super(true);
@@ -63,22 +84,98 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Creates a method logger matching the type of the logger field. If the field type is not recognized,
-   * {@link MethodLogger#NO_OP} is returned.
+   * Creates a method logger matching the type of the logger instance held by the logger field.
    * {@inheritDoc}
    */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {
-    return switch(loggerField.getType().getName()) {
-      case "ch.qos.logback.classic.Logger" -> LogbackLogger.from(loggerField, obj);
-      case "java.util.logging.Logger" -> JULLogger.from(loggerField, obj);
-      case "org.apache.commons.logging.Log" -> JCLLogger.from(loggerField, obj);
-      case "org.apache.logging.log4j.Logger" -> Log4j2Logger.from(loggerField, obj);
-      case "org.jboss.logging.Logger" -> JBossLogger.from(loggerField, obj);
-      case "org.slf4j.Logger" -> Slf4jLogger.from(loggerField, obj);
-      case "org.tinylog.Logger" -> TinylogLogger.INSTANCE;
-      default -> NO_OP;
+    final Object logger;
+
+    try {
+      if ((logger = loggerField.get(obj)) == null)
+        return NO_OP;
+    } catch(IllegalAccessException ex) {
+      return NO_OP;
+    }
+
+    return switch(LOGGER_KIND.get(logger.getClass())) {
+      case LOGBACK -> LogbackLogger.of(logger);
+      case SLF4J -> Slf4jLogger.of(logger);
+      case LOG4J2 -> Log4j2Logger.of(logger);
+      case JUL -> JULLogger.of(logger);
+      case JCL -> JCLLogger.of(logger);
+      case JBOSS -> JBossLogger.of(logger);
+      case TINYLOG -> TinylogTaggedLogger.of(logger);
+      case SYSTEM -> SystemLogger.of(logger);
+      case UNSUPPORTED -> createUnsupportedMethodLogger(loggerField, logger, obj);
     };
+  }
+
+
+  private @NotNull MethodLogger createUnsupportedMethodLogger(@NotNull Field loggerField, @NotNull Object logger,
+                                                              @NotNull Object obj)
+  {
+    final var declaringClass = loggerField.getDeclaringClass();
+
+    if (reportedLoggerFields.add(declaringClass.getName() + '#' + loggerField.getName()))
+    {
+      LOG.warn("Logger field '" + loggerField.getName() + "' of " + declaringClass + " contains an unsupported " +
+          "logger of type " + logger.getClass().getName() + "; a JCL logger is used instead");
+    }
+
+    return getClassMethodLogger(obj.getClass());
+  }
+
+
+
+
+  /**
+   * Supported logger kinds, identified by type name, as the logging frameworks are optional dependencies.
+   */
+  private enum LoggerKind
+  {
+    // Logback loggers are SLF4J loggers as well, so Logback must be checked first
+    LOGBACK("ch.qos.logback.classic.Logger"),
+    SLF4J("org.slf4j.Logger"),
+    LOG4J2("org.apache.logging.log4j.Logger"),
+    JUL("java.util.logging.Logger"),
+    JCL("org.apache.commons.logging.Log"),
+    JBOSS("org.jboss.logging.Logger"),
+    TINYLOG("org.tinylog.TaggedLogger"),
+    SYSTEM("java.lang.System$Logger"),
+    UNSUPPORTED(null);
+
+
+    private final String typeName;
+
+
+    LoggerKind(String typeName) {
+      this.typeName = typeName;
+    }
+
+
+    @Contract(pure = true)
+    private static @NotNull LoggerKind of(@NotNull Class<?> type)
+    {
+      final var typeNames = new HashSet<String>();
+
+      collectTypeNames(type, typeNames);
+
+      for(var kind: values())
+        if (kind.typeName == null || typeNames.contains(kind.typeName))
+          return kind;
+
+      return UNSUPPORTED;
+    }
+
+
+    private static void collectTypeNames(Class<?> type, @NotNull Set<String> typeNames)
+    {
+      for(; type != null; type = type.getSuperclass())
+        if (typeNames.add(type.getName()))
+          for(var interfaceType: type.getInterfaces())
+            collectTypeNames(interfaceType, typeNames);
+    }
   }
 }

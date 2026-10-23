@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -76,7 +76,7 @@ final class Log4j2Logger implements MethodLogger
 
   /**
    * Creates a {@code Log4j2Logger} by reading a Log4j2 {@link Logger} from the given field on the target instance.
-   * Returns {@link #NO_OP} if the field is not accessible or its value is {@code null}.
+   * Returns {@link #NO_OP} if the field is not accessible, its value is {@code null} or not a Log4j2 logger.
    *
    * @param loggerField  the field containing the Log4j2 logger, not {@code null}
    * @param instance     the object owning the field, not {@code null}
@@ -87,9 +87,23 @@ final class Log4j2Logger implements MethodLogger
   static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
   {
     try {
-      return new Log4j2Logger((Logger)loggerField.get(instance));
-    } catch(IllegalAccessException | NullPointerException ex) {
+      return of(loggerField.get(instance));
+    } catch(IllegalAccessException ex) {
       return NO_OP;
     }
+  }
+
+
+  /**
+   * Creates a {@code Log4j2Logger} for the given logger instance.
+   *
+   * @param logger  logger instance, may be {@code null}
+   *
+   * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a Log4j2 logger, never
+   *          {@code null}
+   */
+  @Contract(pure = true)
+  static @NotNull MethodLogger of(Object logger) {
+    return logger instanceof Logger l ? new Log4j2Logger(l) : NO_OP;
   }
 }

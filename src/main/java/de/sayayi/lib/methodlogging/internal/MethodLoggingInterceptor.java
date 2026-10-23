@@ -18,7 +18,6 @@ package de.sayayi.lib.methodlogging.internal;
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
-import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
@@ -41,8 +40,9 @@ import static org.springframework.util.StringUtils.hasLength;
  * <p>
  * Method logging never affects the invoked method: its result and exceptions are passed on unchanged. If a parameter
  * value or the result cannot be formatted, it is logged as {@code <format failed: exception>}. Other failures are
- * reported at WARN level through the JCL logger of this class: if the method logger cannot be obtained, the method is
- * invoked without logging; if logging the entry, result or exit fails, the remaining messages are still logged.
+ * reported at WARN level through the JCL logger of this class: if the method cannot be analyzed (for AspectJ based
+ * method logging on first invocation) or the method logger cannot be obtained, the method is invoked without logging;
+ * if logging the entry, result or exit fails, the remaining messages are still logged.
  * <p>
  * Nothing is logged for an invocation if the method logger does not enable the entry/exit level; parameters and result
  * are logged only together with the entry and exit messages.
@@ -65,11 +65,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
     messageSupport = annotationMethodLoggingSource.messageSupport;
-
-    final var configuredMethodLoggerFactory =
-        annotationMethodLoggingSource.methodLoggingConfigurer.methodLoggerFactory();
-    methodLoggerFactory =
-        configuredMethodLoggerFactory != null ? configuredMethodLoggerFactory : new AutoDetectLoggerFactory();
+    methodLoggerFactory = annotationMethodLoggingSource.methodLoggerFactory;
   }
 
 
@@ -78,7 +74,15 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     final var _this = requireNonNull(invocation.getThis());
     final var thisType = ultimateTargetClass(_this);
-    final var methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
+    final MethodDef methodDef;
+
+    try {
+      // usually analyzed when the proxy is created; for AspectJ based method logging on first invocation
+      methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
+    } catch(Exception ex) {
+      LOG.warn("Method logging analysis failed for method '" + invocation.getMethod().getName() + '\'', ex);
+      return invocation.proceed();
+    }
 
     // no definition if the target differs from the class matched by the pointcut (e.g. for a custom target source)
     if (methodDef == null)

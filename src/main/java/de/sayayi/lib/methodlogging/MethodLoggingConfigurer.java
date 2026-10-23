@@ -66,8 +66,8 @@ public interface MethodLoggingConfigurer
    * Construct the method logger factory to be used with method logging.
    * <p>
    * The default is an instance of {@link AutoDetectLoggerFactory} which selects the appropriate logger based on the
-   * type of the logger field. If no logger field is available, it falls back to a JCL (Java Commons Logging) based
-   * logger.
+   * type of the logger held by the logger field. If no logger field is available, it falls back to a JCL (Java Commons
+   * Logging) based logger.
    *
    * @return  Method logger factory or {@code null} to use the default method logger factory
    *

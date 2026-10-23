@@ -586,8 +586,15 @@ public class MethodLoggingTest
 
 
   @Setter
-  static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory {
+  static final class MethodLoggerFactoryDelegate implements MethodLoggerFactory
+  {
     @Delegate private MethodLoggerFactory factory;
+
+
+    @Override
+    public void validate(Field loggerField, @NotNull Class<?> type) {
+      // the factory is set by the tests after the definitions have been analyzed
+    }
   }
 
 

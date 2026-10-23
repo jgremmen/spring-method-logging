@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.annotation;
 
-import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Visibility;
 import org.intellij.lang.annotations.Language;
 
@@ -71,8 +71,9 @@ public @interface MethodLoggingConfig
    * The method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle
    * the contents of the field.
    * <p>
-   * If the field contains {@code null} or an object not supported by the method logger factory, the method is not
-   * logged. An empty name disables the logger field lookup.
+   * If the field contains {@code null}, the method is not logged. The handling of an object not supported by the method
+   * logger factory depends on the factory: the default factory falls back to a JCL logger, the logging framework
+   * specific factories do not log the method. An empty name disables the logger field lookup.
    *
    * @return  logger field name
    *

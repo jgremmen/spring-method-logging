@@ -15,7 +15,10 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
@@ -24,6 +27,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 
 /**
@@ -50,5 +54,45 @@ class MethodLoggingInterceptorTest
     final var proxy = (Supplier<String>)proxyFactory.getProxy();
 
     assertEquals("result", proxy.get());
+  }
+
+
+  @Test
+  @DisplayName("Method is invoked if the method analysis fails")
+  void failingAnalysis()
+  {
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public MethodLoggerFactory methodLoggerFactory() {
+            return JULLoggerFactory.strict();
+          }
+        },
+        new DefaultResourceLoader());
+
+    // proxy mode fails when analyzing the method, as the bean has no logger field...
+    assertThrowsExactly(IllegalStateException.class,
+        () -> source.getMethodDefinition(NoLoggerField.class.getMethod("get"), NoLoggerField.class));
+
+    // ...while AspectJ mode analyzes on invocation, which must not fail
+    final var proxyFactory = new ProxyFactory(new NoLoggerField());
+    proxyFactory.addAdvice(new MethodLoggingInterceptor(source));
+
+    @SuppressWarnings("unchecked")
+    final var proxy = (Supplier<String>)proxyFactory.getProxy();
+
+    assertEquals("result", proxy.get());
+  }
+
+
+
+
+  public static class NoLoggerField implements Supplier<String>
+  {
+    @Override
+    @MethodLogging
+    public String get() {
+      return "result";
+    }
   }
 }
