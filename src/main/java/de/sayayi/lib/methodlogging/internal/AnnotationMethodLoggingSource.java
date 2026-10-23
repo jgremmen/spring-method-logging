@@ -54,6 +54,7 @@ import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
+import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
@@ -70,7 +71,7 @@ import static org.springframework.util.StringUtils.hasLength;
 
 
 /**
- * Analyses methods annotated with {@link MethodLogging @MethodLogging} and provides their method logging definitions.
+ * Analyzes methods annotated with {@link MethodLogging @MethodLogging} and provides their method logging definitions.
  * <p>
  * The definition of a method is resolved from the method annotation, the {@link MethodLoggingConfig} annotation of the
  * target class and the {@link MethodLoggingConfigurer}, in that order: an attribute left at its default
@@ -82,6 +83,9 @@ import static org.springframework.util.StringUtils.hasLength;
  * Definitions are cached per method and target class, including the information that a method has no method logging.
  * The analysis runs without holding a lock, so concurrent analysis of the same method is possible; the definition
  * cached first is used.
+ * <p>
+ * Creating the configurer may require beans with method logging. Methods analyzed by the thread creating the configurer
+ * are therefore not analyzed until the configurer is available.
  * <p>
  * This class also creates the message support used by the definitions and the interceptor: the one provided by
  * {@link MethodLoggingConfigurer#messageSupport()} or, if none is provided, a default message support.
@@ -95,6 +99,7 @@ public final class AnnotationMethodLoggingSource
 {
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
   private final @NotNull SingletonSupplier<Configuration> configuration;
+  private final @NotNull ThreadLocal<Boolean> resolvingConfiguration = new ThreadLocal<>();
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
 
@@ -123,7 +128,14 @@ public final class AnnotationMethodLoggingSource
   AnnotationMethodLoggingSource(@NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader)
   {
-    configuration = SingletonSupplier.of(() -> new Configuration(methodLoggingConfigurer.get(), resourceLoader));
+    configuration = SingletonSupplier.of(() -> {
+      resolvingConfiguration.set(TRUE);
+      try {
+        return new Configuration(methodLoggingConfigurer.get(), resourceLoader);
+      } finally {
+        resolvingConfiguration.remove();
+      }
+    });
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
@@ -174,12 +186,51 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
+   * Tells whether {@code method} invoked on an instance of {@code targetClass} has method logging.
+   * <p>
+   * The method is analyzed, unless the configurer is being created by the current thread. In that case only the
+   * presence of the {@code @MethodLogging} annotation is checked, as the analysis requires the configurer. The
+   * definition is analyzed on first invocation instead.
+   *
+   * @param method       method, possibly an interface method, not {@code null}
+   * @param targetClass  target class, not {@code null}
+   *
+   * @return  {@code true} if the method has method logging, {@code false} otherwise
+   */
+  boolean hasMethodLogging(@NotNull Method method, @NotNull Class<?> targetClass)
+  {
+    if (resolvingConfiguration.get() == null)
+      return getMethodDefinition(method, targetClass) != null;
+
+    final var methodDef = methodLoggingDefinitionCache.get(new MethodClassKey(method, targetClass));
+
+    return methodDef != null ? methodDef.isPresent() : hasMethodLoggingAnnotation(method, targetClass);
+  }
+
+
+  /**
+   * Tells whether {@code method} invoked on an instance of {@code targetClass} is annotated with
+   * {@code @MethodLogging}. The method is not analyzed, so the configurer is not required.
+   *
+   * @param method       method, possibly an interface method, not {@code null}
+   * @param targetClass  target class, not {@code null}
+   *
+   * @return  {@code true} if the method is annotated with {@code @MethodLogging}, {@code false} otherwise
+   */
+  @Contract(pure = true)
+  boolean hasMethodLoggingAnnotation(@NotNull Method method, @NotNull Class<?> targetClass) {
+    return findMethodLoggingAttributes(getMostSpecificMethod(method, targetClass)) != null;
+  }
+
+
+  /**
    * Returns the method logging definition for {@code method} invoked on an instance of {@code targetClass}.
    *
    * @param method       invoked method, possibly an interface method, not {@code null}
    * @param targetClass  class of the target instance, not {@code null}
    *
-   * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation
+   * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation or the
+   *          configurer is being created by the current thread
    */
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
@@ -188,6 +239,10 @@ public final class AnnotationMethodLoggingSource
     var methodDef = methodLoggingDefinitionCache.get(methodClassKey);
     if (methodDef == null)
     {
+      // the analysis requires the configurer; obtaining it now would create it again
+      if (resolvingConfiguration.get() != null)
+        return null;
+
       methodDef = ofNullable(analyseMethodDefinition(method, targetClass));
       methodDef = requireNonNullElse(methodLoggingDefinitionCache.putIfAbsent(methodClassKey, methodDef), methodDef);
     }
@@ -201,8 +256,7 @@ public final class AnnotationMethodLoggingSource
     // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
     // providing parameter names/annotations and line numbers
     final var specificMethod = getMostSpecificMethod(method, targetClass);
-    final var methodLoggingAttributes =
-        findMergedAnnotationAttributes(specificMethod, MethodLogging.class, false, true);
+    final var methodLoggingAttributes = findMethodLoggingAttributes(specificMethod);
 
     if (methodLoggingAttributes == null)
       return null;
@@ -221,6 +275,12 @@ public final class AnnotationMethodLoggingSource
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
         getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method, location,
         methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1, loggerField);
+  }
+
+
+  @Contract(pure = true)
+  private static AnnotationAttributes findMethodLoggingAttributes(@NotNull Method specificMethod) {
+    return findMergedAnnotationAttributes(specificMethod, MethodLogging.class, false, true);
   }
 
 

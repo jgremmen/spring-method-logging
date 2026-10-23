@@ -15,22 +15,35 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
+import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.junit.jupiter.api.DisplayName;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.aop.support.AopUtils.isAopProxy;
 
 
 /**
@@ -72,10 +85,30 @@ class ConfigurerResolutionTest
         fail("context must not start");
       }
     });
-    assertInstanceOf(NoUniqueBeanDefinitionException.class, NestedExceptionUtils.getRootCause(ex));
+    assertInstanceOf(NoUniqueBeanDefinitionException.class, NestedExceptionUtils.getMostSpecificCause(ex));
 
     try(var context = new AnnotationConfigApplicationContext(PrimaryConfigurer.class)) {
       assertNotNull(context.getBean(Bean.class));
+    }
+  }
+
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(classes = { ConstructorInjectedConfigurer.class, FieldInjectedConfigurer.class })
+  @DisplayName("Configurer may depend on a bean with method logging")
+  void configurerWithMethodLoggingDependency(Class<?> configurerClass)
+  {
+    try(var context = new AnnotationConfigApplicationContext(
+        DependentConfigurerConfiguration.class, Dependency.class, configurerClass)) {
+      final var dependency = context.getBean(Dependency.class);
+
+      assertTrue(isAopProxy(dependency));
+
+      // invoked while the configurer was created, without method logging
+      assertTrue(dependency.getLog().isEmpty());
+
+      dependency.work();
+      assertEquals(List.of("INFO|> work", "INFO|< work"), dependency.getLog());
     }
   }
 
@@ -109,6 +142,81 @@ class ConfigurerResolutionTest
 
     public void notLogged() {
     }
+  }
+
+
+
+
+  @Getter
+  @SuppressWarnings("unused")
+  public static class Dependency
+  {
+    private final List<String> log = new ArrayList<>();
+
+
+    @MethodLogging
+    public MethodLoggerFactory methodLoggerFactory()
+    {
+      return (loggerField, obj, type) -> new MethodLogger() {
+        @Override
+        public void log(@NotNull Level level, String message) {
+          log.add(level.name() + '|' + message);
+        }
+
+        @Override
+        public boolean isLogEnabled(@NotNull Level level) {
+          return true;
+        }
+      };
+    }
+
+
+    @MethodLogging(lineNumber = HIDE)
+    public void work() {
+    }
+  }
+
+
+
+
+  @Component
+  public static class ConstructorInjectedConfigurer implements MethodLoggingConfigurer
+  {
+    private final Dependency dependency;
+
+
+    public ConstructorInjectedConfigurer(Dependency dependency) {
+      this.dependency = dependency;
+    }
+
+
+    @Override
+    public MethodLoggerFactory methodLoggerFactory() {
+      return dependency.methodLoggerFactory();
+    }
+  }
+
+
+
+
+  @Component
+  public static class FieldInjectedConfigurer implements MethodLoggingConfigurer
+  {
+    @Autowired private Dependency dependency;
+
+
+    @Override
+    public MethodLoggerFactory methodLoggerFactory() {
+      return dependency.methodLoggerFactory();
+    }
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging
+  static class DependentConfigurerConfiguration {
   }
 
 

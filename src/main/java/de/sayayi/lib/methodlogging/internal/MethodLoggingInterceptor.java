@@ -71,7 +71,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     final MethodDef methodDef;
 
     try {
-      // usually analyzed when the proxy is created; for AspectJ based method logging on first invocation
+      // usually analyzed on startup; for AspectJ based method logging on first invocation
       methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
     } catch(Throwable ex) {
       rethrowIfFatal(ex);
@@ -80,6 +80,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
     }
 
     // no definition if the target differs from the class matched by the pointcut (e.g. for a custom target source)
+    // or if the method is invoked while the configurer is being created
     if (methodDef == null)
       return invocation.proceed();
 
