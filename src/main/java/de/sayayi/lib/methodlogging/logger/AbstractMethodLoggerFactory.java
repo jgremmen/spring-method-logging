@@ -43,19 +43,11 @@ import static java.lang.reflect.Modifier.STATIC;
  */
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
-  private final ClassValue<Map<String,MethodLogger>> fieldLoggerCache = new ClassValue<>() {
-    @Override
-    protected @NotNull Map<String,MethodLogger> computeValue(@NotNull Class<?> type) {
-      return new ConcurrentHashMap<>();
-    }
-  };
+  /** Method loggers for static final logger fields, by logger field. */
+  private final Map<Field,MethodLogger> fieldLoggerCache = new ConcurrentHashMap<>();
 
-  private final ClassValue<MethodLogger> classLoggerCache = new ClassValue<>() {
-    @Override
-    protected @NotNull MethodLogger computeValue(@NotNull Class<?> type) {
-      return createMethodLogger(type);
-    }
-  };
+  /** Method loggers for classes without logger field, by class. */
+  private final Map<Class<?>,MethodLogger> classLoggerCache = new ConcurrentHashMap<>();
 
   private final boolean createLoggerOnNoField;
 
@@ -95,16 +87,13 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
     {
       if ((loggerField.getModifiers() & (STATIC | FINAL)) == (STATIC | FINAL))
       {
-        final var fieldLoggers = fieldLoggerCache.get(loggerField.getDeclaringClass());
-        final var fieldName = loggerField.getName();
-
-        var methodLogger = fieldLoggers.get(fieldName);
+        var methodLogger = fieldLoggerCache.get(loggerField);
         if (methodLogger == null)
         {
           // create the logger without holding a lock; concurrently created loggers are equivalent
           methodLogger = createMethodLogger(loggerField, obj);
 
-          var cachedMethodLogger = fieldLoggers.putIfAbsent(fieldName, methodLogger);
+          var cachedMethodLogger = fieldLoggerCache.putIfAbsent(loggerField, methodLogger);
           if (cachedMethodLogger != null)
             methodLogger = cachedMethodLogger;
         }
@@ -172,14 +161,25 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    *
    * @since 0.6.0
    */
-  protected final @NotNull MethodLogger getClassMethodLogger(@NotNull Class<?> type) {
-    return classLoggerCache.get(type);
+  protected final @NotNull MethodLogger getClassMethodLogger(@NotNull Class<?> type)
+  {
+    var methodLogger = classLoggerCache.get(type);
+    if (methodLogger == null)
+    {
+      methodLogger = createMethodLogger(type);
+
+      var cachedMethodLogger = classLoggerCache.putIfAbsent(type, methodLogger);
+      if (cachedMethodLogger != null)
+        methodLogger = cachedMethodLogger;
+    }
+
+    return methodLogger;
   }
 
 
   /**
    * Creates a method logger for the given class when no logger field is available. The method logger is cached, so this
-   * method is invoked once per class.
+   * method is invoked once per class, unless the method logger for a class is requested concurrently.
    *
    * @param clazz  the target class, not {@code null}
    *

@@ -55,13 +55,16 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 {
   private static final Log LOG = LogFactory.getLog(AutoDetectLoggerFactory.class);
 
-  /** Supported logger kind, by logger instance class. */
-  private static final ClassValue<LoggerKind> LOGGER_KIND = new ClassValue<>() {
+  /** Ordinal of the supported logger kind, by logger instance class. */
+  private static final ClassValue<Integer> LOGGER_KIND_ORDINAL = new ClassValue<>() {
     @Override
-    protected @NotNull LoggerKind computeValue(@NotNull Class<?> type) {
-      return LoggerKind.of(type);
+    protected @NotNull Integer computeValue(@NotNull Class<?> type) {
+      return LoggerKind.of(type).ordinal();
     }
   };
+
+  /** All logger kinds, indexed by ordinal. */
+  private static final LoggerKind[] LOGGER_KINDS = LoggerKind.values();
 
   /** Logger fields with an unsupported logger type which have been reported already. */
   private final Set<String> reportedLoggerFields = newKeySet();
@@ -99,7 +102,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
       return NO_OP;
     }
 
-    return switch(LOGGER_KIND.get(logger.getClass())) {
+    return switch(LOGGER_KINDS[LOGGER_KIND_ORDINAL.get(logger.getClass())]) {
       case LOGBACK -> LogbackLogger.of(logger);
       case SLF4J -> Slf4jLogger.of(logger);
       case LOG4J2 -> Log4j2Logger.of(logger);
