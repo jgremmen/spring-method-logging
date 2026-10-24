@@ -170,7 +170,8 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 
     /**
      * Analyzes the methods matched so far and stops deferring the analysis of methods matched from now on. An analysis
-     * failure is passed on, so the application context fails to start.
+     * failure is passed on, so the application context fails to start. If another thread is creating the configuration
+     * at that time, the remaining methods are analyzed on first invocation instead.
      *
      * @throws IllegalStateException  if the method logging configuration of a method is invalid
      */

@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
@@ -39,9 +40,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.aop.support.AopUtils.isAopProxy;
 
@@ -73,6 +78,74 @@ class ConfigurerResolutionTest
     assertNotNull(source.getMethodDefinition(Bean.class.getMethod("logged"), Bean.class));
     assertNotNull(source.getMethodDefinition(Bean.class.getMethod("loggedToo"), Bean.class));
     assertEquals(1, resolved.get());
+  }
+
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(booleans = { false, true })
+  @DisplayName("Configuration creation does not deadlock with a thread holding the bean factory lock")
+  void noDeadlockWithBeanFactoryLock(boolean lockInConfigurerMethod) throws Exception
+  {
+    // simulates the singleton lock of the bean factory, acquired when the configurer bean is created or when a
+    // configurer method obtains a bean
+    final var singletonLock = new ReentrantLock();
+    final var resolverWaiting = new CountDownLatch(1);
+    final var messageSupportInvocations = new AtomicInteger();
+    final Runnable acquireSingletonLock = () -> {
+      resolverWaiting.countDown();
+      singletonLock.lock();
+      singletonLock.unlock();
+    };
+    final var source = new AnnotationMethodLoggingSource(
+        () -> {
+          if (!lockInConfigurerMethod)
+            acquireSingletonLock.run();
+
+          return new MethodLoggingConfigurer() {
+            @Override
+            public MessageSupport messageSupport()
+            {
+              messageSupportInvocations.incrementAndGet();
+              if (lockInConfigurerMethod)
+                acquireSingletonLock.run();
+
+              return null;
+            }
+          };
+        },
+        new DefaultResourceLoader());
+    final var logged = Bean.class.getMethod("logged");
+    final var resolver = new Thread(() -> source.getMethodDefinition(logged, Bean.class));
+    final var methodDef = new CompletableFuture<MethodDef>();
+
+    // creates a bean, holding the singleton lock, and invokes a method with method logging, while the resolver thread
+    // is creating the configuration and waits for the singleton lock
+    final var beanCreator = new Thread(() -> {
+      singletonLock.lock();
+      try {
+        resolver.start();
+
+        if (resolverWaiting.await(5, SECONDS))
+          methodDef.complete(source.getMethodDefinition(logged, Bean.class));
+        else
+          methodDef.completeExceptionally(new AssertionError("resolver thread not started"));
+      } catch(Throwable ex) {
+        methodDef.completeExceptionally(ex);
+      } finally {
+        singletonLock.unlock();
+      }
+    });
+    resolver.setDaemon(true);
+    beanCreator.setDaemon(true);
+    beanCreator.start();
+
+    // the method is not logged while the configuration is being created
+    assertNull(methodDef.get(5, SECONDS));
+
+    resolver.join(5000);
+    assertFalse(resolver.isAlive());
+    assertNotNull(source.getMethodDefinition(logged, Bean.class));
+    assertEquals(1, messageSupportInvocations.get());
   }
 
 

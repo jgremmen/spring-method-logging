@@ -41,7 +41,6 @@ import org.springframework.core.annotation.MergedAnnotationSelectors;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.util.function.SingletonSupplier;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -50,20 +49,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
-import static java.lang.Boolean.TRUE;
 import static java.lang.reflect.Modifier.PRIVATE;
 import static java.lang.reflect.Modifier.STATIC;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
-import static java.util.Optional.ofNullable;
 import static org.springframework.aop.support.AopUtils.getMostSpecificMethod;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
 import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
@@ -90,8 +88,10 @@ import static org.springframework.util.StringUtils.hasLength;
  * The analysis runs without holding a lock, so concurrent analysis of the same method is possible; the definition
  * cached first is used.
  * <p>
- * Creating the configurer may require beans with method logging. Methods analyzed by the thread creating the configurer
- * are therefore not analyzed until the configurer is available.
+ * Creating the configurer may require beans with method logging, and creating the configurer bean or invoking the
+ * configurer methods may acquire the bean factory's singleton lock. No thread therefore waits for the configuration:
+ * while it is being created, methods with method logging are not analyzed (and not logged) until the configuration is
+ * available. This avoids deadlocks with threads holding the singleton lock while invoking a method with method logging.
  * <p>
  * This class also creates the message support used by the definitions and the interceptor: the one provided by
  * {@link MethodLoggingConfigurer#messageSupport()} or, if none is provided, a default message support.
@@ -104,8 +104,10 @@ import static org.springframework.util.StringUtils.hasLength;
 public final class AnnotationMethodLoggingSource
 {
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
-  private final @NotNull SingletonSupplier<Configuration> configuration;
-  private final @NotNull ThreadLocal<Boolean> resolvingConfiguration = new ThreadLocal<>();
+  private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
+  private final @NotNull ResourceLoader resourceLoader;
+  private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
+  private volatile Configuration configuration;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
 
@@ -134,14 +136,8 @@ public final class AnnotationMethodLoggingSource
   AnnotationMethodLoggingSource(@NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader)
   {
-    configuration = SingletonSupplier.of(() -> {
-      resolvingConfiguration.set(TRUE);
-      try {
-        return new Configuration(methodLoggingConfigurer.get(), resourceLoader);
-      } finally {
-        resolvingConfiguration.remove();
-      }
-    });
+    this.methodLoggingConfigurer = methodLoggingConfigurer;
+    this.resourceLoader = resourceLoader;
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
@@ -149,22 +145,77 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Returns the message support provided by the configurer or the default message support.
+   * Returns the configuration, creating it on first invocation, unless it is being created.
+   * <p>
+   * Creating the configuration obtains the configurer bean and invokes the configurer methods, both of which may
+   * acquire the bean factory's singleton lock. A thread waiting for the configuration could therefore deadlock with the
+   * creating thread, if it holds the singleton lock itself (e.g. while creating a bean which invokes a method with
+   * method logging). So no thread waits: while the configuration is being created by one thread, {@code null} is
+   * returned to all threads, including the creating thread, which may require beans with method logging for creating
+   * the configurer. The configurer methods are invoked by a single thread, once the configuration has been created.
    *
-   * @return  message support, never {@code null}
+   * @return  configuration or {@code null} if the configuration is being created
+   *
+   * @throws IllegalStateException  if the configurer returns an invalid default
    */
-  @NotNull MessageSupport getMessageSupport() {
-    return configuration.obtain().messageSupport;
+  private Configuration findConfiguration()
+  {
+    var config = configuration;
+
+    if (config == null && creatingConfiguration.compareAndSet(false, true))
+    {
+      try {
+        if ((config = configuration) == null)
+          configuration = config = new Configuration(methodLoggingConfigurer.get(), resourceLoader);
+      } finally {
+        creatingConfiguration.set(false);
+      }
+    }
+
+    return config;
   }
 
 
   /**
-   * Returns the method logger factory provided by the configurer or the default method logger factory.
+   * Returns the configuration, creating it on first invocation.
+   *
+   * @return  configuration, never {@code null}
+   *
+   * @throws IllegalStateException  if the configuration is being created or the configurer returns an invalid default
+   */
+  private @NotNull Configuration getConfiguration()
+  {
+    var config = findConfiguration();
+    if (config == null)
+      throw new IllegalStateException("Method logging configuration is being created");
+
+    return config;
+  }
+
+
+  /**
+   * Returns the message support provided by the configurer or the default message support. The configuration is
+   * available once a method logging definition exists.
+   *
+   * @return  message support, never {@code null}
+   *
+   * @throws IllegalStateException  if the configuration is being created
+   */
+  @NotNull MessageSupport getMessageSupport() {
+    return getConfiguration().messageSupport;
+  }
+
+
+  /**
+   * Returns the method logger factory provided by the configurer or the default method logger factory. The
+   * configuration is available once a method logging definition exists.
    *
    * @return  method logger factory, never {@code null}
+   *
+   * @throws IllegalStateException  if the configuration is being created
    */
   @NotNull MethodLoggerFactory getMethodLoggerFactory() {
-    return configuration.obtain().methodLoggerFactory;
+    return getConfiguration().methodLoggerFactory;
   }
 
 
@@ -195,9 +246,9 @@ public final class AnnotationMethodLoggingSource
   /**
    * Tells whether {@code method} invoked on an instance of {@code targetClass} has method logging.
    * <p>
-   * The method is analyzed, unless the configurer is being created by the current thread. In that case only the
-   * presence of the {@code @MethodLogging} annotation is checked, as the analysis requires the configurer. The
-   * definition is analyzed on first invocation instead.
+   * The method is analyzed, unless the configuration is being created. In that case only the presence of the
+   * {@code @MethodLogging} annotation is checked, as the analysis requires the configuration. The definition is
+   * analyzed on first invocation instead.
    *
    * @param method       method, possibly an interface method, not {@code null}
    * @param targetClass  target class, not {@code null}
@@ -206,9 +257,10 @@ public final class AnnotationMethodLoggingSource
    */
   boolean hasMethodLogging(@NotNull Method method, @NotNull Class<?> targetClass)
   {
-    if (resolvingConfiguration.get() == null)
-      return getMethodDefinition(method, targetClass) != null;
+    if (getMethodDefinition(method, targetClass) != null)
+      return true;
 
+    // no definition is cached for an annotated method while the configuration is being created
     final var methodDef = methodLoggingDefinitionCache.get(new MethodClassKey(method, targetClass));
 
     return methodDef != null ? methodDef.isPresent() : hasMethodLoggingAnnotation(method, targetClass);
@@ -237,7 +289,7 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass  class of the target instance, not {@code null}
    *
    * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation or the
-   *          configurer is being created by the current thread
+   *          configuration is being created
    */
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
@@ -246,11 +298,24 @@ public final class AnnotationMethodLoggingSource
     var methodDef = methodLoggingDefinitionCache.get(methodClassKey);
     if (methodDef == null)
     {
-      // the analysis requires the configurer; obtaining it now would create it again
-      if (resolvingConfiguration.get() != null)
-        return null;
+      // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
+      // providing parameter names/annotations and line numbers
+      final var specificMethod = getMostSpecificMethod(method, targetClass);
+      final var methodLoggingAttributes = findMethodLoggingAttributes(specificMethod);
 
-      methodDef = ofNullable(analyseMethodDefinition(method, targetClass));
+      if (methodLoggingAttributes == null)
+        methodDef = Optional.empty();
+      else
+      {
+        // the configuration is required for methods with method logging only
+        final var config = findConfiguration();
+        if (config == null)
+          return null;
+
+        methodDef = Optional.of(
+            analyseMethodDefinition(method, specificMethod, methodLoggingAttributes, targetClass, config));
+      }
+
       methodDef = requireNonNullElse(methodLoggingDefinitionCache.putIfAbsent(methodClassKey, methodDef), methodDef);
     }
 
@@ -263,25 +328,21 @@ public final class AnnotationMethodLoggingSource
    * The settings of the method annotation are merged with the class annotation and the configurer defaults, the
    * parameters are analyzed, and the source location and logger field are determined.
    *
-   * @param method       invoked method, possibly an interface method, not {@code null}
-   * @param targetClass  class of the target instance, not {@code null}
+   * @param method                   invoked method, possibly an interface method, not {@code null}
+   * @param specificMethod           method implementation, not {@code null}
+   * @param methodLoggingAttributes  merged {@code @MethodLogging} attributes of {@code specificMethod}, not
+   *                                 {@code null}
+   * @param targetClass              class of the target instance, not {@code null}
+   * @param config                   configuration, not {@code null}
    *
-   * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation
+   * @return  method logging definition, never {@code null}
    *
    * @throws IllegalStateException  if the method logging configuration of the method is invalid
    */
-  private MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
+  private @NotNull MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Method specificMethod,
+                                                     @NotNull AnnotationAttributes methodLoggingAttributes,
+                                                     @NotNull Class<?> targetClass, @NotNull Configuration config)
   {
-    // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
-    // providing parameter names/annotations and line numbers
-    final var specificMethod = getMostSpecificMethod(method, targetClass);
-    final var methodLoggingAttributes = findMethodLoggingAttributes(specificMethod);
-
-    if (methodLoggingAttributes == null)
-      return null;
-
-    // the configurer is required for methods with method logging only
-    final var config = configuration.obtain();
     final var methodLoggingConfigAttributes = findMethodLoggingConfigAttributes(config, targetClass);
     final var methodLogging =
         findMergedMethodLogging(methodLoggingConfigAttributes, methodLoggingAttributes);
@@ -292,7 +353,7 @@ public final class AnnotationMethodLoggingSource
 
     return new MethodDef(config.messageSupport.getMessageAccessor().getMessageFactory(),
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
-        getParameterDefs(specificMethod, method, targetClass, methodLogging), methodLogging, method, location,
+        getParameterDefs(specificMethod, method, targetClass, methodLogging, config), methodLogging, method, location,
         methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1, loggerField);
   }
 
@@ -332,6 +393,7 @@ public final class AnnotationMethodLoggingSource
    * @param method          invoked method, possibly an interface method, not {@code null}
    * @param targetClass     class of the target instance, not {@code null}
    * @param methodLogging   merged method logging settings, not {@code null}
+   * @param config          configuration, not {@code null}
    *
    * @return  definitions of the parameters to be logged, never {@code null}
    *
@@ -340,7 +402,8 @@ public final class AnnotationMethodLoggingSource
   private @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod,
                                                                      @NotNull Method method,
                                                                      @NotNull Class<?> targetClass,
-                                                                     @NotNull MethodLogging methodLogging)
+                                                                     @NotNull MethodLogging methodLogging,
+                                                                     @NotNull Configuration config)
   {
     final var parameterCount = specificMethod.getParameterCount();
     if (parameterCount == 0 || methodLogging.parameters() != SHOW)
@@ -352,7 +415,7 @@ public final class AnnotationMethodLoggingSource
     final var declarationParameterNames = discoverParameterNames(declarations);
     final var excludeParameters = Set.copyOf(asList(methodLogging.exclude()));
     final var matchedExcludeParameters = new HashSet<String>();
-    final var messageFactory = getMessageSupport().getMessageAccessor().getMessageFactory();
+    final var messageFactory = config.messageSupport.getMessageAccessor().getMessageFactory();
 
     for(var p = 0; p < parameterCount; p++)
     {
@@ -370,7 +433,7 @@ public final class AnnotationMethodLoggingSource
         }
 
       if ((paramLog == null || !paramLog.exclude()) && !excludedByName &&
-          (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p, targetClass))))
+          (paramLog != null || isParameterIncluded(config, forMethodParameter(specificMethod, p, targetClass))))
       {
         @Language("MessageFormat")
         final var format = paramLog != null && hasLength(paramLog.format()) ? paramLog.format() : "%{value}";
@@ -602,17 +665,19 @@ public final class AnnotationMethodLoggingSource
    * Tells whether a parameter without {@code @ParamLog} annotation is to be logged. Primitive parameters are always
    * logged; for all other parameters, the configurer decides.
    *
+   * @param config               configuration providing the configurer, not {@code null}
    * @param methodParameterType  method parameter type, not {@code null}
    *
    * @return  {@code true} if the parameter is to be logged, {@code false} otherwise
    *
    * @see MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)
    */
-  private boolean isParameterIncluded(@NotNull ResolvableType methodParameterType)
+  private static boolean isParameterIncluded(@NotNull Configuration config,
+                                             @NotNull ResolvableType methodParameterType)
   {
     return
         (methodParameterType.toClass().isPrimitive() && !methodParameterType.isArray()) ||
-        !configuration.obtain().methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
+        !config.methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
   }
 
 
