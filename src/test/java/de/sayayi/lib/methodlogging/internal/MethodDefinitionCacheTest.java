@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +26,8 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,10 +97,97 @@ class MethodDefinitionCacheTest
 
 
 
+  @Test
+  @DisplayName("Failed analysis is cached and its failure passed on")
+  void failedAnalysis() throws Exception
+  {
+    final var analyses = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            analyses.incrementAndGet();
+            return false;
+          }
+        },
+        new DefaultResourceLoader());
+    final var method = Bean.class.getMethod("failing", String.class);
+
+    final var ex = assertThrowsExactly(IllegalStateException.class,
+        () -> source.getMethodDefinition(method, Bean.class));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class)));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.hasMethodLogging(method, Bean.class)));
+    assertEquals(1, analyses.get());
+    assertTrue(source.methodLoggingDefinitionCache.isEmpty());
+
+    // reported once
+    assertTrue(source.isFirstFailureReport(method, Bean.class));
+    assertFalse(source.isFirstFailureReport(method, Bean.class));
+  }
+
+
+  @Test
+  @DisplayName("Failing configurer methods are invoked once")
+  void failingConfigurer() throws Exception
+  {
+    final var invocations = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public @NotNull Level defaultEntryExitLevel()
+          {
+            invocations.incrementAndGet();
+            return Level.DEFAULT;
+          }
+        },
+        new DefaultResourceLoader());
+    final var logged = Bean.class.getMethod("logged", String.class);
+    final var failing = Bean.class.getMethod("failing", String.class);
+
+    final var ex = assertThrowsExactly(IllegalStateException.class,
+        () -> source.getMethodDefinition(logged, Bean.class));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(logged, Bean.class)));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(failing, Bean.class)));
+    assertEquals(1, invocations.get());
+  }
+
+
+  @Test
+  @DisplayName("Failure obtaining the configurer bean is not cached")
+  void unavailableConfigurer() throws Exception
+  {
+    final var available = new AtomicBoolean();
+    final var source = new AnnotationMethodLoggingSource(
+        () -> {
+          if (!available.get())
+            throw new IllegalStateException("configurer bean currently in creation");
+
+          return new MethodLoggingConfigurer() {};
+        },
+        new DefaultResourceLoader());
+    final var method = Bean.class.getMethod("logged", String.class);
+
+    assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class));
+    assertTrue(source.isFirstFailureReport(method, Bean.class));
+    assertTrue(source.isFirstFailureReport(method, Bean.class));
+
+    available.set(true);
+    assertNotNull(source.getMethodDefinition(method, Bean.class));
+  }
+
+
+
+
   public static class Bean
   {
     @MethodLogging
     public void logged(@SuppressWarnings("unused") String value) {
+    }
+
+
+    @MethodLogging(exclude = "missing")
+    public void failing(@SuppressWarnings("unused") String value) {
     }
 
 

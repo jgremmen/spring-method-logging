@@ -86,7 +86,7 @@ import static org.springframework.util.StringUtils.hasLength;
  * <p>
  * Definitions are cached per method and target class, including the information that a method has no method logging.
  * The analysis runs without holding a lock, so concurrent analysis of the same method is possible; the definition
- * cached first is used.
+ * cached first is used. A failed analysis is cached as well, so it is not repeated on every invocation.
  * <p>
  * Creating the configurer may require beans with method logging, and creating the configurer bean or invoking the
  * configurer methods may acquire the bean factory's singleton lock. No thread therefore waits for the configuration:
@@ -104,10 +104,12 @@ import static org.springframework.util.StringUtils.hasLength;
 public final class AnnotationMethodLoggingSource
 {
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
+  final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
   private final @NotNull ResourceLoader resourceLoader;
   private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
   private volatile Configuration configuration;
+  private volatile RuntimeException configurationFailure;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
 
@@ -140,6 +142,7 @@ public final class AnnotationMethodLoggingSource
     this.resourceLoader = resourceLoader;
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
+    methodLoggingFailureCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
   }
 
@@ -153,6 +156,11 @@ public final class AnnotationMethodLoggingSource
    * method logging). So no thread waits: while the configuration is being created by one thread, {@code null} is
    * returned to all threads, including the creating thread, which may require beans with method logging for creating
    * the configurer. The configurer methods are invoked by a single thread, once the configuration has been created.
+   * <p>
+   * If the configurer methods fail (e.g. by returning an invalid default), they would fail again; the failure is cached
+   * and passed on by all subsequent invocations, without invoking the configurer methods again. A failure obtaining the
+   * configurer bean is not cached, as the bean may be available later on (e.g. if it depends on a bean which is
+   * currently being created).
    *
    * @return  configuration or {@code null} if the configuration is being created
    *
@@ -161,18 +169,46 @@ public final class AnnotationMethodLoggingSource
   private Configuration findConfiguration()
   {
     var config = configuration;
-
-    if (config == null && creatingConfiguration.compareAndSet(false, true))
+    if (config == null)
     {
-      try {
-        if ((config = configuration) == null)
-          configuration = config = new Configuration(methodLoggingConfigurer.get(), resourceLoader);
-      } finally {
-        creatingConfiguration.set(false);
+      throwConfigurationFailure();
+
+      if (creatingConfiguration.compareAndSet(false, true))
+      {
+        try {
+          if ((config = configuration) == null)
+          {
+            throwConfigurationFailure();
+
+            final var configurer = methodLoggingConfigurer.get();
+
+            try {
+              configuration = config = new Configuration(configurer, resourceLoader);
+            } catch(RuntimeException ex) {
+              configurationFailure = ex;
+              throw ex;
+            }
+          }
+        } finally {
+          creatingConfiguration.set(false);
+        }
       }
     }
 
     return config;
+  }
+
+
+  /**
+   * Passes on the cached failure of the configurer methods, if any.
+   *
+   * @throws RuntimeException  if creating the configuration has failed
+   */
+  private void throwConfigurationFailure()
+  {
+    var failure = configurationFailure;
+    if (failure != null)
+      throw failure;
   }
 
 
@@ -288,8 +324,13 @@ public final class AnnotationMethodLoggingSource
    * @param method       invoked method, possibly an interface method, not {@code null}
    * @param targetClass  class of the target instance, not {@code null}
    *
+   * A failed analysis is cached: it is not repeated, but its failure is passed on by all subsequent invocations for the
+   * same method and target class (see {@link #isFirstFailureReport(Method, Class)}).
+   *
    * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation or the
    *          configuration is being created
+   *
+   * @throws RuntimeException  if the analysis of the method has failed
    */
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {
@@ -298,6 +339,10 @@ public final class AnnotationMethodLoggingSource
     var methodDef = methodLoggingDefinitionCache.get(methodClassKey);
     if (methodDef == null)
     {
+      var failure = methodLoggingFailureCache.get(methodClassKey);
+      if (failure != null)
+        throw failure.exception;
+
       // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
       // providing parameter names/annotations and line numbers
       final var specificMethod = getMostSpecificMethod(method, targetClass);
@@ -307,19 +352,52 @@ public final class AnnotationMethodLoggingSource
         methodDef = Optional.empty();
       else
       {
+        final Configuration config;
+
         // the configuration is required for methods with method logging only
-        final var config = findConfiguration();
+        try {
+          config = findConfiguration();
+        } catch(RuntimeException ex) {
+          // the configurer bean may be available later on, but failing configurer methods fail again
+          if (ex == configurationFailure)
+            methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(ex));
+
+          throw ex;
+        }
+
         if (config == null)
           return null;
 
-        methodDef = Optional.of(
-            analyseMethodDefinition(method, specificMethod, methodLoggingAttributes, targetClass, config));
+        try {
+          methodDef = Optional.of(
+              analyseMethodDefinition(method, specificMethod, methodLoggingAttributes, targetClass, config));
+        } catch(RuntimeException ex) {
+          methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(ex));
+          throw ex;
+        }
       }
 
       methodDef = requireNonNullElse(methodLoggingDefinitionCache.putIfAbsent(methodClassKey, methodDef), methodDef);
     }
 
     return methodDef.orElse(null);
+  }
+
+
+  /**
+   * Tells whether a failure of {@link #getMethodDefinition(Method, Class)} for {@code method} invoked on an instance of
+   * {@code targetClass} is to be reported. A cached analysis failure is reported once; a failure which is not cached
+   * (e.g. the configurer bean is not available yet) is reported every time.
+   *
+   * @param method       invoked method, possibly an interface method, not {@code null}
+   * @param targetClass  class of the target instance, not {@code null}
+   *
+   * @return  {@code true} if the failure is to be reported, {@code false} if it has been reported already
+   */
+  boolean isFirstFailureReport(@NotNull Method method, Class<?> targetClass)
+  {
+    final var failure = methodLoggingFailureCache.get(new MethodClassKey(method, targetClass));
+    return failure == null || failure.reported.compareAndSet(false, true);
   }
 
 
@@ -849,6 +927,31 @@ public final class AnnotationMethodLoggingSource
       }
 
     return null;
+  }
+
+
+
+
+  /**
+   * Cached failure of a method analysis.
+   */
+  static final class AnalysisFailure
+  {
+    /** Exception raised by the analysis, passed on whenever the method definition is requested. */
+    final @NotNull RuntimeException exception;
+
+    /** Tells whether the failure has been reported. */
+    final @NotNull AtomicBoolean reported = new AtomicBoolean();
+
+
+    /**
+     * Creates a cached analysis failure.
+     *
+     * @param exception  exception raised by the analysis, not {@code null}
+     */
+    AnalysisFailure(@NotNull RuntimeException exception) {
+      this.exception = exception;
+    }
   }
 
 

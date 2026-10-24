@@ -40,10 +40,11 @@ import static org.springframework.util.StringUtils.hasLength;
  * Method logging never affects the invoked method: its result and exceptions are passed on unchanged. If a parameter
  * value or the result cannot be formatted, it is logged as {@code <format failed: exception>}. Other failures are
  * reported at WARN level through the JCL logger of this class: if the method cannot be analyzed (for AspectJ based
- * method logging on first invocation) or the method logger cannot be obtained, the method is invoked without logging;
- * if logging the entry, result or exit fails, the remaining messages are still logged. This includes errors like a
- * {@link StackOverflowError} raised by a cyclic {@code toString()}; only virtual machine errors the application cannot
- * recover from, like an {@link OutOfMemoryError}, are passed on.
+ * method logging on first invocation; reported once per method and target class, as the failed analysis is not
+ * repeated) or the method logger cannot be obtained, the method is invoked without logging; if logging the entry,
+ * result or exit fails, the remaining messages are still logged. This includes errors like a {@link StackOverflowError}
+ * raised by a cyclic {@code toString()}; only virtual machine errors the application cannot recover from, like an
+ * {@link OutOfMemoryError}, are passed on.
  * <p>
  * Nothing is logged for an invocation if the method logger does not enable the entry/exit level; parameters and result
  * are logged only together with the entry and exit messages.
@@ -84,14 +85,19 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   {
     final var _this = requireNonNull(invocation.getThis());
     final var thisType = ultimateTargetClass(_this);
+    final var invocationMethod = invocation.getMethod();
     final MethodDef methodDef;
 
     try {
       // usually analyzed on startup; for AspectJ based method logging on first invocation
-      methodDef = annotationMethodLoggingSource.getMethodDefinition(invocation.getMethod(), thisType);
+      methodDef = annotationMethodLoggingSource.getMethodDefinition(invocationMethod, thisType);
     } catch(Throwable ex) {
       rethrowIfFatal(ex);
-      LOG.warn("Method logging analysis failed for method '" + invocation.getMethod().getName() + '\'', ex);
+
+      // a failed analysis is cached, so it is reported once instead of on every invocation
+      if (annotationMethodLoggingSource.isFirstFailureReport(invocationMethod, thisType))
+        LOG.warn("Method logging analysis failed for method '" + invocationMethod.getName() + '\'', ex);
+
       return invocation.proceed();
     }
 

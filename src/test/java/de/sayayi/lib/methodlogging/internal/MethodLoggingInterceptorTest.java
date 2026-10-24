@@ -65,7 +65,7 @@ class MethodLoggingInterceptorTest
 
   @Test
   @DisplayName("Method is invoked if the method analysis fails")
-  void failingAnalysis()
+  void failingAnalysis() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
         new MethodLoggingConfigurer() {
@@ -76,9 +76,10 @@ class MethodLoggingInterceptorTest
         },
         new DefaultResourceLoader());
 
+    final var method = NoLoggerField.class.getMethod("get");
+
     // proxy mode fails when analyzing the method, as the bean has no logger field...
-    assertThrowsExactly(IllegalStateException.class,
-        () -> source.getMethodDefinition(NoLoggerField.class.getMethod("get"), NoLoggerField.class));
+    assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(method, NoLoggerField.class));
 
     // ...while AspectJ mode analyzes on invocation, which must not fail
     final var proxyFactory = new ProxyFactory(new NoLoggerField());
@@ -88,6 +89,10 @@ class MethodLoggingInterceptorTest
     final var proxy = (Supplier<String>)proxyFactory.getProxy();
 
     assertEquals("result", proxy.get());
+    assertEquals("result", proxy.get());
+
+    // the cached failure has been reported by the first invocation (of the interface method invoked by the proxy)
+    assertFalse(source.isFirstFailureReport(Supplier.class.getMethod("get"), NoLoggerField.class));
   }
 
 
