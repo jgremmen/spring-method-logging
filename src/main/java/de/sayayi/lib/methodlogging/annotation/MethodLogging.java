@@ -70,9 +70,34 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </table>
  *
  * <h2>Effect on the logged method</h2>
- * Method logging never affects the logged method: its result and exceptions are passed on unchanged. A parameter value
- * or result which cannot be formatted is logged as {@code <format failed: exception>}. Other logging failures, for
- * example of the method logger, are reported at WARN level by the method logging interceptor through JCL.
+ * The result and exceptions of the logged method are passed on unchanged. A parameter value or result which cannot be
+ * formatted is logged as {@code <format failed: exception>}. Other logging failures, for example of the method logger,
+ * are reported at WARN level by the method logging interceptor through JCL.
+ * <p>
+ * Formatting a value may however execute code of the value itself. Parameters are formatted before the method is
+ * invoked, the result before it is returned to the caller, provided the parameter or result level is enabled. With the
+ * default message support (see {@link MethodLoggingConfigurer#messageSupport()}):
+ * <ul>
+ *   <li>
+ *     a {@link java.util.function.Supplier Supplier} (and its primitive variants, like
+ *     {@link java.util.function.IntSupplier IntSupplier}) is evaluated by invoking its {@code get} method, so its side
+ *     effects occur once more and before the method is invoked;
+ *   </li>
+ *   <li>
+ *     an {@link Iterable} is iterated completely. An iterable which can be iterated only once (e.g. a
+ *     {@link java.nio.file.DirectoryStream DirectoryStream}) cannot be iterated by the method or the caller anymore,
+ *     a lazily evaluated iterable (e.g. Spring's {@code ObjectProvider}) resolves its elements and an infinite iterable
+ *     does not return at all;
+ *   </li>
+ *   <li>
+ *     collections, arrays and maps are formatted with all of their elements. An {@link OutOfMemoryError} raised while
+ *     formatting a very large value is passed on, so the method is not invoked (parameters) or its result is lost
+ *     (result).
+ *   </li>
+ * </ul>
+ * Values of such types should therefore be excluded from logging: parameters with {@link ParamLog#exclude()},
+ * {@link #exclude()} or {@link MethodLoggingConfigurer#excludeMethodParameter(org.springframework.core.ResolvableType)},
+ * results with {@link #result()} set to {@link Visibility#HIDE HIDE}.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

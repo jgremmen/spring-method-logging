@@ -37,14 +37,20 @@ import static org.springframework.util.StringUtils.hasLength;
  * Method interceptor logging the entry, parameters, result and exit of methods with a method logging definition. It is
  * used for both proxy and AspectJ based method logging.
  * <p>
- * Method logging never affects the invoked method: its result and exceptions are passed on unchanged. If a parameter
- * value or the result cannot be formatted, it is logged as {@code <format failed: exception>}. Other failures are
- * reported at WARN level through the JCL logger of this class: if the method cannot be analyzed (for AspectJ based
- * method logging on first invocation; reported once per method and target class, as the failed analysis is not
- * repeated) or the method logger cannot be obtained, the method is invoked without logging; if logging the entry,
- * result or exit fails, the remaining messages are still logged. This includes errors like a {@link StackOverflowError}
- * raised by a cyclic {@code toString()}; only virtual machine errors the application cannot recover from, like an
- * {@link OutOfMemoryError}, are passed on.
+ * The result and exceptions of the invoked method are passed on unchanged. If a parameter value or the result cannot be
+ * formatted, it is logged as {@code <format failed: exception>}. Other failures are reported at WARN level through the
+ * JCL logger of this class: if the method cannot be analyzed (for AspectJ based method logging on first invocation;
+ * reported once per method and target class, as the failed analysis is not repeated) or the method logger cannot be
+ * obtained, the method is invoked without logging; if logging the entry, result or exit fails, the remaining messages
+ * are still logged. This includes errors like a {@link StackOverflowError} raised by a cyclic {@code toString()}; only
+ * virtual machine errors the application cannot recover from, like an {@link OutOfMemoryError}, are passed on.
+ * <p>
+ * Formatting a parameter value or the result may execute code of the value and thereby affect the invoked method or its
+ * caller: parameters are formatted before the method is invoked and the result before it is returned. The default
+ * message support evaluates suppliers and iterates iterables completely, which may repeat side effects, consume
+ * iterables which can be iterated only once or not return for infinite iterables. An {@link OutOfMemoryError} raised
+ * while formatting a very large value prevents the invocation (parameters) or replaces the result (result). See
+ * {@link de.sayayi.lib.methodlogging.annotation.MethodLogging MethodLogging}.
  * <p>
  * Nothing is logged for an invocation if the method logger does not enable the entry/exit level; parameters and result
  * are logged only together with the entry and exit messages.

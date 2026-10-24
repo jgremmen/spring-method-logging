@@ -96,6 +96,14 @@ Use `@ParamLog(exclude = true)` on the parameter, or exclude parameters by name 
 which is particularly important for sensitive parameters. Parameters can also be excluded by type with
 `MethodLoggingConfigurer.excludeMethodParameter(ResolvableType)`.
 
+Formatting a value may execute code of the value itself, as parameters are formatted before the method is invoked and
+the result before it is returned to the caller. By default, a `Supplier` is evaluated (so its side effects occur once
+more) and an `Iterable` is iterated completely: an iterable which can be iterated only once (e.g. a `DirectoryStream`)
+is consumed, a lazy one (e.g. Spring's `ObjectProvider`) resolves its elements and an infinite one never returns. An
+`OutOfMemoryError` raised while formatting a very large value prevents the method invocation or loses its result.
+Exclude such parameters and hide such results (`@MethodLogging(result = HIDE)`), or provide a message support with
+different formatters by `MethodLoggingConfigurer.messageSupport()`.
+
 ### Using a logger instance
 
 The basic configuration uses the JCL logger (also used internally by the Spring Framework), which in turn delegates to 

@@ -62,6 +62,12 @@ public interface MethodLoggingConfigurer
    * If {@code null} is returned (the default), a message support is created with a new {@link DefaultFormatterService}
    * for the class loader of the application context, using a formatter cache size of 128, and the default message
    * factory.
+   * <p>
+   * The default formatter service formats a {@link java.util.function.Supplier Supplier} (and its primitive variants)
+   * by evaluating it and an {@link Iterable}, collection, array or map with all of its elements. Formatting a parameter
+   * or result of such a type may therefore execute code of the value, with effects on the logged method (see
+   * {@link MethodLogging}). A message support with a formatter service lacking these formatters, or with formatters
+   * limiting the output, avoids this for all logged methods.
    *
    * @return  Message support or {@code null} to use the default message support
    */
@@ -105,7 +111,9 @@ public interface MethodLoggingConfigurer
   /**
    * Tells whether a method parameter is to be excluded from logging. This method provides a way to exclude parameters
    * by type, e.g. types which have no meaningful string representation, produce far too much output, contain sensitive
-   * information or are not important enough to be logged at all.
+   * information or are not important enough to be logged at all. Types whose formatting executes code of the value,
+   * like {@link java.util.function.Supplier Supplier} or {@link Iterable} implementations which are evaluated lazily,
+   * can be iterated only once or are infinite, should be excluded as well (see {@link MethodLogging}).
    * <p>
    * This method is queried for non-primitive types (except if it is an array, e.g. {@code byte[]}) and method
    * parameters without a @{@link ParamLog} annotation only.
