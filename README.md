@@ -36,9 +36,10 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 
 Parameter names are logged as they are discovered by Spring. Compile your classes with `-parameters`, as Spring
 Framework 6.1 and later no longer read parameter names from the debug information. Otherwise, synthesized names
-(`arg0`, `arg1`, …) are logged, unless a name is given with `@ParamLog(name = …)`. Without parameter names, a name
-excluded with `@MethodLogging(exclude = …)` which matches no parameter fails the method analysis, so the parameter is
-not logged unnoticed.
+(`arg0`, `arg1`, …) are logged, unless a name is given with `@ParamLog(name = …)`. A name excluded with
+`@MethodLogging(exclude = …)` which matches no parameter fails the method analysis, so a misspelled or outdated name
+does not leave the parameter logged unnoticed. Only names excluded by a composed annotation are not checked if
+parameter names are available, so the composed annotation can be used on methods with different parameters.
 
 ### Getting started
 

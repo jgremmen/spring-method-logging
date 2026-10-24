@@ -233,16 +233,18 @@ public @interface MethodLogging
    * whose value has no meaningful string representation, produces far too much output or contains sensitive information
    * such as passwords or tokens.
    * <p>
-   * The names are matched against the logged parameter names, i.e. the name given by {@link ParamLog#name()} if
-   * present, otherwise the discovered parameter name (or {@code arg0}, {@code arg1}, ... if parameter names are not
-   * available). A parameter is excluded even if it is annotated with {@link ParamLog @ParamLog}. To exclude a parameter
-   * independent of its name, use {@link ParamLog#exclude()}.
+   * A name matches a parameter if it equals the name given by {@link ParamLog#name()} or the discovered parameter name
+   * of the method or of any method it overrides, so a parameter named differently in an interface and its
+   * implementation can be excluded by either name. If parameter names are not available, the names {@code arg0},
+   * {@code arg1}, ... are matched instead of the discovered names. A parameter is excluded even if it is annotated with
+   * {@link ParamLog @ParamLog}. To exclude a parameter independent of its name, use {@link ParamLog#exclude()}.
    * <p>
-   * If parameter names are not available, a name matching no parameter would leave the parameter meant to be excluded
-   * in the log output. In that case the method analysis fails with an {@link IllegalStateException}: for proxy based
-   * method logging, the application context fails to start; for AspectJ based method logging, the method is invoked
-   * without logging. A name matching no parameter is accepted if parameter names are available, so composed annotations
-   * may exclude names not present on every method.
+   * A name matching no parameter, e.g. because it is misspelled or the parameter has been renamed, would leave the
+   * parameter meant to be excluded in the log output. In that case the method analysis fails with an
+   * {@link IllegalStateException}: for proxy based method logging, the application context fails to start; for AspectJ
+   * based method logging, the method is invoked without logging. Only if parameter names are available and the names
+   * are excluded by a composed annotation (meta-annotated with {@code @MethodLogging}), a name matching no parameter is
+   * accepted, so a composed annotation may exclude names not present on every method.
    *
    * @return  parameter names to exclude, empty by default
    */

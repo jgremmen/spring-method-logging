@@ -30,7 +30,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 
-import javax.tools.ToolProvider;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -44,6 +43,7 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
+import static javax.tools.ToolProvider.getSystemJavaCompiler;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.util.ClassUtils.isPresent;
 
@@ -202,11 +202,12 @@ class ParameterNameDiscoveryTest
 
   @ParameterizedTest(name = "{0}", quoteTextArguments = false)
   @CsvSource({
-      "METHOD_PARAMETERS, 'INFO|> call(id=1,flag=true)'",
-      "NONE,              ''"
+      "METHOD_PARAMETERS, other, false",
+      "NONE,              name,  true"
   })
-  @DisplayName("Excluding parameters by name fails without parameter names")
-  void excludeUnmatchedName(@NotNull NameInfo nameInfo, @NotNull String expectedEntry) throws Exception
+  @DisplayName("Excluding a name matching no parameter fails")
+  void excludeUnmatchedName(@NotNull NameInfo nameInfo, @NotNull String unmatchedName, boolean namesUnavailable)
+      throws Exception
   {
     compile("test.Bean", """
         package test;
@@ -223,19 +224,102 @@ class ParameterNameDiscoveryTest
         }
         """, nameInfo);
 
+    val ex = assertThrows(IllegalStateException.class,
+        () -> invoke("test.Bean", "test.Bean", 1, "x", true));
+
+    assertTrue(ex.getMessage().startsWith("Excluded parameter '" + unmatchedName + "' matches no parameter of "),
+        ex.getMessage());
+    assertEquals(namesUnavailable, ex.getMessage().contains("parameter names are not available"), ex.getMessage());
+    assertTrue(FACTORY.log.isEmpty());
+  }
+
+
+  @ParameterizedTest(name = "{0}", quoteTextArguments = false)
+  @CsvSource({
+      "METHOD_PARAMETERS, 'INFO|> call(id=1,flag=true)'",
+      "NONE,              ''"
+  })
+  @DisplayName("Excluding a name matching no parameter by composed annotation fails without parameter names only")
+  void excludeUnmatchedNameByComposedAnnotation(@NotNull NameInfo nameInfo, @NotNull String expectedEntry)
+      throws Exception
+  {
+    compile("test.Audited", """
+        package test;
+
+        import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+
+        import java.lang.annotation.Retention;
+        import java.lang.annotation.Target;
+
+        import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+        import static java.lang.annotation.ElementType.METHOD;
+        import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+        @Target(METHOD)
+        @Retention(RUNTIME)
+        @MethodLogging(lineNumber = HIDE, result = HIDE, exclude = { "name", "password" })
+        public @interface Audited {
+        }
+        """, NameInfo.NONE);
+    compile("test.Bean", """
+        package test;
+
+        public class Bean
+        {
+          @Audited
+          public void call(int id, String name, boolean flag) {
+          }
+        }
+        """, nameInfo);
+
     if (!expectedEntry.isEmpty())
     {
-      // with parameter names, names matching no parameter are accepted (e.g. preset by a composed annotation)
+      // with parameter names, a composed annotation may exclude names not present on every method
       invoke("test.Bean", "test.Bean", 1, "x", true);
       assertEquals(expectedEntry, FACTORY.log.getFirst());
     }
     else
     {
-      val ex = assertThrows(IllegalStateException.class, () -> invoke("test.Bean", "test.Bean", 1, "x", true));
+      val ex = assertThrows(IllegalStateException.class,
+          () -> invoke("test.Bean", "test.Bean", 1, "x", true));
 
       assertTrue(ex.getMessage().startsWith("Excluded parameter 'name' matches no parameter of "), ex.getMessage());
       assertTrue(FACTORY.log.isEmpty());
     }
+  }
+
+
+  @ParameterizedTest(name = "{0}", quoteTextArguments = false)
+  @CsvSource({ "secret", "name" })
+  @DisplayName("Excluding parameters by interface or implementation name")
+  void excludeInterfaceOrImplementationName(@NotNull String excludedName) throws Exception
+  {
+    compile("test.If", """
+        package test;
+
+        public interface If {
+          void call(int id, String secret, boolean flag);
+        }
+        """, NameInfo.METHOD_PARAMETERS);
+    compile("test.Impl", """
+        package test;
+
+        import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+
+        import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+
+        public class Impl implements If
+        {
+          @Override
+          @MethodLogging(lineNumber = HIDE, result = HIDE, exclude = "%s")
+          public void call(int id, String name, boolean flag) {
+          }
+        }
+        """.formatted(excludedName), NameInfo.METHOD_PARAMETERS);
+
+    invoke("test.Impl", "test.If", 1, "x", true);
+
+    assertEquals("INFO|> call(id=1,flag=true)", FACTORY.log.getFirst());
   }
 
 
@@ -319,7 +403,8 @@ class ParameterNameDiscoveryTest
   private void compile(@NotNull String className, @NotNull String source, @NotNull NameInfo nameInfo)
       throws Exception
   {
-    val sourceFile = tempDir.resolve("src").resolve(className.replace('.', '/') + ".java");
+    val sourceFile = tempDir
+        .resolve("src").resolve(className.replace('.', '/') + ".java");
     Files.createDirectories(sourceFile.getParent());
     Files.writeString(sourceFile, source, UTF_8);
 
@@ -329,7 +414,7 @@ class ParameterNameDiscoveryTest
         "-d", classesDir.toString(),
         sourceFile.toString()));
 
-    assertEquals(0, ToolProvider.getSystemJavaCompiler().run(null, null, null, arguments.toArray(String[]::new)),
+    assertEquals(0, getSystemJavaCompiler().run(null, null, null, arguments.toArray(String[]::new)),
         "compilation of " + className + " failed");
   }
 

@@ -37,6 +37,9 @@ import org.springframework.core.MethodClassKey;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.annotation.MergedAnnotationSelectors;
+import org.springframework.core.annotation.MergedAnnotations;
+import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.function.SingletonSupplier;
 
@@ -44,6 +47,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,6 +71,7 @@ import static org.springframework.core.ResolvableType.forMethodParameter;
 import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotationAttributes;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.synthesizeAnnotation;
+import static org.springframework.core.annotation.MergedAnnotations.SearchStrategy.TYPE_HIERARCHY;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClassAsSet;
 import static org.springframework.util.StringUtils.hasLength;
 
@@ -307,16 +312,18 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Analyzes the method parameters. Parameter names are taken from {@code specificMethod}, falling back to
-   * {@code method} if {@code specificMethod} does not provide them. {@link ParamLog} annotations are taken from the
-   * most specific declaration of the method annotating the parameter, including overridden interface and superclass
-   * methods; a parameter excluded by any declaration stays excluded.
+   * Analyzes the method parameters. {@link ParamLog} annotations are taken from the most specific declaration of the
+   * method annotating the parameter, including overridden interface and superclass methods; a parameter excluded by any
+   * declaration stays excluded.
    * <p>
-   * The parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer or, if no name can be
-   * discovered, the synthesized reflection name ({@code arg0}, {@code arg1}, ...) in that order.
+   * The logged parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer (from the most
+   * specific declaration providing names) or, if no name can be discovered, the synthesized reflection name
+   * ({@code arg0}, {@code arg1}, ...) in that order.
    * <p>
-   * If no parameter names can be discovered, each name excluded by {@link MethodLogging#exclude()} must match a
-   * resolved parameter name. Otherwise, the parameter meant to be excluded would be logged.
+   * A name excluded by {@link MethodLogging#exclude()} matches a parameter if it equals the {@code @ParamLog} name or
+   * the discovered name of any declaration. Each excluded name must match a parameter, unless parameter names are
+   * available and the names are excluded by a composed annotation. Otherwise, a misspelled or outdated name would leave
+   * the parameter meant to be excluded in the log output.
    * <p>
    * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
    * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
@@ -328,8 +335,7 @@ public final class AnnotationMethodLoggingSource
    *
    * @return  definitions of the parameters to be logged, never {@code null}
    *
-   * @throws IllegalStateException  if an excluded parameter name matches no parameter, as parameter names are not
-   *                                available
+   * @throws IllegalStateException  if an excluded parameter name to be validated matches no parameter
    */
   private @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod,
                                                                      @NotNull Method method,
@@ -340,28 +346,30 @@ public final class AnnotationMethodLoggingSource
     if (parameterCount == 0 || methodLogging.parameters() != SHOW)
       return List.of();
 
-    var parameterNames = nameDiscoverer.getParameterNames(specificMethod);
-    if (parameterNames == null && specificMethod != method)
-      parameterNames = nameDiscoverer.getParameterNames(method);
-
     final var parameterDefs = new ArrayList<ParameterDef>(8);
-    final var names = new ArrayList<String>(parameterCount);
     final var specificParameters = specificMethod.getParameters();
     final var declarations = findMethodDeclarations(specificMethod, method, targetClass);
-    final var excludeParameters = asList(methodLogging.exclude());
+    final var declarationParameterNames = discoverParameterNames(declarations);
+    final var excludeParameters = Set.copyOf(asList(methodLogging.exclude()));
+    final var matchedExcludeParameters = new HashSet<String>();
     final var messageFactory = getMessageSupport().getMessageAccessor().getMessageFactory();
 
     for(var p = 0; p < parameterCount; p++)
     {
       final var paramLog = findParamLog(declarations, p);
+      final var names = getParameterNames(paramLog, declarationParameterNames, specificParameters[p], p);
+      final var name = names.iterator().next();
 
-      var name = paramLog != null ? paramLog.name() : "";
-      if (!hasLength(name))
-        name = parameterNames != null ? parameterNames[p] : specificParameters[p].getName();
+      // all names match, so a parameter named differently in an interface and its implementation is excluded either way
+      var excludedByName = false;
+      for(var n: names)
+        if (excludeParameters.contains(n))
+        {
+          matchedExcludeParameters.add(n);
+          excludedByName = true;
+        }
 
-      names.add(name);
-
-      if ((paramLog == null || !paramLog.exclude()) && !excludeParameters.contains(name) &&
+      if ((paramLog == null || !paramLog.exclude()) && !excludedByName &&
           (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p, targetClass))))
       {
         @Language("MessageFormat")
@@ -372,10 +380,65 @@ public final class AnnotationMethodLoggingSource
       }
     }
 
-    if (parameterNames == null)
-      validateExcludedParameterNames(specificMethod, excludeParameters, names);
+    validateExcludedParameterNames(specificMethod, methodLogging.exclude(), matchedExcludeParameters,
+        !declarationParameterNames.isEmpty());
 
     return copyOf(parameterDefs);
+  }
+
+
+  /**
+   * Discovers the parameter names of each declaration providing them.
+   *
+   * @param declarations  method declarations, ordered from most to least specific, not {@code null}
+   *
+   * @return  parameter names of the declarations providing them, in declaration order, never {@code null}
+   */
+  @Contract(pure = true)
+  private @NotNull List<String[]> discoverParameterNames(@NotNull List<Method> declarations)
+  {
+    final var declarationParameterNames = new ArrayList<String[]>();
+
+    for(var declaration: declarations)
+    {
+      final var parameterNames = nameDiscoverer.getParameterNames(declaration);
+      if (parameterNames != null)
+        declarationParameterNames.add(parameterNames);
+    }
+
+    return declarationParameterNames;
+  }
+
+
+  /**
+   * Returns all names of parameter {@code p}, starting with the name to log: the name given by {@link ParamLog#name()},
+   * followed by the discovered names of all declarations. If no declaration provides parameter names, the synthesized
+   * reflection name ({@code arg0}, {@code arg1}, ...) is used instead of the discovered names.
+   *
+   * @param paramLog                   {@code @ParamLog} annotation of the parameter or {@code null}
+   * @param declarationParameterNames  discovered parameter names of the declarations, not {@code null}
+   * @param specificParameter          parameter of the method implementation, not {@code null}
+   * @param p                          parameter index
+   *
+   * @return  parameter names, never empty
+   */
+  @Contract(pure = true)
+  private static @NotNull Set<String> getParameterNames(ParamLog paramLog,
+                                                        @NotNull List<String[]> declarationParameterNames,
+                                                        @NotNull Parameter specificParameter, int p)
+  {
+    final var names = new LinkedHashSet<String>();
+
+    if (paramLog != null && hasLength(paramLog.name()))
+      names.add(paramLog.name());
+
+    for(var parameterNames: declarationParameterNames)
+      names.add(parameterNames[p]);
+
+    if (declarationParameterNames.isEmpty())
+      names.add(specificParameter.getName());
+
+    return names;
   }
 
 
@@ -484,24 +547,54 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Validates that each excluded parameter name matches a parameter, if parameter names are not available.
+   * Validates that each excluded parameter name matches a parameter. Names excluded by a composed annotation are not
+   * validated if parameter names are available, as a composed annotation may be used on methods with different
+   * parameters.
    *
-   * @param method             method, used for the exception message, not {@code null}
-   * @param excludeParameters  excluded parameter names, not {@code null}
-   * @param names              resolved parameter names of the method, not {@code null}
+   * @param method                    method implementation, not {@code null}
+   * @param excludeParameters         excluded parameter names, not {@code null}
+   * @param matchedExcludeParameters  excluded parameter names matching a parameter, not {@code null}
+   * @param parameterNamesAvailable   {@code true} if parameter names were discovered for at least one declaration
    *
    * @throws IllegalStateException  if an excluded parameter name matches no parameter name
    */
-  private static void validateExcludedParameterNames(@NotNull Method method, @NotNull List<String> excludeParameters,
-                                                     @NotNull List<String> names)
+  private static void validateExcludedParameterNames(@NotNull Method method, @NotNull String[] excludeParameters,
+                                                     @NotNull Set<String> matchedExcludeParameters,
+                                                     boolean parameterNamesAvailable)
   {
+    // names excluded by a composed annotation may be meant for other methods than this one
+    if (parameterNamesAvailable && !isMethodLoggingDirectlyDeclared(method))
+      return;
+
     for(var excludeParameter: excludeParameters)
-      if (!names.contains(excludeParameter))
+      if (!matchedExcludeParameters.contains(excludeParameter))
       {
         throw new IllegalStateException("Excluded parameter '" + excludeParameter + "' matches no parameter of " +
-            method + ", as parameter names are not available; compile with -parameters or exclude the parameter " +
-            "with @ParamLog(exclude = true)");
+            method + (parameterNamesAvailable
+                ? ""
+                : ", as parameter names are not available; compile with -parameters or exclude the parameter " +
+                  "with @ParamLog(exclude = true)"));
       }
+  }
+
+
+  /**
+   * Tells whether the {@code @MethodLogging} annotation providing the method logging attributes of
+   * {@code specificMethod} is declared directly, as opposed to being a meta-annotation of a composed annotation.
+   * The annotation is selected as in {@link #findMethodLoggingAttributes(Method)}.
+   *
+   * @param specificMethod  method implementation, not {@code null}
+   *
+   * @return  {@code true} if {@code @MethodLogging} is declared directly on the method or an overridden method,
+   *          {@code false} otherwise
+   */
+  @Contract(pure = true)
+  private static boolean isMethodLoggingDirectlyDeclared(@NotNull Method specificMethod)
+  {
+    return MergedAnnotations
+        .from(specificMethod, TYPE_HIERARCHY, RepeatableContainers.none())
+        .get(MethodLogging.class, null, MergedAnnotationSelectors.firstDirectlyDeclared())
+        .getDistance() == 0;
   }
 
 
