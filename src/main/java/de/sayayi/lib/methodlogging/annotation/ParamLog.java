@@ -86,7 +86,7 @@ public @interface ParamLog
    * containing the object passed to the method.
    * <p>
    * The default format is {@code %{value}}, which will format the parameter value using the default formatter for this
-   * type from the message context.
+   * type from the message context. An invalid format fails the method analysis (see {@link MethodLogging}).
    *
    * @return  a message format string, or empty to use the default format
    *

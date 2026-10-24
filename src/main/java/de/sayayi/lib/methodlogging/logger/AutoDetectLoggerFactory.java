@@ -45,8 +45,9 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
  *   <li>Tinylog ({@code org.tinylog.TaggedLogger})</li>
  * </ul>
  * If no logger field is available or the logger field contains a logger of another type, a JCL logger for the target
- * class is used; an unsupported logger type is reported once per logger field at WARN level. If the logger field
- * contains {@code null}, the method is not logged.
+ * class is used. The same applies to a logger of a supported logging framework which is not accessible to this library,
+ * e.g. if it is loaded by a class loader not visible to this library. An unsupported or inaccessible logger is reported
+ * once per logger field at WARN level. If the logger field contains {@code null}, the method is not logged.
  *
  * @author Jeroen Gremmen
  * @since 0.3.0
@@ -66,7 +67,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
   /** All logger kinds, indexed by ordinal. */
   private static final LoggerKind[] LOGGER_KINDS = LoggerKind.values();
 
-  /** Logger fields with an unsupported logger type which have been reported already. */
+  /** Logger fields with an unsupported or inaccessible logger which have been reported already. */
   private final Set<String> reportedLoggerFields = newKeySet();
 
 
@@ -102,39 +103,59 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
       return NO_OP;
     }
 
-    return switch(LOGGER_KINDS[LOGGER_KIND_ORDINAL.get(logger.getClass())]) {
-      case LOGBACK -> LogbackLogger.of(logger);
-      case SLF4J -> Slf4jLogger.of(logger);
-      case LOG4J2 -> Log4j2Logger.of(logger);
-      case JUL -> JULLogger.of(logger);
-      case JCL -> JCLLogger.of(logger);
-      case JBOSS -> JBossLogger.of(logger);
-      case TINYLOG -> TinylogTaggedLogger.of(logger);
-      case SYSTEM -> SystemLogger.of(logger);
-      case UNSUPPORTED -> createUnsupportedMethodLogger(loggerField, logger, obj);
-    };
+    MethodLogger methodLogger;
+    LinkageError linkageError = null;
+
+    try {
+      methodLogger = switch(LOGGER_KINDS[LOGGER_KIND_ORDINAL.get(logger.getClass())]) {
+        case LOGBACK -> LogbackLogger.of(logger);
+        case SLF4J -> Slf4jLogger.of(logger);
+        case LOG4J2 -> Log4j2Logger.of(logger);
+        case JUL -> JULLogger.of(logger);
+        case JCL -> JCLLogger.of(logger);
+        case JBOSS -> JBossLogger.of(logger);
+        case TINYLOG -> TinylogTaggedLogger.of(logger);
+        case SYSTEM -> SystemLogger.of(logger);
+        case UNSUPPORTED -> null;
+      };
+    } catch(LinkageError ex) {
+      // logging framework not visible to this library
+      methodLogger = NO_OP;
+      linkageError = ex;
+    }
+
+    if (methodLogger == null)
+      return createFallbackMethodLogger(loggerField, logger, obj, "an unsupported", null);
+
+    // the logger is not an instance of the logging framework type visible to this library
+    return methodLogger == NO_OP
+        ? createFallbackMethodLogger(loggerField, logger, obj, "an inaccessible", linkageError)
+        : methodLogger;
   }
 
 
   /**
-   * Returns the JCL fallback method logger for a logger field holding an unsupported logger. The unsupported logger
-   * type is reported once per logger field.
+   * Returns the JCL fallback method logger for a logger field holding an unsupported or inaccessible logger. The logger
+   * is reported once per logger field.
    *
    * @param loggerField  logger field, not {@code null}
-   * @param logger       unsupported logger held by the logger field, not {@code null}
+   * @param logger       unsupported or inaccessible logger held by the logger field, not {@code null}
    * @param obj          object owning the logger field, not {@code null}
+   * @param kind         kind of logger for the report ({@code "an unsupported"} or {@code "an inaccessible"}), not
+   *                     {@code null}
+   * @param cause        error raised while accessing the logger or {@code null}
    *
    * @return  JCL method logger for the class of {@code obj}, never {@code null}
    */
-  private @NotNull MethodLogger createUnsupportedMethodLogger(@NotNull Field loggerField, @NotNull Object logger,
-                                                              @NotNull Object obj)
+  private @NotNull MethodLogger createFallbackMethodLogger(@NotNull Field loggerField, @NotNull Object logger,
+                                                           @NotNull Object obj, @NotNull String kind, Throwable cause)
   {
     final var declaringClass = loggerField.getDeclaringClass();
 
     if (reportedLoggerFields.add(declaringClass.getName() + '#' + loggerField.getName()))
     {
-      LOG.warn("Logger field '" + loggerField.getName() + "' of " + declaringClass + " contains an unsupported " +
-          "logger of type " + logger.getClass().getName() + "; a JCL logger is used instead");
+      LOG.warn("Logger field '" + loggerField.getName() + "' of " + declaringClass + " contains " + kind +
+          " logger of type " + logger.getClass().getName() + "; a JCL logger is used instead", cause);
     }
 
     return getClassMethodLogger(obj.getClass());

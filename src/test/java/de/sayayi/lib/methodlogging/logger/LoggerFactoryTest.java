@@ -21,6 +21,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -68,6 +71,32 @@ class LoggerFactoryTest
     assertInstanceOf(JCLLogger.class, logger);
     assertSame(logger, factory.from(field, new ObjectFields(), ObjectFields.class));
     assertSame(logger, factory.from(null, new ObjectFields(), ObjectFields.class));
+  }
+
+
+  @Test
+  @DisplayName("Auto detection falls back to a JCL logger for loggers not accessible to the library")
+  void autoDetectInaccessible() throws Exception
+  {
+    final var slf4jLocation = org.slf4j.Logger.class.getProtectionDomain().getCodeSource().getLocation();
+
+    try(var slf4jClassLoader = new Slf4jClassLoader(slf4jLocation)) {
+      final var loggerType = slf4jClassLoader.loadClass(org.slf4j.Logger.class.getName());
+      final var bean = new InaccessibleLoggerField(Proxy.newProxyInstance(slf4jClassLoader,
+          new Class<?>[] { loggerType }, (proxy, method, args) -> switch(method.getName()) {
+            case "equals" -> proxy == args[0];
+            case "hashCode" -> System.identityHashCode(proxy);
+            case "toString" -> "inaccessible logger";
+            default -> null;
+          }));
+      final var factory = new AutoDetectLoggerFactory();
+      final var field = field(InaccessibleLoggerField.class, "log");
+      final var logger = factory.from(field, bean, InaccessibleLoggerField.class);
+
+      assertNotSame(org.slf4j.Logger.class, loggerType);
+      assertInstanceOf(JCLLogger.class, logger);
+      assertSame(logger, factory.from(null, bean, InaccessibleLoggerField.class));
+    }
   }
 
 
@@ -183,6 +212,55 @@ class LoggerFactoryTest
     private Object logback = new LoggerContext().getLogger("logger-factory-test");
     private Object unsupported = "not a logger";
     private Object none = null;
+  }
+
+
+
+
+  @SuppressWarnings({ "unused", "ClassCanBeRecord", "FieldCanBeLocal" })
+  static final class InaccessibleLoggerField
+  {
+    private final Object log;
+
+
+    InaccessibleLoggerField(@NotNull Object log) {
+      this.log = log;
+    }
+  }
+
+
+
+
+  /**
+   * Class loader loading the SLF4J API itself, instead of delegating to its parent first.
+   */
+  private static final class Slf4jClassLoader extends URLClassLoader
+  {
+    private Slf4jClassLoader(@NotNull URL slf4jLocation) {
+      super(new URL[] { slf4jLocation }, LoggerFactoryTest.class.getClassLoader());
+    }
+
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException
+    {
+      if (name.startsWith("org.slf4j."))
+      {
+        synchronized(getClassLoadingLock(name))
+        {
+          var type = findLoadedClass(name);
+          if (type == null)
+            type = findClass(name);
+
+          if (resolve)
+            resolveClass(type);
+
+          return type;
+        }
+      }
+
+      return super.loadClass(name, resolve);
+    }
   }
 
 

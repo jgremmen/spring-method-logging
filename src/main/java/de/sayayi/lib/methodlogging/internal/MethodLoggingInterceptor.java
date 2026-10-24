@@ -44,6 +44,8 @@ import static org.springframework.util.StringUtils.hasLength;
  * obtained, the method is invoked without logging; if logging the entry, result or exit fails, the remaining messages
  * are still logged. This includes errors like a {@link StackOverflowError} raised by a cyclic {@code toString()}; only
  * virtual machine errors the application cannot recover from, like an {@link OutOfMemoryError}, are passed on.
+ * Failures obtaining the method logger or logging the entry, result or exit are reported at WARN level for the first
+ * failure of each phase per method definition; subsequent failures of that phase are reported at DEBUG level.
  * <p>
  * Formatting a parameter value or the result may execute code of the value and thereby affect the invoked method or its
  * caller: parameters are formatted before the method is invoked and the result before it is returned. The default
@@ -424,14 +426,21 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
 
   /**
-   * Reports a method logging failure at WARN level.
+   * Reports a method logging failure: the first failure of {@code phase} for the method definition at WARN level, all
+   * subsequent failures of that phase at DEBUG level.
    *
    * @param methodDef  method logging definition, not {@code null}
    * @param phase      logging phase which failed, not {@code null}
    * @param ex         exception raised while logging, not {@code null}
    */
-  private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Throwable ex) {
-    LOG.warn("Method logging (" + phase + ") failed for method '" + methodDef.methodName + '\'', ex);
+  private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Throwable ex)
+  {
+    final var message = "Method logging (" + phase + ") failed for method '" + methodDef.methodName + '\'';
+
+    if (methodDef.isFirstFailureReport(phase))
+      LOG.warn(message + "; subsequent failures are reported at DEBUG level", ex);
+    else if (LOG.isDebugEnabled())
+      LOG.debug(message, ex);
   }
 
 

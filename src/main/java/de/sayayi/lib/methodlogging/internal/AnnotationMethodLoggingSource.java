@@ -18,7 +18,6 @@ package de.sayayi.lib.methodlogging.internal;
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
 import de.sayayi.lib.message.formatter.DefaultFormatterService;
-import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
@@ -56,6 +55,7 @@ import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
+import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
 import static java.lang.reflect.Modifier.PRIVATE;
 import static java.lang.reflect.Modifier.STATIC;
 import static java.util.Arrays.asList;
@@ -103,6 +103,10 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 public final class AnnotationMethodLoggingSource
 {
+  /** Default format of a parameter value. */
+  @Language("MessageFormat")
+  private static final String DEFAULT_PARAMETER_VALUE_FORMAT = "%{value}";
+
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
   final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
@@ -530,7 +534,8 @@ public final class AnnotationMethodLoggingSource
    *
    * @return  definitions of the parameters to be logged, never {@code null}
    *
-   * @throws IllegalStateException  if an excluded parameter name to be validated matches no parameter
+   * @throws IllegalStateException  if an excluded parameter name to be validated matches no parameter or a custom
+   *                                parameter format is invalid
    */
   private @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod,
                                                                      @NotNull Method method,
@@ -568,11 +573,9 @@ public final class AnnotationMethodLoggingSource
       if ((paramLog == null || !paramLog.exclude()) && !excludedByName &&
           (paramLog != null || isParameterIncluded(config, forMethodParameter(specificMethod, p, targetClass))))
       {
-        @Language("MessageFormat")
-        final var format = paramLog != null && hasLength(paramLog.format()) ? paramLog.format() : "%{value}";
-
         parameterDefs.add(new ParameterDef(p, name, paramLog == null || paramLog.inline(),
-            SupplierDelegate.of(() -> messageFactory.parseMessage(format))));
+            messageSupplier(messageFactory, paramLog != null ? paramLog.format() : "", DEFAULT_PARAMETER_VALUE_FORMAT,
+                "@ParamLog format of parameter '" + name + '\'', specificMethod)));
       }
     }
 
