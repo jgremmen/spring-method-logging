@@ -65,7 +65,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface ParamLog
 {
   /**
-   * Alias for {@link #format()}.
+   * Alias for {@link #format()}, allowing the format to be given without attribute name (e.g.
+   * {@code @ParamLog("[%{value}]")}).
+   *
+   * @return  a message format string, or empty to use the default format
    *
    * @see #format()
    */

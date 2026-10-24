@@ -24,10 +24,14 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Method logger implementation for the JDK platform logger ({@link System.Logger}).
+ * {@link MethodLogger} implementation that delegates to a JDK platform logger ({@link System.Logger}).
+ * <p>
+ * There is no dedicated factory for the platform logger; it is supported by the {@link AutoDetectLoggerFactory} only.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
+ *
+ * @see AutoDetectLoggerFactory
  */
 final class SystemLogger implements MethodLogger
 {
@@ -51,12 +55,18 @@ final class SystemLogger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the platform logger at the corresponding platform logger level.
+   */
   @Override
   public void log(@NotNull Level level, String message) {
     logger.log(LEVELS[level.ordinal()], message);
   }
 
 
+  /**
+   * Tells whether the platform logger is enabled for the corresponding platform logger level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isLoggable(LEVELS[level.ordinal()]);

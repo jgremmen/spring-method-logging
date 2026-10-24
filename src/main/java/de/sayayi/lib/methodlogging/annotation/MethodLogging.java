@@ -61,10 +61,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     <tr><td>entry/exit, parameter and result level</td><td>yes</td><td>yes</td>
  *       <td>{@code defaultEntryExitLevel()}, {@code defaultParameterLevel()}, {@code defaultResultLevel()}</td></tr>
  *     <tr><td>line number</td><td>yes</td><td>yes</td><td>{@code defaultLineNumber()}</td></tr>
- *     <tr><td>elapsed time, parameters, result</td><td>yes</td><td>yes</td><td>-</td></tr>
- *     <tr><td>inline parameter, parameter and result format</td><td>yes</td><td>yes</td><td>-</td></tr>
- *     <tr><td>method entry and exit prefix</td><td>-</td><td>yes</td><td>-</td></tr>
- *     <tr><td>excluded parameters</td><td>by name ({@link #exclude()})</td><td>-</td>
+ *     <tr><td>elapsed time, parameters, result</td><td>yes</td><td>yes</td><td>no</td></tr>
+ *     <tr><td>inline parameter, parameter and result format</td><td>yes</td><td>yes</td><td>no</td></tr>
+ *     <tr><td>method entry and exit prefix</td><td>no</td><td>yes</td><td>no</td></tr>
+ *     <tr><td>excluded parameters</td><td>by name ({@link #exclude()})</td><td>no</td>
  *       <td>by type ({@code excludeMethodParameter(ResolvableType)})</td></tr>
  *   </tbody>
  * </table>

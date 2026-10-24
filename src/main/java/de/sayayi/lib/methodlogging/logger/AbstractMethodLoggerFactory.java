@@ -72,6 +72,15 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Method loggers for static final logger fields are cached per field and method loggers for classes without logger
+   * field are cached per class. For all other logger fields, a method logger is created on each invocation, as the
+   * field content may change.
+   *
+   * @throws IllegalStateException  if no logger field is available and this factory requires one
+   */
   @Override
   public @NotNull MethodLogger from(Field loggerField, @NotNull Object obj, @NotNull Class<?> type)
   {

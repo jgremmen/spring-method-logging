@@ -23,7 +23,11 @@ import java.lang.reflect.Field;
 
 
 /**
- * Method logger factory implementation for the Tinylog logging framework.
+ * Method logger factory implementation for Tinylog. Logger fields may hold a Tinylog
+ * {@link org.tinylog.TaggedLogger TaggedLogger}; otherwise, the static Tinylog logger is used.
+ * <p>
+ * Use {@link #withFallback()} to log with the static Tinylog logger if no logger field is available, or
+ * {@link #strict()} to require a logger field.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -68,12 +72,19 @@ public final class TinylogLoggerFactory extends AbstractMethodLoggerFactory
   }
 
 
+  /**
+   * Returns the method logger for the static Tinylog logger, as Tinylog has no class specific loggers.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
     return TinylogLogger.INSTANCE;
   }
 
 
+  /**
+   * Creates a method logger for the tagged logger held by {@code loggerField}. If the field does not contain a tagged
+   * logger, the static Tinylog logger is used.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {

@@ -17,8 +17,16 @@
 /**
  * Internal implementation of method logging: the Spring configuration, the analysis of logged methods and the method
  * interceptor. This package is not exported and is not part of the API.
+ * <p>
+ * {@code @EnableMethodLogging} imports the {@link MethodLoggingConfigurationSelector}, which selects the
+ * {@link ProxyMethodLoggingConfiguration} or the {@link AspectJMethodLoggingConfiguration}, depending on the advice
+ * mode. Both extend {@link MethodLoggingConfiguration}, which provides the beans shared by both modes.
+ * <p>
+ * The {@link AnnotationMethodLoggingSource} analyzes the methods annotated with {@code @MethodLogging} and resolves
+ * their settings into immutable method and parameter definitions. The {@link MethodLoggingInterceptor} uses these
+ * definitions to log the invocations of the methods.
  *
- * @see de.sayayi.lib.methodlogging.internal.AnnotationMethodLoggingSource
- * @see de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor
+ * @see AnnotationMethodLoggingSource
+ * @see MethodLoggingInterceptor
  */
 package de.sayayi.lib.methodlogging.internal;

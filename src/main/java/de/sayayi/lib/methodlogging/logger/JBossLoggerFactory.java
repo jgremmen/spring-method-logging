@@ -24,7 +24,10 @@ import java.lang.reflect.Field;
 
 
 /**
- * Method logger factory implementation for the JBoss logging framework.
+ * Method logger factory implementation for JBoss Logging. Logger fields must hold a JBoss logger ({@link Logger}).
+ * <p>
+ * Use {@link #withFallback()} to log with a logger for the target class if no logger field is available, or
+ * {@link #strict()} to require a logger field.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -69,18 +72,28 @@ public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
   }
 
 
+  /**
+   * Returns the JBoss logger type, so logger fields which can never hold a JBoss logger are rejected.
+   */
   @Override
   protected @NotNull Class<?> getLoggerType() {
     return Logger.class;
   }
 
 
+  /**
+   * Creates a method logger for a JBoss logger of {@code clazz}.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
     return new JBossLogger(Logger.getLogger(clazz));
   }
 
 
+  /**
+   * Creates a method logger for the JBoss logger held by {@code loggerField}. If the field contains {@code null} or
+   * another kind of object, the method is not logged.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
     return JBossLogger.from(loggerField, obj);

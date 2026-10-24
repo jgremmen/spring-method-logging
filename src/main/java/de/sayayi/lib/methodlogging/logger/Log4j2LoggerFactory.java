@@ -25,7 +25,10 @@ import java.lang.reflect.Field;
 
 
 /**
- * Method logger factory implementation for the Log4j2 logging framework.
+ * Method logger factory implementation for Log4j2. Logger fields must hold a Log4j2 logger ({@link Logger}).
+ * <p>
+ * Use {@link #withFallback()} to log with a logger for the target class if no logger field is available, or
+ * {@link #strict()} to require a logger field.
  *
  * @author Jeroen Gremmen
  * @since 0.3.0
@@ -70,18 +73,28 @@ public final class Log4j2LoggerFactory extends AbstractMethodLoggerFactory
   }
 
 
+  /**
+   * Returns the Log4j2 logger type, so logger fields which can never hold a Log4j2 logger are rejected.
+   */
   @Override
   protected @NotNull Class<?> getLoggerType() {
     return Logger.class;
   }
 
 
+  /**
+   * Creates a method logger for a Log4j2 logger of {@code clazz}.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
     return new Log4j2Logger(LogManager.getLogger(clazz));
   }
 
 
+  /**
+   * Creates a method logger for the Log4j2 logger held by {@code loggerField}. If the field contains {@code null} or
+   * another kind of object, the method is not logged.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
     return Log4j2Logger.from(loggerField, obj);

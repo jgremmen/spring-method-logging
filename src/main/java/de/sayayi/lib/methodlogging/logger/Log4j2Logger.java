@@ -56,18 +56,29 @@ final class Log4j2Logger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the Log4j2 logger at the corresponding Log4j2 level.
+   */
   @Override
   public void log(@NotNull Level level, String message) {
     logger.log(LEVELS[level.ordinal()], message);
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The location is passed to Log4j2 as the source location of the log event.
+   */
   @Override
   public void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
     logger.atLevel(LEVELS[level.ordinal()]).withLocation(location).log(message);
   }
 
 
+  /**
+   * Tells whether the Log4j2 logger is enabled for the corresponding Log4j2 level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isEnabled(LEVELS[level.ordinal()]);

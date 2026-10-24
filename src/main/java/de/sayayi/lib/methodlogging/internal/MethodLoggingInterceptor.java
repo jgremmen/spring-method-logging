@@ -58,11 +58,27 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
 
+  /**
+   * Creates the method logging interceptor.
+   *
+   * @param annotationMethodLoggingSource  method logging source providing the method logging definitions and the
+   *                                       method logger factory, not {@code null}
+   */
   MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
   }
 
 
+  /**
+   * Invokes the method, logging its entry, parameters, result and exit if the method has a method logging definition
+   * and the entry/exit level is enabled for the method logger.
+   *
+   * @param invocation  method invocation, not {@code null}
+   *
+   * @return  result of the method invocation, passed on unchanged
+   *
+   * @throws Throwable  if the method invocation throws an exception, passed on unchanged
+   */
   @Override
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
@@ -110,6 +126,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   /**
    * Returns the method logger for the given method definition, if logging for method entry/exit is enabled.
    *
+   * @param methodDef  method logging definition, not {@code null}
+   * @param obj        object the method is invoked on, not {@code null}
+   * @param type       target type of {@code obj}, not {@code null}
+   *
    * @return  method logger or {@code null} if entry/exit logging is disabled or the method logger could not be obtained
    */
   private MethodLogger getEnabledMethodLogger(@NotNull MethodDef methodDef, @NotNull Object obj,
@@ -129,6 +149,14 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Logs the method entry, including the inline parameters, followed by the parameters which are logged on separate
+   * lines. Parameters are only logged if the parameter level is enabled.
+   *
+   * @param methodDef     method logging definition, not {@code null}
+   * @param arguments     method arguments, not {@code null}
+   * @param methodLogger  method logger, not {@code null}
+   */
   private void logMethodEntry(@NotNull MethodDef methodDef, @NotNull Object[] arguments,
                               @NotNull MethodLogger methodLogger)
   {
@@ -171,6 +199,12 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
   /**
    * Formats a parameter using the inline or in-method parameter message.
+   *
+   * @param parameterMessage  inline or in-method parameter message, not {@code null}
+   * @param parameterDef      parameter definition, not {@code null}
+   * @param value             parameter value
+   *
+   * @return  formatted parameter, never {@code null}
    */
   @Contract(pure = true)
   private @NotNull String formatParameter(@NotNull Message parameterMessage, @NotNull ParameterDef parameterDef,
@@ -185,6 +219,15 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Formats a parameter value using the parameter format message of the parameter definition. If the value cannot be
+   * formatted, a format failure text is returned instead.
+   *
+   * @param parameterDef  parameter definition, not {@code null}
+   * @param value         parameter value
+   *
+   * @return  formatted parameter value, never {@code null}
+   */
   private @NotNull String formatParameterValue(@NotNull ParameterDef parameterDef, Object value)
   {
     try {
@@ -201,6 +244,14 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Logs the method exit, including the elapsed time if configured and the exception thrown by the method, if any.
+   *
+   * @param methodDef     method logging definition, not {@code null}
+   * @param methodLogger  method logger, not {@code null}
+   * @param startTime     start time of the method invocation in nanoseconds
+   * @param throwable     exception thrown by the method or {@code null} if the method returned normally
+   */
   private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, long startTime,
                              Throwable throwable)
   {
@@ -289,6 +340,14 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Logs the method result if the result level is enabled. If the result cannot be formatted, a format failure text is
+   * logged instead.
+   *
+   * @param methodDef     method logging definition, not {@code null}
+   * @param methodLogger  method logger, not {@code null}
+   * @param result        method result
+   */
   private void logResult(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, Object result)
   {
     try {
@@ -319,6 +378,13 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Returns the text logged in place of a value which cannot be formatted.
+   *
+   * @param ex  exception thrown while formatting, not {@code null}
+   *
+   * @return  format failure text naming the exception, never {@code null}
+   */
   @Contract(pure = true)
   private static @NotNull String formatFailed(@NotNull Throwable ex) {
     return "<format failed: " + exceptionName(getMostSpecificCause(ex).getClass()) + '>';
@@ -345,6 +411,13 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   }
 
 
+  /**
+   * Reports a method logging failure at WARN level.
+   *
+   * @param methodDef  method logging definition, not {@code null}
+   * @param phase      logging phase which failed, not {@code null}
+   * @param ex         exception raised while logging, not {@code null}
+   */
   private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Throwable ex) {
     LOG.warn("Method logging (" + phase + ") failed for method '" + methodDef.methodName + '\'', ex);
   }

@@ -38,8 +38,8 @@ import static java.util.stream.Collectors.partitioningBy;
  * Method logging definition of a method, with all settings resolved (see {@link AnnotationMethodLoggingSource}). The
  * levels are never {@link Level#DEFAULT}.
  * <p>
- * Instances are immutable and shared by all threads invoking the method. The messages for parameters and the result
- * are created on first use, as many of them are never needed when the corresponding log level is disabled.
+ * Instances are immutable and shared by all threads invoking the method. The messages for parameters and the result are
+ * created on first use, as many of them are never needed when the corresponding log level is disabled.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -65,6 +65,18 @@ final class MethodDef
   final Level resultLevel;
 
 
+  /**
+   * Creates the method logging definition from the resolved settings.
+   *
+   * @param messageFactory       message factory for parsing the message formats, not {@code null}
+   * @param methodLoggingConfig  class level settings with the configurer defaults applied, not {@code null}
+   * @param parameters           definitions of the parameters to be logged, not {@code null}
+   * @param methodLogging        merged method level settings, not {@code null}
+   * @param method               logged method, not {@code null}
+   * @param location             source location of the method, not {@code null}
+   * @param line                 line number to log or a value {@code <= 0} if no line number is logged
+   * @param loggerField          logger field or {@code null} if no logger field was found
+   */
   MethodDef(final @NotNull MessageFactory messageFactory, @NotNull MethodLoggingConfig methodLoggingConfig,
             @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging, @NotNull Method method,
             @NotNull StackTraceElement location, int line, Field loggerField)
@@ -98,6 +110,14 @@ final class MethodDef
   }
 
 
+  /**
+   * Returns {@code s} or, if it is empty, {@code defaultValue}.
+   *
+   * @param s             string to check, not {@code null}
+   * @param defaultValue  value to return if {@code s} is empty, not {@code null}
+   *
+   * @return  {@code s} or {@code defaultValue}, never {@code null}
+   */
   @Contract(pure = true)
   private static @NotNull String notEmpty(@NotNull String s, @NotNull String defaultValue) {
     return s.isEmpty() ? defaultValue : s;

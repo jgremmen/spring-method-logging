@@ -17,11 +17,14 @@
 /**
  * Method logger factories for the supported logging frameworks.
  * <p>
- * {@link de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory AutoDetectLoggerFactory} (the default) selects the
- * logging framework by the type of the logger held by the logger field. The other factories support a single logging
- * framework each and require it to be present at runtime; they are created with {@code withFallback()}, using a logger
- * for the target class if no logger field is available, or {@code strict()}, requiring a logger field. Custom factories
- * can extend {@link de.sayayi.lib.methodlogging.logger.AbstractMethodLoggerFactory AbstractMethodLoggerFactory}, which
- * caches the created method loggers.
+ * {@link AutoDetectLoggerFactory} (the default) selects the logging framework by the type of the logger held by the
+ * logger field, including the JDK platform logger ({@link System.Logger}), and falls back to a JCL logger. The other
+ * factories support a single logging framework each and require it to be present at runtime; they are created with
+ * {@code withFallback()}, using a logger for the target class if no logger field is available, or {@code strict()},
+ * requiring a logger field. Custom factories can extend {@link AbstractMethodLoggerFactory}, which caches the created
+ * method loggers.
+ * <p>
+ * The {@link de.sayayi.lib.methodlogging.MethodLogger MethodLogger} implementations bridging to the logging frameworks
+ * are internal to this package.
  */
 package de.sayayi.lib.methodlogging.logger;

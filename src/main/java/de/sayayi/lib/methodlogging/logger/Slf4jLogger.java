@@ -50,6 +50,9 @@ final class Slf4jLogger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the SLF4J logger at the corresponding SLF4J level.
+   */
   @Override
   public void log(@NotNull Level level, String message)
   {
@@ -62,6 +65,9 @@ final class Slf4jLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the SLF4J logger is enabled for the corresponding SLF4J level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {

@@ -17,8 +17,8 @@ package de.sayayi.lib.methodlogging.logger;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.LoggingEvent;
-import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,6 +51,9 @@ final class LogbackLogger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the Logback logger at the corresponding Logback level.
+   */
   @Override
   public void log(@NotNull Level level, String message)
   {
@@ -88,6 +91,9 @@ final class LogbackLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the Logback logger is enabled for the corresponding Logback level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {

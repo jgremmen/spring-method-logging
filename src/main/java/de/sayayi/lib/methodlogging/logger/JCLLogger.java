@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
 import org.apache.commons.logging.Log;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +50,9 @@ final class JCLLogger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the JCL logger at the corresponding JCL level.
+   */
   @Override
   public void log(@NotNull Level level, String message)
   {
@@ -62,6 +65,9 @@ final class JCLLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the JCL logger is enabled for the corresponding JCL level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {

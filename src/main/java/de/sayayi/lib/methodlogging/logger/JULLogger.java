@@ -28,7 +28,9 @@ import static java.util.logging.Level.*;
 
 
 /**
- * {@link MethodLogger} implementation that delegates to a Java Util Logging (JUL) {@link Logger}.
+ * {@link MethodLogger} implementation that delegates to a Java Util Logging (JUL) {@link Logger}. The levels
+ * {@code TRACE}, {@code DEBUG} and {@code INFO} are mapped to the JUL levels {@code FINEST}, {@code FINE} and
+ * {@code INFO}.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -52,6 +54,9 @@ final class JULLogger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the JUL logger at the corresponding JUL level.
+   */
   @Override
   public void log(@NotNull Level level, String message) {
     logger.log(LEVELS[level.ordinal()], message);
@@ -69,6 +74,9 @@ final class JULLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the JUL logger is enabled for the corresponding JUL level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isLoggable(LEVELS[level.ordinal()]);

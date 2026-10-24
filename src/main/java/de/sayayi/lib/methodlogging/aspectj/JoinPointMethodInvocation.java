@@ -37,6 +37,11 @@ final class JoinPointMethodInvocation implements MethodInvocation
   private final Method method;
 
 
+  /**
+   * Creates a method invocation for the given method execution join point.
+   *
+   * @param joinPoint  method execution join point, not {@code null}
+   */
   JoinPointMethodInvocation(@NotNull ProceedingJoinPoint joinPoint)
   {
     this.joinPoint = joinPoint;
@@ -44,30 +49,57 @@ final class JoinPointMethodInvocation implements MethodInvocation
   }
 
 
+  /**
+   * Returns the executed method, as declared by the class of the join point.
+   *
+   * @return  executed method, never {@code null}
+   */
   @Override
   public @NotNull Method getMethod() {
     return method;
   }
 
 
+  /**
+   * Returns the arguments passed to the executed method.
+   *
+   * @return  method arguments, never {@code null}
+   */
   @Override
   public @NotNull Object @NotNull [] getArguments() {
     return joinPoint.getArgs();
   }
 
 
+  /**
+   * Proceeds with the execution of the method.
+   *
+   * @return  result of the method execution
+   *
+   * @throws Throwable  if the method execution throws an exception
+   */
   @Override
   public Object proceed() throws Throwable {
     return joinPoint.proceed();
   }
 
 
+  /**
+   * Returns the object the method is executed on.
+   *
+   * @return  object executing the method
+   */
   @Override
   public Object getThis() {
     return joinPoint.getThis();
   }
 
 
+  /**
+   * Returns the static part of this invocation, which is the executed method.
+   *
+   * @return  executed method, never {@code null}
+   */
   @Override
   public @NotNull AccessibleObject getStaticPart() {
     return method;

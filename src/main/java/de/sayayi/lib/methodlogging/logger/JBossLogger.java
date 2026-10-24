@@ -50,6 +50,9 @@ final class JBossLogger implements MethodLogger
   }
 
 
+  /**
+   * Logs {@code message} with the JBoss logger at the corresponding JBoss level.
+   */
   @Override
   public void log(@NotNull Level level, String message)
   {
@@ -62,6 +65,9 @@ final class JBossLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the JBoss logger is enabled for the corresponding JBoss level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {

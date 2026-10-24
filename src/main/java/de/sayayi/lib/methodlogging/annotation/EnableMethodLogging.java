@@ -59,8 +59,8 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  * }</pre>
  *
  * {@code @EnableMethodLogging} is responsible for registering the necessary Spring components that power
- * annotation-driven method logging, such as the proxy- or AspectJ-based advice that weaves the interceptor into the
- * call stack when {@link MethodLogging @MethodLogging} methods are invoked.
+ * annotation-driven method logging, such as the proxy or AspectJ based advice that weaves the interceptor into the call
+ * stack when {@link MethodLogging @MethodLogging} methods are invoked.
  * <p>
  * The {@link #mode} attribute controls how advice is applied: If the mode is {@link AdviceMode#PROXY} (the default),
  * then the other attributes control the behavior of the proxying. Please note that proxy mode allows for interception
@@ -70,8 +70,8 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
  * {@link #proxyTargetClass} and {@link #order} attributes will be ignored. Note also that in this case the AspectJ
  * runtime ({@code aspectjrt} or {@code aspectjweaver}) must be present on the classpath, with compile-time weaving
  * (with this library on the aspect path) or load-time weaving (this library provides a {@code META-INF/aop.xml}
- * declaring the aspect) applying the {@link MethodLoggingAspect} to the affected classes. There is no proxy involved
- * in such a scenario; local calls will be intercepted as well. As AspectJ does not inherit method annotations, only
+ * declaring the aspect) applying the {@link MethodLoggingAspect} to the affected classes. There is no proxy involved in
+ * such a scenario; local calls will be intercepted as well. As AspectJ does not inherit method annotations, only
  * non-static methods which are annotated with {@code @MethodLogging} themselves are logged in this mode; composed
  * annotations meta-annotated with {@code @MethodLogging} are not supported.
  *

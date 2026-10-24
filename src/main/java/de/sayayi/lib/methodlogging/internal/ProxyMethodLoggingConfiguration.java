@@ -48,6 +48,15 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 @SuppressWarnings("SpringFacetCodeInspection")
 public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
+  /**
+   * Creates the advisor applying the method logging interceptor to the methods with method logging, ordered as
+   * configured by {@link de.sayayi.lib.methodlogging.annotation.EnableMethodLogging#order() @EnableMethodLogging}.
+   *
+   * @param annotationMethodLoggingSource  method logging source, not {@code null}
+   * @param methodLoggingInterceptor       method logging interceptor, not {@code null}
+   *
+   * @return  method logging advisor, never {@code null}
+   */
   @Bean @Role(ROLE_INFRASTRUCTURE)
   MethodLoggingAdvisor internalMethodLoggingAdvisor(
       AnnotationMethodLoggingSource annotationMethodLoggingSource,
@@ -73,17 +82,32 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     private final @NotNull MethodLoggingPointcut pointcut;
 
 
+    /**
+     * Creates the advisor for the given pointcut.
+     *
+     * @param pointcut  method logging pointcut, not {@code null}
+     */
     MethodLoggingAdvisor(@NotNull MethodLoggingPointcut pointcut) {
       this.pointcut = pointcut;
     }
 
 
+    /**
+     * Returns the method logging pointcut.
+     *
+     * @return  method logging pointcut, never {@code null}
+     */
     @Override
     public @NotNull Pointcut getPointcut() {
       return pointcut;
     }
 
 
+    /**
+     * Analyzes the methods matched by the pointcut while the singleton beans were created.
+     *
+     * @throws IllegalStateException  if the method logging configuration of a method is invalid
+     */
     @Override
     public void afterSingletonsInstantiated() {
       pointcut.analyseDeferredMethods();
@@ -107,6 +131,11 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     private volatile boolean deferAnalysis;
 
 
+    /**
+     * Creates the pointcut, deferring the analysis of matched methods.
+     *
+     * @param annotationMethodLoggingSource  method logging source, not {@code null}
+     */
     MethodLoggingPointcut(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource)
     {
       this.annotationMethodLoggingSource = annotationMethodLoggingSource;
@@ -116,6 +145,15 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     }
 
 
+    /**
+     * Tells whether {@code method} invoked on an instance of {@code targetClass} has method logging. While the analysis
+     * is deferred, a method annotated with {@code @MethodLogging} matches and is analyzed later.
+     *
+     * @param method       method, possibly an interface method, not {@code null}
+     * @param targetClass  target class, not {@code null}
+     *
+     * @return  {@code true} if the method has method logging, {@code false} otherwise
+     */
     @Override
     public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass)
     {
@@ -133,6 +171,8 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     /**
      * Analyzes the methods matched so far and stops deferring the analysis of methods matched from now on. An analysis
      * failure is passed on, so the application context fails to start.
+     *
+     * @throws IllegalStateException  if the method logging configuration of a method is invalid
      */
     void analyseDeferredMethods()
     {
@@ -146,6 +186,13 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     }
 
 
+    /**
+     * Tells whether {@code o} is a method logging pointcut for the same method logging source.
+     *
+     * @param o  object to compare with
+     *
+     * @return  {@code true} if both pointcuts are equal, {@code false} otherwise
+     */
     @Override
     public boolean equals(Object o)
     {
@@ -154,12 +201,22 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     }
 
 
+    /**
+     * Returns a hash code based on the method logging source.
+     *
+     * @return  hash code
+     */
     @Override
     public int hashCode() {
       return annotationMethodLoggingSource.hashCode();
     }
 
 
+    /**
+     * Returns a string representation of this pointcut, naming the method logging source.
+     *
+     * @return  string representation, never {@code null}
+     */
     @Override
     public String toString() {
       return getClass().getName() + ": " + annotationMethodLoggingSource;

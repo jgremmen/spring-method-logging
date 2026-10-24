@@ -25,7 +25,10 @@ import java.lang.reflect.Field;
 
 
 /**
- * Method logger factory implementation for the Slf4j logging framework.
+ * Method logger factory implementation for SLF4J. Logger fields must hold an SLF4J logger ({@link Logger}).
+ * <p>
+ * Use {@link #withFallback()} to log with a logger for the target class if no logger field is available, or
+ * {@link #strict()} to require a logger field.
  *
  * @author Jeroen Gremmen
  * @since 0.3.0
@@ -70,18 +73,28 @@ public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
   }
 
 
+  /**
+   * Returns the SLF4J logger type, so logger fields which can never hold an SLF4J logger are rejected.
+   */
   @Override
   protected @NotNull Class<?> getLoggerType() {
     return Logger.class;
   }
 
 
+  /**
+   * Creates a method logger for an SLF4J logger of {@code clazz}.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
     return new Slf4jLogger(LoggerFactory.getLogger(clazz));
   }
 
 
+  /**
+   * Creates a method logger for the SLF4J logger held by {@code loggerField}. If the field contains {@code null} or
+   * another kind of object, the method is not logged.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
     return Slf4jLogger.from(loggerField, obj);

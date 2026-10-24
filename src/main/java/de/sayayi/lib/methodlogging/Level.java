@@ -32,12 +32,12 @@ public enum Level
   /** Inherit the log level from the class-level or global configuration. */
   DEFAULT,
 
-  /** Trace log level */
+  /** Trace log level, for the most detailed output. */
   TRACE,
 
-  /** Debug log level */
+  /** Debug log level, for diagnostic output. */
   DEBUG,
 
-  /** Info log level */
+  /** Info log level, for regular informational output. */
   INFO
 }

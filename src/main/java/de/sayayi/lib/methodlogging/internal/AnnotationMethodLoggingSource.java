@@ -167,6 +167,7 @@ public final class AnnotationMethodLoggingSource
    *
    * @param value       default value returned by the configurer
    * @param methodName  name of the configurer method, not {@code null}
+   * @param <T>         type of the default value
    *
    * @return  {@code value}, never {@code null}
    *
@@ -251,6 +252,18 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Analyzes {@code method} invoked on an instance of {@code targetClass} and creates its method logging definition.
+   * The settings of the method annotation are merged with the class annotation and the configurer defaults, the
+   * parameters are analyzed, and the source location and logger field are determined.
+   *
+   * @param method       invoked method, possibly an interface method, not {@code null}
+   * @param targetClass  class of the target instance, not {@code null}
+   *
+   * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation
+   *
+   * @throws IllegalStateException  if the method logging configuration of the method is invalid
+   */
   private MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
   {
     // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
@@ -278,6 +291,14 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Returns the merged {@code @MethodLogging} attributes of {@code specificMethod}, including composed annotations and
+   * annotations inherited from overridden methods.
+   *
+   * @param specificMethod  method implementation, not {@code null}
+   *
+   * @return  method logging attributes or {@code null} if the method is not annotated with {@code @MethodLogging}
+   */
   @Contract(pure = true)
   private static AnnotationAttributes findMethodLoggingAttributes(@NotNull Method specificMethod) {
     return findMergedAnnotationAttributes(specificMethod, MethodLogging.class, false, true);
@@ -296,6 +317,16 @@ public final class AnnotationMethodLoggingSource
    * <p>
    * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
    * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
+   *
+   * @param specificMethod  method implementation, not {@code null}
+   * @param method          invoked method, possibly an interface method, not {@code null}
+   * @param targetClass     class of the target instance, not {@code null}
+   * @param methodLogging   merged method logging settings, not {@code null}
+   *
+   * @return  definitions of the parameters to be logged, never {@code null}
+   *
+   * @throws IllegalStateException  if an excluded parameter name matches no parameter, as parameter names are not
+   *                                available
    */
   private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
                                                        @NotNull Class<?> targetClass,
@@ -349,6 +380,10 @@ public final class AnnotationMethodLoggingSource
   /**
    * Validates that each excluded parameter name matches a parameter, if parameter names are not available.
    *
+   * @param method             method, used for the exception message, not {@code null}
+   * @param excludeParameters  excluded parameter names, not {@code null}
+   * @param names              resolved parameter names of the method, not {@code null}
+   *
    * @throws IllegalStateException  if an excluded parameter name matches no parameter name
    */
   private static void validateExcludedParameterNames(@NotNull Method method, @NotNull List<String> excludeParameters,
@@ -364,6 +399,16 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Tells whether a parameter without {@code @ParamLog} annotation is to be logged. Primitive parameters are always
+   * logged; for all other parameters, the configurer decides.
+   *
+   * @param methodParameterType  method parameter type, not {@code null}
+   *
+   * @return  {@code true} if the parameter is to be logged, {@code false} otherwise
+   *
+   * @see MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)
+   */
   private boolean isParameterIncluded(@NotNull ResolvableType methodParameterType)
   {
     return
@@ -372,6 +417,15 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Returns the {@code @MethodLoggingConfig} attributes of {@code type}, or the annotation defaults if the type is not
+   * annotated. Logger field name, levels and line number left at their default are replaced by the configurer defaults.
+   *
+   * @param config  configuration with the configurer defaults, not {@code null}
+   * @param type    target class, not {@code null}
+   *
+   * @return  class level method logging attributes, never {@code null}
+   */
   @Contract(pure = true)
   private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Configuration config,
                                                                          @NotNull Class<?> type)
@@ -401,6 +455,11 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Creates the attributes of a {@code @MethodLoggingConfig} annotation with all attributes at their default value.
+   *
+   * @return  default method logging config attributes, never {@code null}
+   */
   @Contract(pure = true)
   private @NotNull AnnotationAttributes createDefaultMethodLoggingConfigAttributes()
   {
@@ -414,6 +473,15 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Merges the method annotation attributes with the class level attributes: each method attribute left at its default
+   * is replaced by the corresponding class level attribute.
+   *
+   * @param methodLoggingConfigAttributes  class level attributes, not {@code null}
+   * @param methodLoggingAttributes        method annotation attributes, not {@code null}
+   *
+   * @return  merged method logging annotation, never {@code null}
+   */
   private @NotNull MethodLogging findMergedMethodLogging(@NotNull AnnotationAttributes methodLoggingConfigAttributes,
                                                          @NotNull AnnotationAttributes methodLoggingAttributes)
   {
@@ -432,9 +500,13 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Determines the source location of {@code method}: its declaring class, name, source file and the line of the
-   * first statement. Source file and line are taken from the class file and are {@code null} and {@code -1}
-   * respectively, if not available.
+   * Determines the source location of {@code method}: its declaring class, name, source file and the line of the first
+   * statement. Source file and line are taken from the class file and are {@code null} and {@code -1} respectively, if
+   * not available.
+   *
+   * @param method  method implementation, not {@code null}
+   *
+   * @return  source location of the method, never {@code null}
    */
   private @NotNull StackTraceElement findMethodLocation(@NotNull Method method)
   {
@@ -475,6 +547,17 @@ public final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Finds the logger field in {@code clazz} or one of its superclasses and makes it accessible.
+   *
+   * @param clazz          target class
+   * @param methodLogging  merged method logging settings providing the logger field name, not {@code null}
+   *
+   * @return  logger field or {@code null} if no logger field was found or the logger field name is empty
+   *
+   * @throws IllegalStateException  if the logger field is not accessible, e.g. as its package is not opened to this
+   *                                module
+   */
   private Field findLoggerField(Class<?> clazz, @NotNull MethodLogging methodLogging)
   {
     final var loggerFieldName = methodLogging.loggerFieldName();
@@ -522,6 +605,16 @@ public final class AnnotationMethodLoggingSource
     private final @NotNull Visibility defaultLineNumber;
 
 
+    /**
+     * Creates the configuration from the configurer, validating its defaults and falling back to the default message
+     * support and method logger factory if the configurer provides none.
+     *
+     * @param methodLoggingConfigurer  method logging configurer, not {@code null}
+     * @param resourceLoader           resource loader providing the class loader for the default message support, not
+     *                                 {@code null}
+     *
+     * @throws IllegalStateException  if the configurer returns an invalid default
+     */
     private Configuration(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
                           @NotNull ResourceLoader resourceLoader)
     {

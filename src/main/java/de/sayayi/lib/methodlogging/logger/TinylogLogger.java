@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.NotNull;
 import org.tinylog.Logger;
 
@@ -39,6 +39,9 @@ enum TinylogLogger implements MethodLogger
   INSTANCE;
 
 
+  /**
+   * Logs {@code message} with the static Tinylog logger at the corresponding Tinylog level.
+   */
   @Override
   public void log(@NotNull Level level, String message)
   {
@@ -51,6 +54,9 @@ enum TinylogLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the static Tinylog logger is enabled for the corresponding Tinylog level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {

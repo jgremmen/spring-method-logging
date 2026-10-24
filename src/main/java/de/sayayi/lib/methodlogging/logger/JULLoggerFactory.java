@@ -24,7 +24,11 @@ import java.util.logging.Logger;
 
 
 /**
- * Method logger factory implementation for the jdk logging framework.
+ * Method logger factory implementation for Java Util Logging (JUL). Logger fields must hold a JUL logger
+ * ({@link Logger}).
+ * <p>
+ * Use {@link #withFallback()} to log with a logger for the target class if no logger field is available, or
+ * {@link #strict()} to require a logger field.
  *
  * @author Jeroen Gremmen
  * @since 0.3.0
@@ -69,18 +73,28 @@ public final class JULLoggerFactory extends AbstractMethodLoggerFactory
   }
 
 
+  /**
+   * Returns the JUL logger type, so logger fields which can never hold a JUL logger are rejected.
+   */
   @Override
   protected @NotNull Class<?> getLoggerType() {
     return Logger.class;
   }
 
 
+  /**
+   * Creates a method logger for a JUL logger of {@code clazz}.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
     return new JULLogger(Logger.getLogger(clazz.getName()));
   }
 
 
+  /**
+   * Creates a method logger for the JUL logger held by {@code loggerField}. If the field contains {@code null} or
+   * another kind of object, the method is not logged.
+   */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
     return JULLogger.from(loggerField, obj);

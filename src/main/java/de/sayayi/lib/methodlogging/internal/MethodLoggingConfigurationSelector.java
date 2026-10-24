@@ -23,19 +23,34 @@ import org.springframework.context.annotation.AutoProxyRegistrar;
 
 
 /**
- * Selects the method logging configuration to import, depending on {@link EnableMethodLogging#mode()}.
+ * Selects the method logging configuration to import, depending on {@link EnableMethodLogging#mode()}: the
+ * {@link ProxyMethodLoggingConfiguration} for proxy based method logging or the
+ * {@link AspectJMethodLoggingConfiguration} for AspectJ based method logging.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
  */
 public final class MethodLoggingConfigurationSelector extends AdviceModeImportSelector<EnableMethodLogging>
 {
+  /**
+   * Returns the configuration classes to import for {@code adviceMode}. For proxy based method logging, an auto proxy
+   * creator is registered as well.
+   *
+   * @param adviceMode  advice mode from {@code @EnableMethodLogging}, not {@code null}
+   *
+   * @return  names of the classes to import, never {@code null}
+   */
   @Override
   protected @NotNull String[] selectImports(@NotNull AdviceMode adviceMode)
   {
     return switch(adviceMode) {
-      case PROXY -> new String[] { AutoProxyRegistrar.class.getName(), ProxyMethodLoggingConfiguration.class.getName() };
-      case ASPECTJ -> new String[] { AspectJMethodLoggingConfiguration.class.getName() };
+      case PROXY -> new String[] {
+          AutoProxyRegistrar.class.getName(),
+          ProxyMethodLoggingConfiguration.class.getName()
+      };
+      case ASPECTJ -> new String[] {
+          AspectJMethodLoggingConfiguration.class.getName()
+      };
     };
   }
 }

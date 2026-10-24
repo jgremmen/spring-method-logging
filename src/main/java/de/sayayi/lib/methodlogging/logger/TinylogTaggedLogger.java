@@ -27,10 +27,12 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Method logger implementation for a tinylog {@link TaggedLogger} instance.
+ * {@link MethodLogger} implementation that delegates to a Tinylog {@link TaggedLogger} instance.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
+ *
+ * @see TinylogLoggerFactory
  */
 @SuppressWarnings("DuplicatedCode")
 final class TinylogTaggedLogger implements MethodLogger
@@ -39,15 +41,18 @@ final class TinylogTaggedLogger implements MethodLogger
 
 
   /**
-   * Creates a new tinylog method logger that delegates to the given tagged {@code logger}.
+   * Creates a new Tinylog method logger that delegates to the given tagged {@code logger}.
    *
-   * @param logger  tinylog tagged logger instance, not {@code null}
+   * @param logger  Tinylog tagged logger instance, not {@code null}
    */
   TinylogTaggedLogger(TaggedLogger logger) {
     this.logger = requireNonNull(logger);
   }
 
 
+  /**
+   * Logs {@code message} with the Tinylog tagged logger at the corresponding Tinylog level.
+   */
   @Override
   public void log(@NotNull Level level, String message)
   {
@@ -60,6 +65,9 @@ final class TinylogTaggedLogger implements MethodLogger
   }
 
 
+  /**
+   * Tells whether the Tinylog tagged logger is enabled for the corresponding Tinylog level.
+   */
   @Override
   public boolean isLogEnabled(@NotNull Level level)
   {
@@ -73,7 +81,7 @@ final class TinylogTaggedLogger implements MethodLogger
 
 
   /**
-   * Creates a {@code TinylogTaggedLogger} by reading a tinylog {@link TaggedLogger} from the given field on the target
+   * Creates a {@code TinylogTaggedLogger} by reading a Tinylog {@link TaggedLogger} from the given field on the target
    * instance. Returns {@link #NO_OP} if the field is not accessible, its value is {@code null} or not a tagged logger.
    *
    * @param loggerField  the field containing the tagged logger, not {@code null}
@@ -97,7 +105,7 @@ final class TinylogTaggedLogger implements MethodLogger
    *
    * @param logger  logger instance, may be {@code null}
    *
-   * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a tinylog tagged
+   * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a Tinylog tagged
    *          logger, never {@code null}
    */
   @Contract(pure = true)

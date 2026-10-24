@@ -18,6 +18,12 @@
  * AspectJ support for method logging, used with
  * {@link de.sayayi.lib.methodlogging.annotation.EnableMethodLogging#mode() @EnableMethodLogging(mode = ASPECTJ)}.
  * <p>
+ * The {@link de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect MethodLoggingAspect} is applied to methods
+ * annotated with {@link de.sayayi.lib.methodlogging.annotation.MethodLogging @MethodLogging} by load-time weaving (this
+ * library provides a {@code META-INF/aop.xml} declaring the aspect) or by compile-time weaving. Contrary to proxy based
+ * method logging, calls within the same class are logged as well. The aspect is configured by the Spring application
+ * context enabling method logging.
+ * <p>
  * This package requires the AspectJ runtime, which is an optional dependency of this library.
  *
  * @see de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect

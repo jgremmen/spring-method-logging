@@ -22,8 +22,15 @@ import java.lang.reflect.Field;
 
 
 /**
- * A method logger factory is responsible for creating a {@link MethodLogger} for a given object.
+ * A method logger factory is responsible for creating a {@link MethodLogger} for a given object. The method logger
+ * bridges the method logging output to a logging framework, usually by using the logger held by the logger field of the
+ * logged class.
+ * <p>
+ * The factory used for method logging is provided by {@link MethodLoggingConfigurer#methodLoggerFactory()}. If none is
+ * provided, an {@link AutoDetectLoggerFactory} is used, which supports all built-in logging frameworks. Custom
+ * factories can extend {@link AbstractMethodLoggerFactory}, which caches the created method loggers.
  *
+ * @see AutoDetectLoggerFactory
  * @see JBossLoggerFactory
  * @see JCLLoggerFactory
  * @see JULLoggerFactory

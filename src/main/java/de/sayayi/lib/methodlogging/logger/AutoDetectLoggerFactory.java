@@ -113,6 +113,16 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
   }
 
 
+  /**
+   * Returns the JCL fallback method logger for a logger field holding an unsupported logger. The unsupported logger
+   * type is reported once per logger field.
+   *
+   * @param loggerField  logger field, not {@code null}
+   * @param logger       unsupported logger held by the logger field, not {@code null}
+   * @param obj          object owning the logger field, not {@code null}
+   *
+   * @return  JCL method logger for the class of {@code obj}, never {@code null}
+   */
   private @NotNull MethodLogger createUnsupportedMethodLogger(@NotNull Field loggerField, @NotNull Object logger,
                                                               @NotNull Object obj)
   {
@@ -150,11 +160,23 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
     private final String typeName;
 
 
+    /**
+     * Creates a logger kind identified by the given type name.
+     *
+     * @param typeName  fully qualified name of the logger type or {@code null} for unsupported loggers
+     */
     LoggerKind(String typeName) {
       this.typeName = typeName;
     }
 
 
+    /**
+     * Returns the logger kind for a logger instance class, checking all of its superclasses and interfaces.
+     *
+     * @param type  logger instance class, not {@code null}
+     *
+     * @return  logger kind or {@link #UNSUPPORTED} if the class is not a supported logger, never {@code null}
+     */
     @Contract(pure = true)
     private static @NotNull LoggerKind of(@NotNull Class<?> type)
     {
@@ -170,6 +192,12 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
     }
 
 
+    /**
+     * Collects the names of {@code type}, its superclasses and all implemented interfaces.
+     *
+     * @param type       type to collect the names for
+     * @param typeNames  set receiving the type names, not {@code null}
+     */
     private static void collectTypeNames(Class<?> type, @NotNull Set<String> typeNames)
     {
       for(; type != null; type = type.getSuperclass())

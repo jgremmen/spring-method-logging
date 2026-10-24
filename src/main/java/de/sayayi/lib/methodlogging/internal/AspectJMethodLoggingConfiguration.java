@@ -40,6 +40,13 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 @SuppressWarnings("SpringFacetCodeInspection")
 public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
+  /**
+   * Configures the {@link MethodLoggingAspect} singleton with the method logging interceptor.
+   *
+   * @param methodLoggingInterceptor  method logging interceptor, not {@code null}
+   *
+   * @return  aspect registration removing the interceptor from the aspect when the application context is closed
+   */
   @Bean @Role(ROLE_INFRASTRUCTURE)
   MethodLoggingAspectRegistration internalMethodLoggingAspectRegistration(
       MethodLoggingInterceptor methodLoggingInterceptor) {
@@ -58,6 +65,11 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
     private final @NotNull MethodInterceptor methodInterceptor;
 
 
+    /**
+     * Creates the registration and sets {@code methodInterceptor} on the aspect singleton.
+     *
+     * @param methodInterceptor  method logging interceptor, not {@code null}
+     */
     MethodLoggingAspectRegistration(@NotNull MethodInterceptor methodInterceptor)
     {
       this.methodInterceptor = methodInterceptor;
@@ -67,6 +79,10 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
     }
 
 
+    /**
+     * Removes the method interceptor from the aspect, unless another application context has configured the aspect in
+     * the meantime.
+     */
     @Override
     public void destroy() {
       aspect.removeMethodInterceptor(methodInterceptor);
