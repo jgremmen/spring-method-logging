@@ -79,6 +79,8 @@ public abstract class MethodLoggingConfiguration implements ImportAware
    * @param resourceLoader           resource loader of the application context
    *
    * @return  method logging source, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Bean @Role(ROLE_INFRASTRUCTURE)
   AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
@@ -97,6 +99,8 @@ public abstract class MethodLoggingConfiguration implements ImportAware
    * which passes the executed method.
    *
    * @return  {@code true} if the invoked method is resolved to the most specific method, {@code false} otherwise
+   *
+   * @since 0.6.0
    */
   abstract boolean isInvokedMethodResolved();
 
@@ -107,6 +111,8 @@ public abstract class MethodLoggingConfiguration implements ImportAware
    * @param annotationMethodLoggingSource  method logging source providing the method logging definitions
    *
    * @return  method logging interceptor, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Bean @Role(ROLE_INFRASTRUCTURE)
   MethodLoggingInterceptor internalMethodLoggingInterceptor(

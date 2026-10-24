@@ -75,6 +75,8 @@ public final class LogbackLoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Returns the Logback logger type, so logger fields which can never hold a Logback logger are rejected.
+   *
+   * @since 0.6.0
    */
   @Override
   protected @NotNull Class<?> getLoggerType() {

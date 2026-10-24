@@ -125,6 +125,8 @@ public final class AnnotationMethodLoggingSource
    * @param methodLoggingConfigurer  method logging configurer, not {@code null}
    * @param resourceLoader           resource loader providing the class loader for the default message support,
    *                                 not {@code null}
+   *
+   * @since 0.6.0
    */
   AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader) {
@@ -143,6 +145,8 @@ public final class AnnotationMethodLoggingSource
    * @param resolveSpecificMethod    {@code true} if the invoked method is resolved to the most specific method of the
    *                                 target class (proxies), {@code false} if the invoked method is the executed
    *                                 method already (AspectJ)
+   *
+   * @since 0.6.0
    */
   AnnotationMethodLoggingSource(@NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader, boolean resolveSpecificMethod)
@@ -178,6 +182,8 @@ public final class AnnotationMethodLoggingSource
    * @return  configuration or {@code null} if the configuration is being created
    *
    * @throws IllegalStateException  if the configurer returns an invalid default
+   *
+   * @since 0.6.0
    */
   private Configuration findConfiguration()
   {
@@ -249,6 +255,8 @@ public final class AnnotationMethodLoggingSource
    * Passes on the cached failure of the configurer bean or the configurer methods, if any.
    *
    * @throws RuntimeException  if creating the configuration has failed
+   *
+   * @since 0.6.0
    */
   private void throwConfigurationFailure()
   {
@@ -269,6 +277,8 @@ public final class AnnotationMethodLoggingSource
    * @return  runtime exception, never {@code null}
    *
    * @see MethodLoggingInterceptor#rethrowIfFatal(Throwable)
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static @NotNull RuntimeException asRuntimeException(@NotNull Throwable throwable, @NotNull String message)
@@ -287,6 +297,8 @@ public final class AnnotationMethodLoggingSource
    * @return  configuration, never {@code null}
    *
    * @throws IllegalStateException  if the configuration is being created or the configurer returns an invalid default
+   *
+   * @since 0.6.0
    */
   private @NotNull Configuration getConfiguration()
   {
@@ -305,6 +317,8 @@ public final class AnnotationMethodLoggingSource
    * @return  message support, never {@code null}
    *
    * @throws IllegalStateException  if the configuration is being created
+   *
+   * @since 0.6.0
    */
   @NotNull MessageSupport getMessageSupport() {
     return getConfiguration().messageSupport;
@@ -318,6 +332,8 @@ public final class AnnotationMethodLoggingSource
    * @return  method logger factory, never {@code null}
    *
    * @throws IllegalStateException  if the configuration is being created
+   *
+   * @since 0.6.0
    */
   @NotNull MethodLoggerFactory getMethodLoggerFactory() {
     return getConfiguration().methodLoggerFactory;
@@ -334,6 +350,8 @@ public final class AnnotationMethodLoggingSource
    * @return  {@code value}, never {@code null}
    *
    * @throws IllegalStateException  if {@code value} is {@code null} or {@code DEFAULT}
+   *
+   * @since 0.6.0
    */
   @Contract(value = "null, _ -> fail", pure = true)
   private static <T> @NotNull T requireDefault(T value, @NotNull String methodName)
@@ -359,6 +377,8 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass  target class, not {@code null}
    *
    * @return  {@code true} if the method has method logging, {@code false} otherwise
+   *
+   * @since 0.6.0
    */
   boolean hasMethodLogging(@NotNull Method method, @NotNull Class<?> targetClass)
   {
@@ -380,6 +400,8 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass  target class, not {@code null}
    *
    * @return  {@code true} if the method is annotated with {@code @MethodLogging}, {@code false} otherwise
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   boolean hasMethodLoggingAnnotation(@NotNull Method method, @NotNull Class<?> targetClass) {
@@ -399,6 +421,8 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass  class of the target instance, not {@code null}
    *
    * @return  executed method implementation, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private @NotNull Method getSpecificMethod(@NotNull Method method, @NotNull Class<?> targetClass) {
@@ -484,6 +508,8 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass  class of the target instance, not {@code null}
    *
    * @return  {@code true} if the failure is to be reported, {@code false} if it has been reported already
+   *
+   * @since 0.6.0
    */
   boolean isFirstFailureReport(@NotNull Method method, Class<?> targetClass)
   {
@@ -507,6 +533,8 @@ public final class AnnotationMethodLoggingSource
    * @return  method logging definition, never {@code null}
    *
    * @throws IllegalStateException  if the method logging configuration of the method is invalid
+   *
+   * @since 0.6.0
    */
   private @NotNull MethodDef analyseMethodDefinition(@NotNull Method method, @NotNull Method specificMethod,
                                                      @NotNull AnnotationAttributes methodLoggingAttributes,
@@ -534,6 +562,8 @@ public final class AnnotationMethodLoggingSource
    * @param specificMethod  method implementation, not {@code null}
    *
    * @return  method logging attributes or {@code null} if the method is not annotated with {@code @MethodLogging}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static AnnotationAttributes findMethodLoggingAttributes(@NotNull Method specificMethod) {
@@ -568,6 +598,8 @@ public final class AnnotationMethodLoggingSource
    *
    * @throws IllegalStateException  if an excluded parameter name to be validated matches no parameter or a custom
    *                                parameter format is invalid
+   *
+   * @since 0.6.0
    */
   private @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod,
                                                                      @NotNull Method method,
@@ -624,6 +656,8 @@ public final class AnnotationMethodLoggingSource
    * @param declarations  method declarations, ordered from most to least specific, not {@code null}
    *
    * @return  parameter names of the declarations providing them, in declaration order, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private @NotNull List<String[]> discoverParameterNames(@NotNull List<Method> declarations)
@@ -652,6 +686,8 @@ public final class AnnotationMethodLoggingSource
    * @param p                          parameter index
    *
    * @return  parameter names, never empty
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static @NotNull Set<String> getParameterNames(ParamLog paramLog,
@@ -688,6 +724,8 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass     class of the target instance, not {@code null}
    *
    * @return  method declarations, starting with {@code specificMethod}, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static @NotNull @Unmodifiable List<Method> findMethodDeclarations(@NotNull Method specificMethod,
@@ -725,6 +763,8 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass     class of the target instance, not {@code null}
    *
    * @return  {@code true} if {@code specificMethod} overrides {@code candidate}, {@code false} otherwise
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static boolean isOverriddenBy(@NotNull Method candidate, @NotNull Method specificMethod,
@@ -756,6 +796,8 @@ public final class AnnotationMethodLoggingSource
    * @param p             parameter index
    *
    * @return  {@code @ParamLog} annotation or {@code null} if no declaration annotates the parameter
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static ParamLog findParamLog(@NotNull List<Method> declarations, int p)
@@ -791,6 +833,8 @@ public final class AnnotationMethodLoggingSource
    * @param parameterNamesAvailable   {@code true} if parameter names were discovered for at least one declaration
    *
    * @throws IllegalStateException  if an excluded parameter name matches no parameter name
+   *
+   * @since 0.6.0
    */
   private static void validateExcludedParameterNames(@NotNull Method method, @NotNull String[] excludeParameters,
                                                      @NotNull Set<String> matchedExcludeParameters,
@@ -821,6 +865,8 @@ public final class AnnotationMethodLoggingSource
    *
    * @return  {@code true} if {@code @MethodLogging} is declared directly on the method or an overridden method,
    *          {@code false} otherwise
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static boolean isMethodLoggingDirectlyDeclared(@NotNull Method specificMethod)
@@ -842,6 +888,8 @@ public final class AnnotationMethodLoggingSource
    * @return  {@code true} if the parameter is to be logged, {@code false} otherwise
    *
    * @see MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)
+   *
+   * @since 0.6.0
    */
   private static boolean isParameterIncluded(@NotNull Configuration config,
                                              @NotNull ResolvableType methodParameterType)
@@ -860,6 +908,8 @@ public final class AnnotationMethodLoggingSource
    * @param type    target class, not {@code null}
    *
    * @return  class level method logging attributes, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private @NotNull AnnotationAttributes findMethodLoggingConfigAttributes(@NotNull Configuration config,
@@ -942,6 +992,8 @@ public final class AnnotationMethodLoggingSource
    * @param method  method implementation, not {@code null}
    *
    * @return  source location of the method, never {@code null}
+   *
+   * @since 0.6.0
    */
   private @NotNull StackTraceElement findMethodLocation(@NotNull Method method)
   {

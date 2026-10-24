@@ -67,6 +67,8 @@ final class JULLogger implements MethodLogger
    * {@inheritDoc}
    * <p>
    * JUL records the class and method name of the location; the line number is not supported.
+   *
+   * @since 0.6.0
    */
   @Override
   public void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
@@ -110,6 +112,8 @@ final class JULLogger implements MethodLogger
    *
    * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a JUL logger, never
    *          {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   static @NotNull MethodLogger of(Object logger) {

@@ -76,6 +76,8 @@ public final class JCLLoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Returns the JCL logger type, so logger fields which can never hold a JCL logger are rejected.
+   *
+   * @since 0.6.0
    */
   @Override
   protected @NotNull Class<?> getLoggerType() {

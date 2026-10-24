@@ -75,6 +75,8 @@ public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Returns the SLF4J logger type, so logger fields which can never hold an SLF4J logger are rejected.
+   *
+   * @since 0.6.0
    */
   @Override
   protected @NotNull Class<?> getLoggerType() {

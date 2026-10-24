@@ -74,6 +74,8 @@ public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Returns the JBoss logger type, so logger fields which can never hold a JBoss logger are rejected.
+   *
+   * @since 0.6.0
    */
   @Override
   protected @NotNull Class<?> getLoggerType() {

@@ -72,6 +72,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    *
    * @param annotationMethodLoggingSource  method logging source providing the method logging definitions and the
    *                                       method logger factory, not {@code null}
+   *
+   * @since 0.6.0
    */
   MethodLoggingInterceptor(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource) {
     this.annotationMethodLoggingSource = annotationMethodLoggingSource;
@@ -145,6 +147,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param type       target type of {@code obj}, not {@code null}
    *
    * @return  method logger or {@code null} if entry/exit logging is disabled or the method logger could not be obtained
+   *
+   * @since 0.6.0
    */
   private MethodLogger getEnabledMethodLogger(@NotNull MethodDef methodDef, @NotNull Object obj,
                                               @NotNull Class<?> type)
@@ -219,6 +223,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param value             parameter value
    *
    * @return  formatted parameter, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private @NotNull String formatParameter(@NotNull Message parameterMessage, @NotNull ParameterDef parameterDef,
@@ -241,6 +247,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param value         parameter value
    *
    * @return  formatted parameter value, never {@code null}
+   *
+   * @since 0.6.0
    */
   private @NotNull String formatParameterValue(@NotNull ParameterDef parameterDef, Object value)
   {
@@ -308,6 +316,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param millis  elapsed time in milliseconds, not negative
    *
    * @return  formatted elapsed time, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   static @NotNull String formatElapsedTime(long millis)
@@ -398,6 +408,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param ex  exception thrown while formatting, not {@code null}
    *
    * @return  format failure text naming the exception, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   private static @NotNull String formatFailed(@NotNull Throwable ex) {
@@ -413,6 +425,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param exceptionClass  exception class, not {@code null}
    *
    * @return  exception class name without package, never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   static @NotNull String exceptionName(@NotNull Class<?> exceptionClass)
@@ -432,6 +446,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * @param methodDef  method logging definition, not {@code null}
    * @param phase      logging phase which failed, not {@code null}
    * @param ex         exception raised while logging, not {@code null}
+   *
+   * @since 0.6.0
    */
   private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Throwable ex)
   {
@@ -451,6 +467,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    * framework not visible to this library).
    *
    * @param throwable  throwable caught while logging, not {@code null}
+   *
+   * @since 0.6.0
    */
   static void rethrowIfFatal(@NotNull Throwable throwable)
   {

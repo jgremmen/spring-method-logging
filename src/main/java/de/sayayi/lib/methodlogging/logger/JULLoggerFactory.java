@@ -75,6 +75,8 @@ public final class JULLoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Returns the JUL logger type, so logger fields which can never hold a JUL logger are rejected.
+   *
+   * @since 0.6.0
    */
   @Override
   protected @NotNull Class<?> getLoggerType() {

@@ -87,6 +87,8 @@ final class MethodDef
    * @param loggerField          logger field or {@code null} if no logger field was found
    *
    * @throws IllegalStateException  if a custom message format is invalid
+   *
+   * @since 0.6.0
    */
   MethodDef(final @NotNull MessageFactory messageFactory, @NotNull MethodLoggingConfig methodLoggingConfig,
             @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging, @NotNull Method method,

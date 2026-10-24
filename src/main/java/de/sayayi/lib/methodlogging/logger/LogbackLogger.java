@@ -70,6 +70,8 @@ final class LogbackLogger implements MethodLogger
    * {@inheritDoc}
    * <p>
    * The location is passed to Logback as caller data of the logging event.
+   *
+   * @since 0.6.0
    */
   @Override
   public void log(@NotNull Level level, String message, @NotNull StackTraceElement location)
@@ -133,6 +135,8 @@ final class LogbackLogger implements MethodLogger
    *
    * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a Logback logger,
    *          never {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   static @NotNull MethodLogger of(Object logger) {

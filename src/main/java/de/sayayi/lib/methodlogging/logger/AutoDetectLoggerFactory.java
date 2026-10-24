@@ -146,6 +146,8 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
    * @param cause        error raised while accessing the logger or {@code null}
    *
    * @return  JCL method logger for the class of {@code obj}, never {@code null}
+   *
+   * @since 0.6.0
    */
   private @NotNull MethodLogger createFallbackMethodLogger(@NotNull Field loggerField, @NotNull Object logger,
                                                            @NotNull Object obj, @NotNull String kind, Throwable cause)

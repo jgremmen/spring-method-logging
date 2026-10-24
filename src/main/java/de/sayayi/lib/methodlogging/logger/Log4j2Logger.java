@@ -69,6 +69,8 @@ final class Log4j2Logger implements MethodLogger
    * {@inheritDoc}
    * <p>
    * The location is passed to Log4j2 as the source location of the log event.
+   *
+   * @since 0.6.0
    */
   @Override
   public void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
@@ -112,6 +114,8 @@ final class Log4j2Logger implements MethodLogger
    *
    * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a Log4j2 logger, never
    *          {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   static @NotNull MethodLogger of(Object logger) {

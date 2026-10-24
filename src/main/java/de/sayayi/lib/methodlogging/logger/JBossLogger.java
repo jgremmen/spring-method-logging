@@ -107,6 +107,8 @@ final class JBossLogger implements MethodLogger
    *
    * @return  a method logger instance or {@link #NO_OP} if {@code logger} is {@code null} or not a JBoss logger, never
    *          {@code null}
+   *
+   * @since 0.6.0
    */
   @Contract(pure = true)
   static @NotNull MethodLogger of(Object logger) {

@@ -75,6 +75,8 @@ public final class Log4j2LoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Returns the Log4j2 logger type, so logger fields which can never hold a Log4j2 logger are rejected.
+   *
+   * @since 0.6.0
    */
   @Override
   protected @NotNull Class<?> getLoggerType() {
