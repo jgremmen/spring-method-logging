@@ -103,7 +103,8 @@ public interface MethodLoggingConfigurer
 
   /**
    * Tells whether a method parameter is to be excluded from logging. This method provides a way to exclude parameters
-   * which have no meaningful string representation or are not important enough to be logged at all.
+   * by type, e.g. types which have no meaningful string representation, produce far too much output, contain sensitive
+   * information or are not important enough to be logged at all.
    * <p>
    * This method is queried for non-primitive types (except if it is an array, e.g. {@code byte[]}) and method
    * parameters without a @{@link ParamLog} annotation only.

@@ -312,11 +312,14 @@ public final class AnnotationMethodLoggingSource
     final var excludeParameters = asList(methodLogging.exclude());
     final var messageFactory = getMessageSupport().getMessageAccessor().getMessageFactory();
 
-    for(int p = 0; p < parameterCount; p++)
+    for(var p = 0; p < parameterCount; p++)
     {
       var paramLog = getMergedAnnotation(specificParameters[p], ParamLog.class);
       if (paramLog == null && specificMethod != method)
         paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+
+      if (paramLog != null && paramLog.exclude())
+        continue;
 
       var name = paramLog != null ? paramLog.name() : "";
       if (!hasLength(name))

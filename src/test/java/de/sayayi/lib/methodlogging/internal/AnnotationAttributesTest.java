@@ -27,9 +27,11 @@ import org.springframework.core.io.DefaultResourceLoader;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.List;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -77,6 +79,29 @@ class AnnotationAttributesTest
   }
 
 
+  @Test
+  @DisplayName("Composed annotation meta-annotated with @ParamLog")
+  void composedParamLog() throws Exception
+  {
+    final var methodDef = requireNonNull(source.getMethodDefinition(
+        Bean.class.getMethod("composedParams", String.class, String.class, String.class), Bean.class));
+
+    assertEquals(List.of(), methodDef.inlineParameters);
+
+    final var parameters = methodDef.inMethodParameters;
+    assertEquals(3, parameters.size());
+
+    assertEquals("a", parameters.get(0).name());
+    assertEquals("[x]", format(parameters.get(0), "x"));
+
+    assertEquals("second", parameters.get(1).name());
+    assertEquals("[y]", format(parameters.get(1), "y"));
+
+    assertEquals("c", parameters.get(2).name());
+    assertEquals("<z>", format(parameters.get(2), "z"));
+  }
+
+
   private @NotNull String format(@NotNull ParameterDef parameterDef, @NotNull String value)
   {
     return source
@@ -101,6 +126,22 @@ class AnnotationAttributesTest
 
 
 
+  @Target(PARAMETER)
+  @Retention(RUNTIME)
+  @ParamLog(format = "[%{value}]", inline = false)
+  @interface Bracketed
+  {
+    @AliasFor(annotation = ParamLog.class, attribute = "name")
+    String name() default "";
+
+
+    @AliasFor(annotation = ParamLog.class, attribute = "format")
+    String format() default "[%{value}]";
+  }
+
+
+
+
   @SuppressWarnings("unused")
   public static class Bean
   {
@@ -113,6 +154,12 @@ class AnnotationAttributesTest
     @Audited(resultLevel = Level.INFO)
     public String auditedInfo() {
       return "audited";
+    }
+
+
+    @MethodLogging
+    public void composedParams(@Bracketed String a, @Bracketed(name = "second") String b,
+                               @Bracketed(format = "<%{value}>") String c) {
     }
 
 

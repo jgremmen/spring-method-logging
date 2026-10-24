@@ -24,10 +24,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.DefaultResourceLoader;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -58,6 +62,22 @@ class ExcludeMethodParameterTest
             .stream()
             .map(ParameterDef::name)
             .toList());
+  }
+
+
+  @Test
+  @DisplayName("Parameters are excluded by @ParamLog(exclude = true)")
+  void excludeByParamLog() throws Exception
+  {
+    final var methodDef = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader())
+        .getMethodDefinition(
+            ExcludeParams.class.getMethod("excludeAnnotated", String.class, String.class, String.class, String.class),
+            ExcludeParams.class);
+
+    assertEquals(List.of("user"), requireNonNull(methodDef).inlineParameters.stream().map(ParameterDef::name).toList());
+    assertEquals(List.of(), methodDef.inMethodParameters);
   }
 
 
@@ -111,11 +131,28 @@ class ExcludeMethodParameterTest
 
 
 
+  @Target(PARAMETER)
+  @Retention(RUNTIME)
+  @ParamLog(exclude = true)
+  @interface Sensitive {
+  }
+
+
+
+
   public static class ExcludeParams
   {
     @MethodLogging(exclude = { "id", "p1" })
     @SuppressWarnings("unused")
     public void excludeParams(@ParamLog(name = "id") int p0, int p1, String name, Locale locale) {
+    }
+
+
+    @MethodLogging
+    @SuppressWarnings("unused")
+    public void excludeAnnotated(String user, @ParamLog(exclude = true) String password,
+                                 @ParamLog(name = "secret", inline = false, exclude = true) String token,
+                                 @Sensitive String apiKey) {
     }
   }
 }

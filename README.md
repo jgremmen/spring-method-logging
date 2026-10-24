@@ -86,7 +86,12 @@ Formats use the message syntax of the [message-format](https://central.sonatype.
 library, which is also used to format the log messages. The parameter value is available as `%{value}`, which is the
 default format.
 
-Parameters can also be excluded from logging by name using the `exclude` attribute on `@MethodLogging`.
+Parameters can be excluded from logging, e.g. if their value has no meaningful string representation, produces far
+too much output (like large collections or binary data) or contains sensitive information such as passwords or tokens.
+Use `@ParamLog(exclude = true)` on the parameter, or exclude parameters by name with the `exclude` attribute of
+`@MethodLogging`. `@ParamLog(exclude = true)` is preferred, as it does not depend on parameter names being available,
+which is particularly important for sensitive parameters. Parameters can also be excluded by type with
+`MethodLoggingConfigurer.excludeMethodParameter(ResolvableType)`.
 
 ### Using a logger instance
 

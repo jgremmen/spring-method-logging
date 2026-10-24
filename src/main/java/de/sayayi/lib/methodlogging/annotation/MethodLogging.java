@@ -229,12 +229,14 @@ public @interface MethodLogging
 
 
   /**
-   * Provides an array of parameter names that are to be excluded from method logging. This can be useful for hiding
-   * sensitive information such as passwords or tokens.
+   * Provides an array of parameter names that are to be excluded from method logging. This is useful for parameters
+   * whose value has no meaningful string representation, produces far too much output or contains sensitive information
+   * such as passwords or tokens.
    * <p>
    * The names are matched against the logged parameter names, i.e. the name given by {@link ParamLog#name()} if
    * present, otherwise the discovered parameter name (or {@code arg0}, {@code arg1}, ... if parameter names are not
-   * available). A parameter is excluded even if it is annotated with {@link ParamLog @ParamLog}.
+   * available). A parameter is excluded even if it is annotated with {@link ParamLog @ParamLog}. To exclude a parameter
+   * independent of its name, use {@link ParamLog#exclude()}.
    *
    * @return  parameter names to exclude, empty by default
    */
