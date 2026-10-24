@@ -161,6 +161,10 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     /**
      * Tells whether {@code method} invoked on an instance of {@code targetClass} has method logging. While the analysis
      * is deferred, a method annotated with {@code @MethodLogging} matches and is analyzed later.
+     * <p>
+     * Spring matches methods when creating a proxy and on the first invocation of each proxied method. A failed
+     * analysis is therefore not passed on: the method matches if it is annotated with {@code @MethodLogging}, so the
+     * interceptor reports the failure and invokes the method without logging.
      *
      * @param method       method, possibly an interface method, not {@code null}
      * @param targetClass  target class, not {@code null}
@@ -171,7 +175,14 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass)
     {
       if (!deferAnalysis)
-        return annotationMethodLoggingSource.hasMethodLogging(method, targetClass);
+      {
+        try {
+          return annotationMethodLoggingSource.hasMethodLogging(method, targetClass);
+        } catch(RuntimeException ex) {
+          // matching is also part of the invocation: the interceptor reports the failure and invokes the method
+          return annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass);
+        }
+      }
 
       if (!annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass))
         return false;

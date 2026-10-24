@@ -241,10 +241,11 @@ public @interface MethodLogging
    * <p>
    * A name matching no parameter, e.g. because it is misspelled or the parameter has been renamed, would leave the
    * parameter meant to be excluded in the log output. In that case the method analysis fails with an
-   * {@link IllegalStateException}: for proxy based method logging, the application context fails to start; for AspectJ
-   * based method logging, the method is invoked without logging. Only if parameter names are available and the names
-   * are excluded by a composed annotation (meta-annotated with {@code @MethodLogging}), a name matching no parameter is
-   * accepted, so a composed annotation may exclude names not present on every method.
+   * {@link IllegalStateException}: for proxy based method logging of singleton beans, the application context fails to
+   * start; for other beans (e.g. lazy or prototype beans) and for AspectJ based method logging, the method is invoked
+   * without logging. Only if parameter names are available and the names are excluded by a composed annotation
+   * (meta-annotated with {@code @MethodLogging}), a name matching no parameter is accepted, so a composed annotation
+   * may exclude names not present on every method.
    *
    * @return  parameter names to exclude, empty by default
    */

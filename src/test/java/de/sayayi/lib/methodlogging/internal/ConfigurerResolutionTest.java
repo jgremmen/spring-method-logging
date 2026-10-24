@@ -30,9 +30,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -187,6 +189,22 @@ class ConfigurerResolutionTest
 
 
   @Test
+  @DisplayName("Failed analysis on first invocation does not affect the method")
+  void failedAnalysisOnInvocation()
+  {
+    try(var context = new AnnotationConfigApplicationContext(
+        DependentConfigurerConfiguration.class, Dependency.class, LazyInvalid.class, LazyConfigurer.class)) {
+      final var invalid = context.getBean(Invalid.class);
+
+      // proxied while the configuration was created, so the method is analyzed on first invocation
+      assertTrue(isAopProxy(invalid));
+      assertEquals("x", invalid.echo("x"));
+      assertEquals("y", invalid.echo("y"));
+    }
+  }
+
+
+  @Test
   @DisplayName("Advisor provides the same pointcut")
   void samePointcut()
   {
@@ -281,6 +299,40 @@ class ConfigurerResolutionTest
     @Override
     public MethodLoggerFactory methodLoggerFactory() {
       return dependency.methodLoggerFactory();
+    }
+  }
+
+
+
+
+  public interface Invalid
+  {
+    String echo(String value);
+  }
+
+
+
+
+  @Lazy
+  @Component
+  public static class LazyInvalid implements Invalid
+  {
+    @Override
+    @MethodLogging(exclude = "doesNotExist")
+    public String echo(String value) {
+      return value;
+    }
+  }
+
+
+
+
+  @Lazy
+  @Component
+  public static class LazyConfigurer implements MethodLoggingConfigurer
+  {
+    public LazyConfigurer(ObjectProvider<Invalid> invalid) {
+      invalid.getObject();
     }
   }
 
