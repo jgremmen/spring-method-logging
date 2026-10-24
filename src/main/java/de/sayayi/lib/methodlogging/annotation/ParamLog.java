@@ -41,6 +41,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * ({@link #exclude()} or by name with {@link MethodLogging#exclude()}) or if parameter logging is disabled
  * ({@link MethodLogging#parameters()}).
  * <p>
+ * The annotation is inherited from the corresponding parameter of overridden interface and superclass methods; an
+ * annotation on the overriding method takes precedence. A parameter excluded by any of these methods
+ * ({@link #exclude()}) is always excluded, even if an overriding method annotates it without exclusion.
+ * <p>
  * This annotation may be used as a meta-annotation to compose a custom parameter annotation with preset attributes.
  * Attributes of the composed annotation can override {@code @ParamLog} attributes using {@link AliasFor @AliasFor}:
  *

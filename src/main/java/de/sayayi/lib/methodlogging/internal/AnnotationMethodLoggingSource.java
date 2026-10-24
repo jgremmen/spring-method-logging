@@ -30,6 +30,7 @@ import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 import org.springframework.asm.*;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.MethodClassKey;
@@ -43,10 +44,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,6 +53,8 @@ import java.util.function.Supplier;
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
 import static java.lang.Boolean.TRUE;
+import static java.lang.reflect.Modifier.PRIVATE;
+import static java.lang.reflect.Modifier.STATIC;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
@@ -67,6 +67,7 @@ import static org.springframework.core.ResolvableType.forMethodParameter;
 import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotationAttributes;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.synthesizeAnnotation;
+import static org.springframework.util.ClassUtils.getAllInterfacesForClassAsSet;
 import static org.springframework.util.StringUtils.hasLength;
 
 
@@ -306,8 +307,10 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Analyzes the method parameters. Parameter names and {@link ParamLog} annotations are taken from
-   * {@code specificMethod}, falling back to {@code method} if {@code specificMethod} does not provide them.
+   * Analyzes the method parameters. Parameter names are taken from {@code specificMethod}, falling back to
+   * {@code method} if {@code specificMethod} does not provide them. {@link ParamLog} annotations are taken from the
+   * most specific declaration of the method annotating the parameter, including overridden interface and superclass
+   * methods; a parameter excluded by any declaration stays excluded.
    * <p>
    * The parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer or, if no name can be
    * discovered, the synthesized reflection name ({@code arg0}, {@code arg1}, ...) in that order.
@@ -328,9 +331,10 @@ public final class AnnotationMethodLoggingSource
    * @throws IllegalStateException  if an excluded parameter name matches no parameter, as parameter names are not
    *                                available
    */
-  private @NotNull List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
-                                                       @NotNull Class<?> targetClass,
-                                                       @NotNull MethodLogging methodLogging)
+  private @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod,
+                                                                     @NotNull Method method,
+                                                                     @NotNull Class<?> targetClass,
+                                                                     @NotNull MethodLogging methodLogging)
   {
     final var parameterCount = specificMethod.getParameterCount();
     if (parameterCount == 0 || methodLogging.parameters() != SHOW)
@@ -343,15 +347,13 @@ public final class AnnotationMethodLoggingSource
     final var parameterDefs = new ArrayList<ParameterDef>(8);
     final var names = new ArrayList<String>(parameterCount);
     final var specificParameters = specificMethod.getParameters();
-    final var parameters = method.getParameters();
+    final var declarations = findMethodDeclarations(specificMethod, method, targetClass);
     final var excludeParameters = asList(methodLogging.exclude());
     final var messageFactory = getMessageSupport().getMessageAccessor().getMessageFactory();
 
     for(var p = 0; p < parameterCount; p++)
     {
-      var paramLog = getMergedAnnotation(specificParameters[p], ParamLog.class);
-      if (paramLog == null && specificMethod != method)
-        paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
+      final var paramLog = findParamLog(declarations, p);
 
       var name = paramLog != null ? paramLog.name() : "";
       if (!hasLength(name))
@@ -374,6 +376,110 @@ public final class AnnotationMethodLoggingSource
       validateExcludedParameterNames(specificMethod, excludeParameters, names);
 
     return copyOf(parameterDefs);
+  }
+
+
+  /**
+   * Returns all declarations of {@code specificMethod}: the method itself, the invoked method and the methods it
+   * overrides in the superclasses and interfaces of {@code targetClass}, ordered from most to least specific.
+   * <p>
+   * Parameter annotations are not inherited. Without collecting the declarations, a {@code @ParamLog} annotation on an
+   * interface or superclass method would only be visible if the invoked method is that very method (e.g. for JDK
+   * proxies), but not for CGLIB proxies or AspectJ.
+   *
+   * @param specificMethod  method implementation, not {@code null}
+   * @param method          invoked method, possibly an interface method, not {@code null}
+   * @param targetClass     class of the target instance, not {@code null}
+   *
+   * @return  method declarations, starting with {@code specificMethod}, never {@code null}
+   */
+  @Contract(pure = true)
+  private static @NotNull @Unmodifiable List<Method> findMethodDeclarations(@NotNull Method specificMethod,
+                                                                            @NotNull Method method,
+                                                                            @NotNull Class<?> targetClass)
+  {
+    final var types = new ArrayList<Class<?>>();
+
+    for(var type = targetClass; type != null && type != Object.class; type = type.getSuperclass())
+      types.add(type);
+
+    types.addAll(getAllInterfacesForClassAsSet(targetClass));
+
+    final var declarations = new LinkedHashSet<Method>();
+
+    declarations.add(specificMethod);
+    declarations.add(method);
+
+    for(var type: types)
+      for(var candidate: type.getDeclaredMethods())
+        if (isOverriddenBy(candidate, specificMethod, targetClass))
+          declarations.add(candidate);
+
+    return copyOf(declarations);
+  }
+
+
+  /**
+   * Tells whether {@code candidate} is overridden by {@code specificMethod}. Generic parameter types of
+   * {@code candidate} are resolved against {@code targetClass}.
+   *
+   * @param candidate       method declared by a superclass or interface of {@code targetClass}, not {@code null}
+   * @param specificMethod  method implementation, not {@code null}
+   * @param targetClass     class of the target instance, not {@code null}
+   *
+   * @return  {@code true} if {@code specificMethod} overrides {@code candidate}, {@code false} otherwise
+   */
+  @Contract(pure = true)
+  private static boolean isOverriddenBy(@NotNull Method candidate, @NotNull Method specificMethod,
+                                        @NotNull Class<?> targetClass)
+  {
+    if ((candidate.getModifiers() & (PRIVATE | STATIC)) != 0 || candidate.isBridge() || candidate.isSynthetic())
+      return false;
+
+    if (!candidate.getName().equals(specificMethod.getName()))
+      return false;
+
+    final var parameterTypes = specificMethod.getParameterTypes();
+    if (candidate.getParameterCount() != parameterTypes.length)
+      return false;
+
+    for(var p = 0; p < parameterTypes.length; p++)
+      if (forMethodParameter(candidate, p, targetClass).resolve() != parameterTypes[p])
+        return false;
+
+    return true;
+  }
+
+
+  /**
+   * Returns the {@code @ParamLog} annotation of parameter {@code p} from the most specific declaration providing one.
+   * An exclusion is never overridden: if any declaration excludes the parameter, its annotation is returned instead.
+   *
+   * @param declarations  method declarations, ordered from most to least specific, not {@code null}
+   * @param p             parameter index
+   *
+   * @return  {@code @ParamLog} annotation or {@code null} if no declaration annotates the parameter
+   */
+  @Contract(pure = true)
+  private static ParamLog findParamLog(@NotNull List<Method> declarations, int p)
+  {
+    ParamLog paramLog = null;
+
+    for(var declaration: declarations)
+    {
+      final var declarationParamLog = getMergedAnnotation(declaration.getParameters()[p], ParamLog.class);
+
+      if (declarationParamLog != null)
+      {
+        if (declarationParamLog.exclude())
+          return declarationParamLog;
+
+        if (paramLog == null)
+          paramLog = declarationParamLog;
+      }
+    }
+
+    return paramLog;
   }
 
 

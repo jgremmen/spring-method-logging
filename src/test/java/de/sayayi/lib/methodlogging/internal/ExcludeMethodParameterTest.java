@@ -26,6 +26,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -82,6 +83,53 @@ class ExcludeMethodParameterTest
 
 
   @Test
+  @DisplayName("@ParamLog on interface method is used for implementation method (CGLIB proxy, AspectJ)")
+  void paramLogFromInterface() throws Exception
+  {
+    assertEquals(List.of("user"), inlineParameterNames(
+        LoginServiceImpl.class.getMethod("login", String.class, String.class), LoginServiceImpl.class));
+  }
+
+
+  @Test
+  @DisplayName("@ParamLog on abstract superclass method is used for overriding method")
+  void paramLogFromSuperclass() throws Exception
+  {
+    assertEquals(List.of("user"), inlineParameterNames(
+        ConcreteLogin.class.getMethod("login", String.class, String.class), ConcreteLogin.class));
+  }
+
+
+  @Test
+  @DisplayName("Exclusion on interface method is not overridden by @ParamLog on implementation method")
+  void exclusionNotOverridden() throws Exception
+  {
+    assertEquals(List.of("account"), inlineParameterNames(
+        RenamingLoginService.class.getMethod("login", String.class, String.class), RenamingLoginService.class));
+  }
+
+
+  @Test
+  @DisplayName("@ParamLog on generic interface method is used for implementation method")
+  void paramLogFromGenericInterface() throws Exception
+  {
+    assertEquals(List.of("id"), inlineParameterNames(
+        StringSecretHandler.class.getMethod("handle", String.class, String.class), StringSecretHandler.class));
+  }
+
+
+  private static List<String> inlineParameterNames(Method method, Class<?> targetClass)
+  {
+    final var methodDef = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader())
+        .getMethodDefinition(method, targetClass);
+
+    return requireNonNull(methodDef).inlineParameters.stream().map(ParameterDef::name).toList();
+  }
+
+
+  @Test
   @DisplayName("Generic parameter type is resolved against the target class")
   void genericParameterType() throws Exception
   {
@@ -109,6 +157,76 @@ class ExcludeMethodParameterTest
             .stream()
             .map(ParameterDef::name)
             .toList());
+  }
+
+
+
+
+  public interface LoginService
+  {
+    @MethodLogging
+    @SuppressWarnings("unused")
+    void login(@ParamLog(name = "user") String user, @ParamLog(exclude = true) String password);
+  }
+
+
+
+
+  public static class LoginServiceImpl implements LoginService
+  {
+    @Override
+    public void login(String user, String password) {
+    }
+  }
+
+
+
+
+  public static class RenamingLoginService implements LoginService
+  {
+    @Override
+    public void login(@ParamLog(name = "account") String user, @ParamLog(name = "pwd") String password) {
+    }
+  }
+
+
+
+
+  public abstract static class AbstractLogin
+  {
+    @MethodLogging
+    @SuppressWarnings("unused")
+    public abstract void login(@ParamLog(name = "user") String user, @Sensitive String password);
+  }
+
+
+
+
+  public static class ConcreteLogin extends AbstractLogin
+  {
+    @Override
+    public void login(String user, String password) {
+    }
+  }
+
+
+
+
+  public interface SecretHandler<T>
+  {
+    @MethodLogging
+    @SuppressWarnings("unused")
+    void handle(@ParamLog(exclude = true) T secret, @ParamLog(name = "id") String id);
+  }
+
+
+
+
+  public static class StringSecretHandler implements SecretHandler<String>
+  {
+    @Override
+    public void handle(String secret, String id) {
+    }
   }
 
 
