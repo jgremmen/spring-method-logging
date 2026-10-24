@@ -49,6 +49,19 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
   /**
+   * {@inheritDoc}
+   * <p>
+   * The invoked method is resolved: proxies pass the invoked method, which may be an interface or superclass method.
+   *
+   * @return  {@code true}
+   */
+  @Override
+  boolean isInvokedMethodResolved() {
+    return true;
+  }
+
+
+  /**
    * Creates the advisor applying the method logging interceptor to the methods with method logging, ordered as
    * configured by {@link de.sayayi.lib.methodlogging.annotation.EnableMethodLogging#order() @EnableMethodLogging}.
    *

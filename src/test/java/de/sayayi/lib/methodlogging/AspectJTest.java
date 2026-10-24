@@ -205,19 +205,78 @@ class AspectJTest
   }
 
 
+  @Test
+  @DisplayName("Superclass method invoked by overriding method uses its own definition")
+  void superMethod() throws Exception
+  {
+    try(val classLoader = compileWoven("ctw.Hierarchy", """
+            package ctw;
+
+            import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+
+            import static de.sayayi.lib.methodlogging.Level.DEBUG;
+            import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+
+            public class Hierarchy
+            {
+              public static class Base
+              {
+                @MethodLogging(lineNumber = HIDE, result = HIDE, entryExitLevel = DEBUG)
+                public void work(String baseName) {
+                }
+              }
+
+              public static class Sub extends Base
+              {
+                @Override
+                @MethodLogging(lineNumber = HIDE, result = HIDE)
+                public void work(String subName) {
+                  super.work(subName);
+                }
+              }
+            }
+            """);
+        val ignored = new AnnotationConfigApplicationContext(AspectJConfig.class)) {
+      val subClass = classLoader.loadClass("ctw.Hierarchy$Sub");
+
+      subClass.getMethod("work", String.class).invoke(subClass.getConstructor().newInstance(), "x");
+
+      assertEquals(List.of(
+          "INFO|> work(subName=x)",
+          "DEBUG|> work(baseName=x)",
+          "DEBUG|< work",
+          "INFO|< work"), FACTORY.log);
+    }
+  }
+
+
   /**
    * Compiles {@link #SERVICE_SOURCE} with this library on the aspect path.
    *
    * @return  class loader for the woven service class, not {@code null}
    */
-  private @NotNull URLClassLoader compileWovenService() throws Exception
+  private @NotNull URLClassLoader compileWovenService() throws Exception {
+    return compileWoven("ctw.Service", SERVICE_SOURCE);
+  }
+
+
+  /**
+   * Compiles {@code source} with this library on the aspect path.
+   *
+   * @param className  name of the top level class, not {@code null}
+   * @param source     source of the top level class, not {@code null}
+   *
+   * @return  class loader for the woven classes, not {@code null}
+   */
+  private @NotNull URLClassLoader compileWoven(@NotNull String className, @NotNull String source) throws Exception
   {
-    val sourceFile = tempDir.resolve("src/ctw/Service.java");
+    val sourceFile = tempDir
+        .resolve("src").resolve(className.replace('.', '/') + ".java");
     val classesDir = createDirectories(tempDir.resolve("classes"));
     val libraryClasses = new File(MethodLoggingAspect.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 
     createDirectories(sourceFile.getParent());
-    Files.writeString(sourceFile, SERVICE_SOURCE, UTF_8);
+    Files.writeString(sourceFile, source, UTF_8);
 
     val messages = new MessageHandler();
     new Main().run(new String[] {

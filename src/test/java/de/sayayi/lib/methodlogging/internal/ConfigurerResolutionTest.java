@@ -68,7 +68,7 @@ class ConfigurerResolutionTest
           resolved.incrementAndGet();
           return new MethodLoggingConfigurer() {};
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
 
     // creating the interceptor and analyzing methods without method logging do not require the configurer
     new MethodLoggingInterceptor(source);
@@ -113,7 +113,7 @@ class ConfigurerResolutionTest
             }
           };
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
     final var logged = Bean.class.getMethod("logged");
     final var resolver = new Thread(() -> source.getMethodDefinition(logged, Bean.class));
     final var methodDef = new CompletableFuture<MethodDef>();

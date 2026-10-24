@@ -86,8 +86,18 @@ public abstract class MethodLoggingConfiguration implements ImportAware
     // resolve the configurer lazily, so it is not created together with the method logging infrastructure
     return new AnnotationMethodLoggingSource(
         () -> methodLoggingConfigurer.getIfAvailable(() -> new MethodLoggingConfigurer() {}),
-        resourceLoader);
+        resourceLoader, isInvokedMethodResolved());
   }
+
+
+  /**
+   * Tells whether the method passed to the method logging interceptor is resolved to the most specific method of the
+   * target class. This is required for proxies, which pass the invoked (e.g. interface) method, but not for AspectJ,
+   * which passes the executed method.
+   *
+   * @return  {@code true} if the invoked method is resolved to the most specific method, {@code false} otherwise
+   */
+  abstract boolean isInvokedMethodResolved();
 
 
   /**

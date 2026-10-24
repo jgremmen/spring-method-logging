@@ -107,6 +107,7 @@ public final class AnnotationMethodLoggingSource
   final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
   private final @NotNull ResourceLoader resourceLoader;
+  private final boolean resolveSpecificMethod;
   private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
   private volatile Configuration configuration;
   private volatile RuntimeException configurationFailure;
@@ -122,7 +123,7 @@ public final class AnnotationMethodLoggingSource
    */
   AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
                                 @NotNull ResourceLoader resourceLoader) {
-    this(() -> methodLoggingConfigurer, resourceLoader);
+    this(() -> methodLoggingConfigurer, resourceLoader, true);
   }
 
 
@@ -134,12 +135,16 @@ public final class AnnotationMethodLoggingSource
    * @param methodLoggingConfigurer  supplier of the method logging configurer, not {@code null}
    * @param resourceLoader           resource loader providing the class loader for the default message support,
    *                                 not {@code null}
+   * @param resolveSpecificMethod    {@code true} if the invoked method is resolved to the most specific method of the
+   *                                 target class (proxies), {@code false} if the invoked method is the executed
+   *                                 method already (AspectJ)
    */
   AnnotationMethodLoggingSource(@NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer,
-                                @NotNull ResourceLoader resourceLoader)
+                                @NotNull ResourceLoader resourceLoader, boolean resolveSpecificMethod)
   {
     this.methodLoggingConfigurer = methodLoggingConfigurer;
     this.resourceLoader = resourceLoader;
+    this.resolveSpecificMethod = resolveSpecificMethod;
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     methodLoggingFailureCache = new ConcurrentHashMap<>();
@@ -314,7 +319,26 @@ public final class AnnotationMethodLoggingSource
    */
   @Contract(pure = true)
   boolean hasMethodLoggingAnnotation(@NotNull Method method, @NotNull Class<?> targetClass) {
-    return findMethodLoggingAttributes(getMostSpecificMethod(method, targetClass)) != null;
+    return findMethodLoggingAttributes(getSpecificMethod(method, targetClass)) != null;
+  }
+
+
+  /**
+   * Returns the method implementation executed for {@code method} invoked on an instance of {@code targetClass}.
+   * <p>
+   * For proxies, the invoked method may be an interface or superclass method (e.g. for JDK proxies), which is resolved
+   * to the most specific method of {@code targetClass}. For AspectJ, the invoked method is the executed method already.
+   * It must not be resolved, as it may be a superclass method invoked by an overriding method of {@code targetClass}
+   * (e.g. {@code super.method()}).
+   *
+   * @param method       invoked method, not {@code null}
+   * @param targetClass  class of the target instance, not {@code null}
+   *
+   * @return  executed method implementation, never {@code null}
+   */
+  @Contract(pure = true)
+  private @NotNull Method getSpecificMethod(@NotNull Method method, @NotNull Class<?> targetClass) {
+    return resolveSpecificMethod ? getMostSpecificMethod(method, targetClass) : method;
   }
 
 
@@ -343,9 +367,8 @@ public final class AnnotationMethodLoggingSource
       if (failure != null)
         throw failure.exception;
 
-      // method may be an interface method (e.g. for JDK proxies); the specific method is the implementation
-      // providing parameter names/annotations and line numbers
-      final var specificMethod = getMostSpecificMethod(method, targetClass);
+      // the specific method is the implementation providing parameter names/annotations and line numbers
+      final var specificMethod = getSpecificMethod(method, targetClass);
       final var methodLoggingAttributes = findMethodLoggingAttributes(specificMethod);
 
       if (methodLoggingAttributes == null)
@@ -585,7 +608,9 @@ public final class AnnotationMethodLoggingSource
 
   /**
    * Returns all declarations of {@code specificMethod}: the method itself, the invoked method and the methods it
-   * overrides in the superclasses and interfaces of {@code targetClass}, ordered from most to least specific.
+   * overrides in its superclasses and the interfaces of {@code targetClass}, ordered from most to least specific.
+   * Subclasses of the declaring class are not searched, as their methods override {@code specificMethod} (e.g. if a
+   * superclass method is executed by a {@code super} call with AspectJ).
    * <p>
    * Parameter annotations are not inherited. Without collecting the declarations, a {@code @ParamLog} annotation on an
    * interface or superclass method would only be visible if the invoked method is that very method (e.g. for JDK
@@ -603,8 +628,9 @@ public final class AnnotationMethodLoggingSource
                                                                             @NotNull Class<?> targetClass)
   {
     final var types = new ArrayList<Class<?>>();
+    final var declaringClass = specificMethod.getDeclaringClass();
 
-    for(var type = targetClass; type != null && type != Object.class; type = type.getSuperclass())
+    for(var type = declaringClass; type != null && type != Object.class; type = type.getSuperclass())
       types.add(type);
 
     types.addAll(getAllInterfacesForClassAsSet(targetClass));

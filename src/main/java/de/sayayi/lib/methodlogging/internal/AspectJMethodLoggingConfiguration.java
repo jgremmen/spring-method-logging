@@ -41,6 +41,20 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
   /**
+   * {@inheritDoc}
+   * <p>
+   * The invoked method is not resolved: AspectJ passes the executed method, which may be a superclass method invoked by
+   * an overriding method ({@code super.method()}).
+   *
+   * @return  {@code false}
+   */
+  @Override
+  boolean isInvokedMethodResolved() {
+    return false;
+  }
+
+
+  /**
    * Configures the {@link MethodLoggingAspect} singleton with the method logging interceptor.
    *
    * @param methodLoggingInterceptor  method logging interceptor, not {@code null}

@@ -165,7 +165,7 @@ class MethodDefinitionCacheTest
 
           return new MethodLoggingConfigurer() {};
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class));
