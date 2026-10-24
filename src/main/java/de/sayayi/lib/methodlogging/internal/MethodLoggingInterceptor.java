@@ -452,7 +452,7 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    *
    * @param throwable  throwable caught while logging, not {@code null}
    */
-  private static void rethrowIfFatal(@NotNull Throwable throwable)
+  static void rethrowIfFatal(@NotNull Throwable throwable)
   {
     if (throwable instanceof VirtualMachineError error && !(throwable instanceof StackOverflowError))
       throw error;

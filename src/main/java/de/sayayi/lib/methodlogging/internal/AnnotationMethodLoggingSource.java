@@ -168,11 +168,12 @@ public final class AnnotationMethodLoggingSource
    * the configurer. The configurer methods are invoked by a single thread, once the configuration has been created.
    * <p>
    * If the configurer methods fail (e.g. by returning an invalid default), they would fail again; the failure is cached
-   * and passed on by all subsequent invocations, without invoking the configurer methods again. A failure obtaining the
-   * configurer bean is not cached while the singleton beans are being created, as the bean may be available later on
-   * (e.g. if it depends on a bean which is currently being created). Once all singleton beans have been created (see
-   * {@link #singletonsInstantiated()}), the configurer bean would fail again (e.g. multiple configurers or a failing
-   * configurer bean), so the failure is cached as well.
+   * and passed on by all subsequent invocations, without invoking the configurer methods again. An error raised by the
+   * configurer is passed on as {@link IllegalStateException}, unless it is a virtual machine error the application
+   * cannot recover from. A failure obtaining the configurer bean is not cached while the singleton beans are being
+   * created, as the bean may be available later on (e.g. if it depends on a bean which is currently being created).
+   * Once all singleton beans have been created (see {@link #singletonsInstantiated()}), the configurer bean would fail
+   * again (e.g. multiple configurers or a failing configurer bean), so the failure is cached as well.
    *
    * @return  configuration or {@code null} if the configuration is being created
    *
@@ -196,19 +197,23 @@ public final class AnnotationMethodLoggingSource
 
             try {
               configurer = methodLoggingConfigurer.get();
-            } catch(RuntimeException ex) {
+            } catch(Throwable ex) {
+              final var failure = asRuntimeException(ex, "Method logging configurer is not available");
+
               // the configurer bean is not created again on each invocation once all singleton beans exist
               if (singletonsInstantiated)
-                configurationFailure = ex;
+                configurationFailure = failure;
 
-              throw ex;
+              throw failure;
             }
 
             try {
               configuration = config = new Configuration(configurer, resourceLoader);
-            } catch(RuntimeException ex) {
-              configurationFailure = ex;
-              throw ex;
+            } catch(Throwable ex) {
+              final var failure = asRuntimeException(ex, "Method logging configurer failed");
+
+              configurationFailure = failure;
+              throw failure;
             }
           }
         } finally {
@@ -250,6 +255,29 @@ public final class AnnotationMethodLoggingSource
     var failure = configurationFailure;
     if (failure != null)
       throw failure;
+  }
+
+
+  /**
+   * Returns {@code throwable} as runtime exception. A runtime exception is returned unchanged; any other throwable is
+   * wrapped in an {@link IllegalStateException}, except for virtual machine errors the application cannot recover from,
+   * which are rethrown.
+   *
+   * @param throwable  throwable caught, not {@code null}
+   * @param message    message of the wrapping exception, not {@code null}
+   *
+   * @return  runtime exception, never {@code null}
+   *
+   * @see MethodLoggingInterceptor#rethrowIfFatal(Throwable)
+   */
+  @Contract(pure = true)
+  private static @NotNull RuntimeException asRuntimeException(@NotNull Throwable throwable, @NotNull String message)
+  {
+    MethodLoggingInterceptor.rethrowIfFatal(throwable);
+
+    return throwable instanceof RuntimeException runtimeException
+        ? runtimeException
+        : new IllegalStateException(message, throwable);
   }
 
 
@@ -385,7 +413,9 @@ public final class AnnotationMethodLoggingSource
    * @param targetClass  class of the target instance, not {@code null}
    *
    * A failed analysis is cached: it is not repeated, but its failure is passed on by all subsequent invocations for the
-   * same method and target class (see {@link #isFirstFailureReport(Method, Class)}).
+   * same method and target class (see {@link #isFirstFailureReport(Method, Class)}). An error raised by the analysis,
+   * like a {@link NoClassDefFoundError}, is passed on as {@link IllegalStateException}, unless it is a virtual machine
+   * error the application cannot recover from.
    *
    * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation or the
    *          configuration is being created
@@ -430,9 +460,11 @@ public final class AnnotationMethodLoggingSource
         try {
           methodDef = Optional.of(
               analyseMethodDefinition(method, specificMethod, methodLoggingAttributes, targetClass, config));
-        } catch(RuntimeException ex) {
-          methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(ex));
-          throw ex;
+        } catch(Throwable ex) {
+          final var analysisFailure = asRuntimeException(ex, "Method logging analysis failed for " + specificMethod);
+
+          methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(analysisFailure));
+          throw analysisFailure;
         }
       }
 

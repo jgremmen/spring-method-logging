@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
@@ -25,20 +26,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 
 import java.lang.reflect.Method;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-import static java.util.Map.entry;
+import static java.lang.reflect.Modifier.PRIVATE;
+import static java.lang.reflect.Modifier.STATIC;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
+import static org.springframework.util.ClassUtils.getAllInterfacesForClassAsSet;
+import static org.springframework.util.ReflectionUtils.getAllDeclaredMethods;
 
 
 /**
  * Configuration for proxy based method logging, registering an advisor applying the method logging interceptor to the
  * methods annotated with {@code @MethodLogging}.
  * <p>
- * Methods matched while the singleton beans are created are analyzed after all singleton beans have been created. So
- * the configurer is not created during the post-processing of a bean and may depend on beans with method logging.
+ * The methods of classes matched while the singleton beans are created are analyzed after all singleton beans have been
+ * created. So the configurer is not created during the post-processing of a bean and may depend on beans with method
+ * logging.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
@@ -117,7 +123,8 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 
 
     /**
-     * Creates the configuration and analyzes the methods matched by the pointcut while the singleton beans were created.
+     * Creates the configuration and analyzes the methods of the classes matched by the pointcut while the singleton
+     * beans were created.
      *
      * @throws RuntimeException  if the configurer bean cannot be obtained or the method logging configuration of a
      *                           method is invalid
@@ -135,18 +142,19 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
    * Pointcut matching the methods with a method logging definition.
    * <p>
    * Until {@link #analyseDeferredMethods()} is invoked, methods are matched by their {@code @MethodLogging} annotation
-   * only and analyzed later. Analyzing a method requires the configurer, which must not be created while a bean is
-   * being post-processed: the configurer may depend on that bean.
+   * only and the methods of their target classes are analyzed later. Analyzing a method requires the configurer, which
+   * must not be created while a bean is being post-processed: the configurer may depend on that bean.
    */
   static final class MethodLoggingPointcut extends StaticMethodMatcherPointcut
   {
     private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
-    private final @NotNull Set<Entry<Method,Class<?>>> deferredMethods;
+    /** Target classes whose methods are to be analyzed by {@link #analyseDeferredMethods()}. */
+    private final @NotNull Set<Class<?>> deferredClasses;
     private volatile boolean deferAnalysis;
 
 
     /**
-     * Creates the pointcut, deferring the analysis of matched methods.
+     * Creates the pointcut, deferring the analysis of the methods of matched classes.
      *
      * @param annotationMethodLoggingSource  method logging source, not {@code null}
      */
@@ -154,14 +162,16 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     {
       this.annotationMethodLoggingSource = annotationMethodLoggingSource;
 
-      deferredMethods = newKeySet();
+      deferredClasses = newKeySet();
       deferAnalysis = true;
     }
 
 
     /**
      * Tells whether {@code method} invoked on an instance of {@code targetClass} has method logging. While the analysis
-     * is deferred, a method annotated with {@code @MethodLogging} matches and is analyzed later.
+     * is deferred, a method annotated with {@code @MethodLogging} matches and all methods of {@code targetClass} are
+     * analyzed later. Spring stops matching the methods of a class at the first matching method when deciding whether
+     * to create a proxy, so the other methods are matched on their first invocation only (e.g. for JDK proxies).
      * <p>
      * Spring matches methods when creating a proxy and on the first invocation of each proxied method. A failed
      * analysis is therefore not passed on: the method matches if it is annotated with {@code @MethodLogging}, so the
@@ -188,16 +198,16 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
       if (!annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass))
         return false;
 
-      deferredMethods.add(entry(method, targetClass));
+      deferredClasses.add(targetClass);
       return true;
     }
 
 
     /**
-     * Creates the configuration, analyzes the methods matched so far and stops deferring the analysis of methods
-     * matched from now on. Methods matched while the configurer is created are analyzed as well. A failure is passed on,
-     * so the application context fails to start. If another thread is creating the configuration at that time, the
-     * remaining methods are analyzed on first invocation instead.
+     * Creates the configuration, analyzes the methods of the classes matched so far and stops deferring the analysis
+     * of methods matched from now on. The methods of classes matched while the configurer is created are analyzed as
+     * well. A failure is passed on, so the application context fails to start. If another thread is creating the
+     * configuration at that time, the remaining methods are analyzed on first invocation instead.
      *
      * @throws RuntimeException  if the configurer bean cannot be obtained or the method logging configuration of a
      *                           method is invalid
@@ -208,11 +218,56 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
       annotationMethodLoggingSource.singletonsInstantiated();
       deferAnalysis = false;
 
-      for(var deferredMethod: deferredMethods)
+      for(var deferredClass: deferredClasses)
       {
-        annotationMethodLoggingSource.getMethodDefinition(deferredMethod.getKey(), deferredMethod.getValue());
-        deferredMethods.remove(deferredMethod);
+        for(var method: getProxiedMethods(deferredClass))
+          if (annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, deferredClass))
+            annotationMethodLoggingSource.getMethodDefinition(method, deferredClass);
+
+        deferredClasses.remove(deferredClass);
       }
+    }
+
+
+    /**
+     * Returns the methods which may be invoked through a proxy for {@code targetClass}: the non-private, non-static
+     * methods of the class and its superclasses and the methods of its interfaces. These are the methods Spring matches
+     * when deciding whether to create a proxy and when invoking a proxied method.
+     *
+     * @param targetClass  target class, not {@code null}
+     *
+     * @return  methods which may be proxied, never {@code null}
+     */
+    @Contract(pure = true)
+    private static @NotNull List<Method> getProxiedMethods(@NotNull Class<?> targetClass)
+    {
+      final var methods = new ArrayList<Method>();
+
+      for(var method: getAllDeclaredMethods(targetClass))
+        if (isProxyable(method))
+          methods.add(method);
+
+      for(var interfaceType: getAllInterfacesForClassAsSet(targetClass))
+        for(var method: interfaceType.getMethods())
+          if (isProxyable(method))
+            methods.add(method);
+
+      return methods;
+    }
+
+
+    /**
+     * Tells whether {@code method} may be invoked through a proxy.
+     *
+     * @param method  method, not {@code null}
+     *
+     * @return  {@code true} if the method is neither private, static, a bridge method nor declared by {@link Object}
+     */
+    @Contract(pure = true)
+    private static boolean isProxyable(@NotNull Method method)
+    {
+      return (method.getModifiers() & (PRIVATE | STATIC)) == 0 && !method.isBridge() &&
+          method.getDeclaringClass() != Object.class;
     }
 
 

@@ -21,6 +21,8 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.MethodClassKey;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -124,6 +126,85 @@ class MethodDefinitionCacheTest
     // reported once
     assertTrue(source.isFirstFailureReport(method, Bean.class));
     assertFalse(source.isFirstFailureReport(method, Bean.class));
+  }
+
+
+  @ParameterizedTest(name = "resolveSpecificMethod = {0}")
+  @ValueSource(booleans = { true, false })
+  @DisplayName("Error raised by the analysis is cached and passed on as IllegalStateException")
+  void failedAnalysisWithError(boolean resolveSpecificMethod) throws Exception
+  {
+    final var analyses = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            analyses.incrementAndGet();
+            throw new NoClassDefFoundError("com/example/Missing");
+          }
+        },
+        new DefaultResourceLoader(), resolveSpecificMethod);
+    final var method = Bean.class.getMethod("logged", String.class);
+
+    final var ex = assertThrowsExactly(IllegalStateException.class,
+        () -> source.getMethodDefinition(method, Bean.class));
+    assertInstanceOf(NoClassDefFoundError.class, ex.getCause());
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class)));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.hasMethodLogging(method, Bean.class)));
+    assertEquals(1, analyses.get());
+
+    // reported once
+    assertTrue(source.isFirstFailureReport(method, Bean.class));
+    assertFalse(source.isFirstFailureReport(method, Bean.class));
+  }
+
+
+  @Test
+  @DisplayName("Virtual machine error raised by the analysis is passed on and not cached")
+  void failedAnalysisWithVirtualMachineError() throws Exception
+  {
+    final var analyses = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            analyses.incrementAndGet();
+            throw new OutOfMemoryError("simulated");
+          }
+        },
+        new DefaultResourceLoader());
+    final var method = Bean.class.getMethod("logged", String.class);
+
+    assertThrowsExactly(OutOfMemoryError.class, () -> source.getMethodDefinition(method, Bean.class));
+    assertThrowsExactly(OutOfMemoryError.class, () -> source.getMethodDefinition(method, Bean.class));
+    assertEquals(2, analyses.get());
+  }
+
+
+  @Test
+  @DisplayName("Error raised by a configurer method is cached and passed on as IllegalStateException")
+  void failingConfigurerWithError() throws Exception
+  {
+    final var invocations = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public @NotNull Level defaultEntryExitLevel()
+          {
+            invocations.incrementAndGet();
+            throw new NoClassDefFoundError("com/example/Missing");
+          }
+        },
+        new DefaultResourceLoader());
+    final var method = Bean.class.getMethod("logged", String.class);
+
+    final var ex = assertThrowsExactly(IllegalStateException.class,
+        () -> source.getMethodDefinition(method, Bean.class));
+    assertInstanceOf(NoClassDefFoundError.class, ex.getCause());
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class)));
+    assertEquals(1, invocations.get());
   }
 
 

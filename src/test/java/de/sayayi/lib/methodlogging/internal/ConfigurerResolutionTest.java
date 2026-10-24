@@ -38,6 +38,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.stereotype.Component;
 
@@ -52,6 +53,7 @@ import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.aop.support.AopUtils.isAopProxy;
+import static org.springframework.aop.support.AopUtils.isJdkDynamicProxy;
 
 
 /**
@@ -208,6 +210,68 @@ class ConfigurerResolutionTest
 
 
   @Test
+  @DisplayName("All methods of a matched class are analyzed on startup")
+  void allMethodsOfMatchedClassAnalyzed() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+    final var pointcut = new ProxyMethodLoggingConfiguration.MethodLoggingPointcut(source);
+
+    // Spring stops matching the methods of a class at the first matching method
+    assertTrue(pointcut.matches(PartiallyInvalid.class.getMethod("first", String.class), PartiallyInvalid.class));
+
+    final var ex = assertThrowsExactly(IllegalStateException.class, pointcut::analyseDeferredMethods);
+    assertTrue(ex.getMessage().contains("doesNotExist"));
+  }
+
+
+  @ParameterizedTest(name = "proxyTargetClass = {0}")
+  @ValueSource(classes = { InterfaceProxyConfiguration.class, ClassProxyConfiguration.class })
+  @DisplayName("Invalid method of a proxied singleton bean fails the startup")
+  void invalidMethodFailsStartup(Class<?> configurationClass)
+  {
+    final var ex = assertThrows(Exception.class, () -> {
+      try(var ignored = new AnnotationConfigApplicationContext(configurationClass)) {
+        fail("context must not start");
+      }
+    });
+    assertTrue(NestedExceptionUtils.getMostSpecificCause(ex).getMessage().contains("doesNotExist"));
+  }
+
+
+  @Test
+  @DisplayName("Error raised by the analysis on startup fails the startup")
+  void errorFailsStartup()
+  {
+    final var ex = assertThrows(Exception.class, () -> {
+      try(var ignored = new AnnotationConfigApplicationContext(ErrorConfiguration.class, ErrorBean.class)) {
+        fail("context must not start");
+      }
+    });
+    assertInstanceOf(NoClassDefFoundError.class, NestedExceptionUtils.getRootCause(ex));
+  }
+
+
+  @Test
+  @DisplayName("Error raised by the analysis on first invocation does not affect the method")
+  void errorOnInvocation()
+  {
+    try(var context = new AnnotationConfigApplicationContext(ErrorConfiguration.class, LazyErrorBean.class)) {
+      final var bean = context.getBean(ErrorApi.class);
+
+      assertTrue(isJdkDynamicProxy(bean));
+      assertEquals("a", bean.first("a"));
+
+      for(var n = 0; n < 3; n++)
+      {
+        final var value = n;
+        assertEquals(value, assertDoesNotThrow(() -> bean.poisoned(new Poison(), value)));
+      }
+    }
+  }
+
+
+  @Test
   @DisplayName("Bean with method logging created for the configurer is analyzed on startup")
   void configurerDependencyAnalyzedOnStartup()
   {
@@ -352,6 +416,129 @@ class ConfigurerResolutionTest
     @MethodLogging(exclude = "doesNotExist")
     public String echo(String value) {
       return value;
+    }
+  }
+
+
+
+
+  @SuppressWarnings("unused")
+  public interface PartiallyInvalidApi
+  {
+    String first(String value);
+
+    String second(String value);
+
+    String third(String value);
+  }
+
+
+
+
+  @SuppressWarnings("unused")
+  public static class PartiallyInvalid implements PartiallyInvalidApi
+  {
+    @Override
+    @MethodLogging
+    public String first(String value) {
+      return value;
+    }
+
+
+    @Override
+    @MethodLogging(exclude = "doesNotExist")
+    public String second(String value) {
+      return value;
+    }
+
+
+    @Override
+    @MethodLogging
+    public String third(String value) {
+      return value;
+    }
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging
+  static class InterfaceProxyConfiguration
+  {
+    @org.springframework.context.annotation.Bean
+    public PartiallyInvalidApi partiallyInvalid() {
+      return new PartiallyInvalid();
+    }
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging(proxyTargetClass = true)
+  static class ClassProxyConfiguration extends InterfaceProxyConfiguration {
+  }
+
+
+
+
+  public static final class Poison {
+  }
+
+
+
+
+  public interface ErrorApi
+  {
+    String first(String value);
+
+    int poisoned(Poison poison, int value);
+  }
+
+
+
+
+  @Component
+  public static class ErrorBean implements ErrorApi
+  {
+    @Override
+    @MethodLogging
+    public String first(String value) {
+      return value;
+    }
+
+
+    @Override
+    @MethodLogging
+    public int poisoned(Poison poison, int value) {
+      return value;
+    }
+  }
+
+
+
+
+  @Lazy
+  @Component
+  public static class LazyErrorBean extends ErrorBean {
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging
+  static class ErrorConfiguration implements MethodLoggingConfigurer
+  {
+    @Override
+    public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+    {
+      // e.g. a parameter type referencing a class which is not available
+      if (methodParameterType.toClass() == Poison.class)
+        throw new NoClassDefFoundError("com/example/Missing");
+
+      return false;
     }
   }
 
