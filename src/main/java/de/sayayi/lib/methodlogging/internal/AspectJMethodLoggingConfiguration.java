@@ -20,6 +20,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aspectj.lang.Aspects;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
@@ -31,6 +32,9 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
  * Configuration for AspectJ based method logging, configuring the {@link MethodLoggingAspect} singleton with the method
  * logging interceptor. The interceptor is removed from the aspect when the application context is closed, unless
  * another context has configured the aspect in the meantime.
+ * <p>
+ * Methods are analyzed on first invocation. The configuration is created once all singleton beans have been created, so
+ * an unavailable configurer bean or an invalid configurer default fails the start of the application context.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
@@ -57,24 +61,29 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
   /**
    * Configures the {@link MethodLoggingAspect} singleton with the method logging interceptor.
    *
-   * @param methodLoggingInterceptor  method logging interceptor, not {@code null}
+   * @param annotationMethodLoggingSource  method logging source, not {@code null}
+   * @param methodLoggingInterceptor       method logging interceptor, not {@code null}
    *
-   * @return  aspect registration removing the interceptor from the aspect when the application context is closed
+   * @return  aspect registration creating the configuration after all singleton beans have been created and removing
+   *          the interceptor from the aspect when the application context is closed
    */
   @Bean @Role(ROLE_INFRASTRUCTURE)
   MethodLoggingAspectRegistration internalMethodLoggingAspectRegistration(
+      AnnotationMethodLoggingSource annotationMethodLoggingSource,
       MethodLoggingInterceptor methodLoggingInterceptor) {
-    return new MethodLoggingAspectRegistration(methodLoggingInterceptor);
+    return new MethodLoggingAspectRegistration(annotationMethodLoggingSource, methodLoggingInterceptor);
   }
 
 
 
 
   /**
-   * Sets the method interceptor on the aspect singleton and removes it when the bean is destroyed.
+   * Sets the method interceptor on the aspect singleton and removes it when the bean is destroyed. Once all singleton
+   * beans have been created, the configuration is created.
    */
-  static final class MethodLoggingAspectRegistration implements DisposableBean
+  static final class MethodLoggingAspectRegistration implements SmartInitializingSingleton, DisposableBean
   {
+    private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
     private final @NotNull MethodLoggingAspect aspect;
     private final @NotNull MethodInterceptor methodInterceptor;
 
@@ -82,14 +91,28 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
     /**
      * Creates the registration and sets {@code methodInterceptor} on the aspect singleton.
      *
-     * @param methodInterceptor  method logging interceptor, not {@code null}
+     * @param annotationMethodLoggingSource  method logging source, not {@code null}
+     * @param methodInterceptor              method logging interceptor, not {@code null}
      */
-    MethodLoggingAspectRegistration(@NotNull MethodInterceptor methodInterceptor)
+    MethodLoggingAspectRegistration(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource,
+                                    @NotNull MethodInterceptor methodInterceptor)
     {
+      this.annotationMethodLoggingSource = annotationMethodLoggingSource;
       this.methodInterceptor = methodInterceptor;
 
       aspect = Aspects.aspectOf(MethodLoggingAspect.class);
       aspect.setMethodInterceptor(methodInterceptor);
+    }
+
+
+    /**
+     * Creates the configuration after all singleton beans have been created.
+     *
+     * @throws RuntimeException  if the configurer bean cannot be obtained or the configurer returns an invalid default
+     */
+    @Override
+    public void afterSingletonsInstantiated() {
+      annotationMethodLoggingSource.singletonsInstantiated();
     }
 
 

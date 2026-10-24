@@ -72,7 +72,8 @@ public abstract class MethodLoggingConfiguration implements ImportAware
 
   /**
    * Creates the source analyzing the methods with method logging. The configurer bean is resolved when the first method
-   * with method logging is analyzed; if there is none, the configurer defaults are used.
+   * with method logging is analyzed or once all singleton beans have been created, whichever comes first; if there is
+   * none, the configurer defaults are used.
    *
    * @param methodLoggingConfigurer  provider of the optional configurer bean
    * @param resourceLoader           resource loader of the application context

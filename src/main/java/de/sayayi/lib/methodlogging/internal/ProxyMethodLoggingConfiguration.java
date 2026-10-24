@@ -117,9 +117,10 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 
 
     /**
-     * Analyzes the methods matched by the pointcut while the singleton beans were created.
+     * Creates the configuration and analyzes the methods matched by the pointcut while the singleton beans were created.
      *
-     * @throws IllegalStateException  if the method logging configuration of a method is invalid
+     * @throws RuntimeException  if the configurer bean cannot be obtained or the method logging configuration of a
+     *                           method is invalid
      */
     @Override
     public void afterSingletonsInstantiated() {
@@ -193,14 +194,18 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 
 
     /**
-     * Analyzes the methods matched so far and stops deferring the analysis of methods matched from now on. An analysis
-     * failure is passed on, so the application context fails to start. If another thread is creating the configuration
-     * at that time, the remaining methods are analyzed on first invocation instead.
+     * Creates the configuration, analyzes the methods matched so far and stops deferring the analysis of methods
+     * matched from now on. Methods matched while the configurer is created are analyzed as well. A failure is passed on,
+     * so the application context fails to start. If another thread is creating the configuration at that time, the
+     * remaining methods are analyzed on first invocation instead.
      *
-     * @throws IllegalStateException  if the method logging configuration of a method is invalid
+     * @throws RuntimeException  if the configurer bean cannot be obtained or the method logging configuration of a
+     *                           method is invalid
      */
     void analyseDeferredMethods()
     {
+      // still deferring, so beans with method logging created for the configurer are analyzed below
+      annotationMethodLoggingSource.singletonsInstantiated();
       deferAnalysis = false;
 
       for(var deferredMethod: deferredMethods)

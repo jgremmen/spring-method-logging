@@ -111,6 +111,7 @@ public final class AnnotationMethodLoggingSource
   private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
   private volatile Configuration configuration;
   private volatile RuntimeException configurationFailure;
+  private volatile boolean singletonsInstantiated;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
 
 
@@ -128,9 +129,9 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Creates a method logging source with a lazily resolved configurer. The configurer is obtained when the first
-   * method with method logging is analyzed, so the configurer bean and its dependencies are not created during the
-   * creation of the method logging infrastructure.
+   * Creates a method logging source with a lazily resolved configurer. The configurer is obtained when the first method
+   * with method logging is analyzed or once all singleton beans have been created, whichever comes first, so the
+   * configurer bean and its dependencies are not created during the creation of the method logging infrastructure.
    *
    * @param methodLoggingConfigurer  supplier of the method logging configurer, not {@code null}
    * @param resourceLoader           resource loader providing the class loader for the default message support,
@@ -164,8 +165,10 @@ public final class AnnotationMethodLoggingSource
    * <p>
    * If the configurer methods fail (e.g. by returning an invalid default), they would fail again; the failure is cached
    * and passed on by all subsequent invocations, without invoking the configurer methods again. A failure obtaining the
-   * configurer bean is not cached, as the bean may be available later on (e.g. if it depends on a bean which is
-   * currently being created).
+   * configurer bean is not cached while the singleton beans are being created, as the bean may be available later on
+   * (e.g. if it depends on a bean which is currently being created). Once all singleton beans have been created (see
+   * {@link #singletonsInstantiated()}), the configurer bean would fail again (e.g. multiple configurers or a failing
+   * configurer bean), so the failure is cached as well.
    *
    * @return  configuration or {@code null} if the configuration is being created
    *
@@ -185,7 +188,17 @@ public final class AnnotationMethodLoggingSource
           {
             throwConfigurationFailure();
 
-            final var configurer = methodLoggingConfigurer.get();
+            final MethodLoggingConfigurer configurer;
+
+            try {
+              configurer = methodLoggingConfigurer.get();
+            } catch(RuntimeException ex) {
+              // the configurer bean is not created again on each invocation once all singleton beans exist
+              if (singletonsInstantiated)
+                configurationFailure = ex;
+
+              throw ex;
+            }
 
             try {
               configuration = config = new Configuration(configurer, resourceLoader);
@@ -205,7 +218,26 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Passes on the cached failure of the configurer methods, if any.
+   * Creates the configuration once all singleton beans have been created, so an unavailable configurer bean or an
+   * invalid configurer default fails the start of the application context, even if no method with method logging has
+   * been analyzed yet. From now on, a failure obtaining the configurer bean is cached (see
+   * {@link #findConfiguration()}).
+   * <p>
+   * If another thread is creating the configuration, this method returns without waiting for it.
+   *
+   * @throws RuntimeException  if the configurer bean cannot be obtained or the configurer returns an invalid default
+   *
+   * @since 0.6.0
+   */
+  void singletonsInstantiated()
+  {
+    singletonsInstantiated = true;
+    findConfiguration();
+  }
+
+
+  /**
+   * Passes on the cached failure of the configurer bean or the configurer methods, if any.
    *
    * @throws RuntimeException  if creating the configuration has failed
    */
@@ -381,7 +413,7 @@ public final class AnnotationMethodLoggingSource
         try {
           config = findConfiguration();
         } catch(RuntimeException ex) {
-          // the configurer bean may be available later on, but failing configurer methods fail again
+          // the configurer bean may be available later on, unless the failure is cached
           if (ex == configurationFailure)
             methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(ex));
 

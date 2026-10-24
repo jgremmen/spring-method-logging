@@ -32,6 +32,7 @@ import org.springframework.aop.PointcutAdvisor;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -190,17 +191,47 @@ class ConfigurerResolutionTest
 
   @Test
   @DisplayName("Failed analysis on first invocation does not affect the method")
-  void failedAnalysisOnInvocation()
+  void failedAnalysisOnInvocation() throws Exception
   {
-    try(var context = new AnnotationConfigApplicationContext(
-        DependentConfigurerConfiguration.class, Dependency.class, LazyInvalid.class, LazyConfigurer.class)) {
-      final var invalid = context.getBean(Invalid.class);
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+    final var pointcut = new ProxyMethodLoggingConfiguration.MethodLoggingPointcut(source);
+    final var echo = LazyInvalid.class.getMethod("echo", String.class);
 
-      // proxied while the configuration was created, so the method is analyzed on first invocation
-      assertTrue(isAopProxy(invalid));
-      assertEquals("x", invalid.echo("x"));
-      assertEquals("y", invalid.echo("y"));
-    }
+    pointcut.analyseDeferredMethods();
+
+    // matched on first invocation of a proxied method; the interceptor reports the failure
+    assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(echo, LazyInvalid.class));
+    assertTrue(pointcut.matches(echo, LazyInvalid.class));
+    assertTrue(pointcut.matches(Invalid.class.getMethod("echo", String.class), LazyInvalid.class));
+  }
+
+
+  @Test
+  @DisplayName("Bean with method logging created for the configurer is analyzed on startup")
+  void configurerDependencyAnalyzedOnStartup()
+  {
+    final var ex = assertThrows(Exception.class, () -> {
+      try(var ignored = new AnnotationConfigApplicationContext(
+          DependentConfigurerConfiguration.class, LazyInvalid.class, LazyConfigurer.class)) {
+        fail("context must not start");
+      }
+    });
+    assertTrue(NestedExceptionUtils.getMostSpecificCause(ex).getMessage().contains("doesNotExist"));
+  }
+
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(classes = { TwoLazyConfigurers.class, TwoAspectJConfigurers.class })
+  @DisplayName("Multiple configurers fail without analyzed methods")
+  void multipleConfigurersWithoutAnalyzedMethods(Class<?> configurationClass)
+  {
+    final var ex = assertThrows(Exception.class, () -> {
+      try(var ignored = new AnnotationConfigApplicationContext(configurationClass)) {
+        fail("context must not start");
+      }
+    });
+    assertInstanceOf(NoUniqueBeanDefinitionException.class, NestedExceptionUtils.getMostSpecificCause(ex));
   }
 
 
@@ -342,6 +373,51 @@ class ConfigurerResolutionTest
   @Configuration
   @EnableMethodLogging
   static class DependentConfigurerConfiguration {
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging
+  static class TwoLazyConfigurers
+  {
+    @Lazy
+    @org.springframework.context.annotation.Bean
+    public Bean bean() {
+      return new Bean();
+    }
+
+
+    @org.springframework.context.annotation.Bean
+    public MethodLoggingConfigurer firstConfigurer() {
+      return new MethodLoggingConfigurer() {};
+    }
+
+
+    @org.springframework.context.annotation.Bean
+    public MethodLoggingConfigurer secondConfigurer() {
+      return new MethodLoggingConfigurer() {};
+    }
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging(mode = AdviceMode.ASPECTJ)
+  static class TwoAspectJConfigurers
+  {
+    @org.springframework.context.annotation.Bean
+    public MethodLoggingConfigurer firstConfigurer() {
+      return new MethodLoggingConfigurer() {};
+    }
+
+
+    @org.springframework.context.annotation.Bean
+    public MethodLoggingConfigurer secondConfigurer() {
+      return new MethodLoggingConfigurer() {};
+    }
   }
 
 

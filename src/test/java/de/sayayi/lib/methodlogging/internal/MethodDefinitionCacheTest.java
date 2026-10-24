@@ -177,6 +177,30 @@ class MethodDefinitionCacheTest
   }
 
 
+  @Test
+  @DisplayName("Failure obtaining the configurer bean is cached once all singletons exist")
+  void failingConfigurerAfterSingletonsInstantiated() throws Exception
+  {
+    final var invocations = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        () -> {
+          invocations.incrementAndGet();
+          throw new IllegalStateException("no unique configurer bean");
+        },
+        new DefaultResourceLoader(), true);
+    final var method = Bean.class.getMethod("logged", String.class);
+
+    final var ex = assertThrowsExactly(IllegalStateException.class, source::singletonsInstantiated);
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class)));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class)));
+    assertEquals(1, invocations.get());
+
+    // reported once
+    assertTrue(source.isFirstFailureReport(method, Bean.class));
+    assertFalse(source.isFirstFailureReport(method, Bean.class));
+  }
+
+
 
 
   public static class Bean
