@@ -200,6 +200,71 @@ class ParameterNameDiscoveryTest
   }
 
 
+  @ParameterizedTest(name = "{0}", quoteTextArguments = false)
+  @CsvSource({
+      "METHOD_PARAMETERS, 'INFO|> call(id=1,flag=true)'",
+      "NONE,              ''"
+  })
+  @DisplayName("Excluding parameters by name fails without parameter names")
+  void excludeUnmatchedName(@NotNull NameInfo nameInfo, @NotNull String expectedEntry) throws Exception
+  {
+    compile("test.Bean", """
+        package test;
+
+        import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+
+        import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+
+        public class Bean
+        {
+          @MethodLogging(lineNumber = HIDE, result = HIDE, exclude = { "name", "other" })
+          public void call(int id, String name, boolean flag) {
+          }
+        }
+        """, nameInfo);
+
+    if (!expectedEntry.isEmpty())
+    {
+      // with parameter names, names matching no parameter are accepted (e.g. preset by a composed annotation)
+      invoke("test.Bean", "test.Bean", 1, "x", true);
+      assertEquals(expectedEntry, FACTORY.log.getFirst());
+    }
+    else
+    {
+      val ex = assertThrows(IllegalStateException.class, () -> invoke("test.Bean", "test.Bean", 1, "x", true));
+
+      assertTrue(ex.getMessage().startsWith("Excluded parameter 'name' matches no parameter of "), ex.getMessage());
+      assertTrue(FACTORY.log.isEmpty());
+    }
+  }
+
+
+  @Test
+  @DisplayName("Excluding parameters by @ParamLog name without parameter names")
+  void excludeParamLogName() throws Exception
+  {
+    compile("test.Bean", """
+        package test;
+
+        import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+        import de.sayayi.lib.methodlogging.annotation.ParamLog;
+
+        import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+
+        public class Bean
+        {
+          @MethodLogging(lineNumber = HIDE, result = HIDE, exclude = "name")
+          public void call(int id, @ParamLog(name = "name") String name, boolean flag) {
+          }
+        }
+        """, NameInfo.NONE);
+
+    invoke("test.Bean", "test.Bean", 1, "x", true);
+
+    assertEquals("INFO|> call(arg0=1,arg2=true)", FACTORY.log.getFirst());
+  }
+
+
   @ParameterizedTest(name = "interface {0}, implementation {1}", quoteTextArguments = false)
   @CsvSource({
       // implementation names are preferred over interface names

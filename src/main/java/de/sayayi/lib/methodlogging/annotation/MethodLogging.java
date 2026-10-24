@@ -237,6 +237,12 @@ public @interface MethodLogging
    * present, otherwise the discovered parameter name (or {@code arg0}, {@code arg1}, ... if parameter names are not
    * available). A parameter is excluded even if it is annotated with {@link ParamLog @ParamLog}. To exclude a parameter
    * independent of its name, use {@link ParamLog#exclude()}.
+   * <p>
+   * If parameter names are not available, a name matching no parameter would leave the parameter meant to be excluded
+   * in the log output. In that case the method analysis fails with an {@link IllegalStateException}: for proxy based
+   * method logging, the application context fails to start; for AspectJ based method logging, the method is invoked
+   * without logging. A name matching no parameter is accepted if parameter names are available, so composed annotations
+   * may exclude names not present on every method.
    *
    * @return  parameter names to exclude, empty by default
    */

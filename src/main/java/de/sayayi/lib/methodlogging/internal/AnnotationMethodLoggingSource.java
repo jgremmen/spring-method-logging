@@ -291,6 +291,9 @@ public final class AnnotationMethodLoggingSource
    * The parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer or, if no name can be
    * discovered, the synthesized reflection name ({@code arg0}, {@code arg1}, ...) in that order.
    * <p>
+   * If no parameter names can be discovered, each name excluded by {@link MethodLogging#exclude()} must match a
+   * resolved parameter name. Otherwise, the parameter meant to be excluded would be logged.
+   * <p>
    * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
    * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
    */
@@ -307,6 +310,7 @@ public final class AnnotationMethodLoggingSource
       parameterNames = nameDiscoverer.getParameterNames(method);
 
     final var parameterDefs = new ArrayList<ParameterDef>(8);
+    final var names = new ArrayList<String>(parameterCount);
     final var specificParameters = specificMethod.getParameters();
     final var parameters = method.getParameters();
     final var excludeParameters = asList(methodLogging.exclude());
@@ -318,14 +322,13 @@ public final class AnnotationMethodLoggingSource
       if (paramLog == null && specificMethod != method)
         paramLog = getMergedAnnotation(parameters[p], ParamLog.class);
 
-      if (paramLog != null && paramLog.exclude())
-        continue;
-
       var name = paramLog != null ? paramLog.name() : "";
       if (!hasLength(name))
         name = parameterNames != null ? parameterNames[p] : specificParameters[p].getName();
 
-      if (!excludeParameters.contains(name) &&
+      names.add(name);
+
+      if ((paramLog == null || !paramLog.exclude()) && !excludeParameters.contains(name) &&
           (paramLog != null || isParameterIncluded(forMethodParameter(specificMethod, p, targetClass))))
       {
         @Language("MessageFormat")
@@ -336,7 +339,28 @@ public final class AnnotationMethodLoggingSource
       }
     }
 
+    if (parameterNames == null)
+      validateExcludedParameterNames(specificMethod, excludeParameters, names);
+
     return copyOf(parameterDefs);
+  }
+
+
+  /**
+   * Validates that each excluded parameter name matches a parameter, if parameter names are not available.
+   *
+   * @throws IllegalStateException  if an excluded parameter name matches no parameter name
+   */
+  private static void validateExcludedParameterNames(@NotNull Method method, @NotNull List<String> excludeParameters,
+                                                     @NotNull List<String> names)
+  {
+    for(var excludeParameter: excludeParameters)
+      if (!names.contains(excludeParameter))
+      {
+        throw new IllegalStateException("Excluded parameter '" + excludeParameter + "' matches no parameter of " +
+            method + ", as parameter names are not available; compile with -parameters or exclude the parameter " +
+            "with @ParamLog(exclude = true)");
+      }
   }
 
 
@@ -437,7 +461,8 @@ public final class AnnotationMethodLoggingSource
             }
 
             @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] ex) {
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                             String[] ex) {
               return methodDescriptor.equals(name.concat(descriptor)) ? methodVisitor : null;
             }
           },
