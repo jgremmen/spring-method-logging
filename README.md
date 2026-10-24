@@ -25,7 +25,7 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 <dependency>
   <groupId>de.sayayi.lib</groupId>
   <artifactId>spring-method-logging</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 
