@@ -24,6 +24,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.AdviceMode;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 
 /**
  * AspectJ aspect applying method logging to the execution of methods annotated with
@@ -40,7 +42,8 @@ import org.springframework.context.annotation.AdviceMode;
  * been configured by the Spring application context, annotated methods are invoked without logging.
  * <p>
  * The aspect is a singleton. If multiple application contexts enable method logging in AspectJ mode, the context
- * created last configures the aspect.
+ * created last configures the aspect. When the context configuring the aspect is closed, annotated methods are invoked
+ * without logging again; the aspect is not handed back to a context created earlier.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
@@ -50,7 +53,7 @@ import org.springframework.context.annotation.AdviceMode;
 @Aspect
 public class MethodLoggingAspect
 {
-  private volatile MethodInterceptor methodInterceptor;
+  private final AtomicReference<MethodInterceptor> methodInterceptor = new AtomicReference<>();
 
 
   /**
@@ -60,7 +63,19 @@ public class MethodLoggingAspect
    * @param methodInterceptor  method logging interceptor or {@code null} to disable method logging
    */
   public void setMethodInterceptor(MethodInterceptor methodInterceptor) {
-    this.methodInterceptor = methodInterceptor;
+    this.methodInterceptor.set(methodInterceptor);
+  }
+
+
+  /**
+   * Removes the method interceptor performing the method logging, if it is {@code methodInterceptor}; if another method
+   * interceptor is set, it is kept. This method is invoked by the method logging configuration when the application
+   * context is closed and is not intended to be used by applications.
+   *
+   * @param methodInterceptor  method logging interceptor to remove, not {@code null}
+   */
+  public void removeMethodInterceptor(@NotNull MethodInterceptor methodInterceptor) {
+    this.methodInterceptor.compareAndSet(methodInterceptor, null);
   }
 
 
@@ -76,7 +91,7 @@ public class MethodLoggingAspect
   @Around("execution(!static * *(..)) && @annotation(de.sayayi.lib.methodlogging.annotation.MethodLogging)")
   public Object logMethod(@NotNull ProceedingJoinPoint joinPoint) throws Throwable
   {
-    final var interceptor = methodInterceptor;
+    final var interceptor = methodInterceptor.get();
 
     return interceptor == null
         ? joinPoint.proceed()

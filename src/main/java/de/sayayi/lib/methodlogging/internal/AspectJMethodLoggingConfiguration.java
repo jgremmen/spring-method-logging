@@ -16,7 +16,10 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect;
+import org.aopalliance.intercept.MethodInterceptor;
 import org.aspectj.lang.Aspects;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
@@ -26,7 +29,8 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 
 /**
  * Configuration for AspectJ based method logging, configuring the {@link MethodLoggingAspect} singleton with the method
- * logging interceptor.
+ * logging interceptor. The interceptor is removed from the aspect when the application context is closed, unless
+ * another context has configured the aspect in the meantime.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
@@ -37,12 +41,35 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
   @Bean @Role(ROLE_INFRASTRUCTURE)
-  MethodLoggingAspect internalMethodLoggingAspect(MethodLoggingInterceptor methodLoggingInterceptor)
+  MethodLoggingAspectRegistration internalMethodLoggingAspectRegistration(
+      MethodLoggingInterceptor methodLoggingInterceptor) {
+    return new MethodLoggingAspectRegistration(methodLoggingInterceptor);
+  }
+
+
+
+
+  /**
+   * Sets the method interceptor on the aspect singleton and removes it when the bean is destroyed.
+   */
+  static final class MethodLoggingAspectRegistration implements DisposableBean
   {
-    final var aspect = Aspects.aspectOf(MethodLoggingAspect.class);
+    private final @NotNull MethodLoggingAspect aspect;
+    private final @NotNull MethodInterceptor methodInterceptor;
 
-    aspect.setMethodInterceptor(methodLoggingInterceptor);
 
-    return aspect;
+    MethodLoggingAspectRegistration(@NotNull MethodInterceptor methodInterceptor)
+    {
+      this.methodInterceptor = methodInterceptor;
+
+      aspect = Aspects.aspectOf(MethodLoggingAspect.class);
+      aspect.setMethodInterceptor(methodInterceptor);
+    }
+
+
+    @Override
+    public void destroy() {
+      aspect.removeMethodInterceptor(methodInterceptor);
+    }
   }
 }

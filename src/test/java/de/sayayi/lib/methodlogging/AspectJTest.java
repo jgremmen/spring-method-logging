@@ -112,25 +112,7 @@ class AspectJTest
   @DisplayName("Compile-time weaving with library on aspect path")
   void compileTimeWeaving() throws Exception
   {
-    val sourceFile = tempDir.resolve("src/ctw/Service.java");
-    val classesDir = createDirectories(tempDir.resolve("classes"));
-    val libraryClasses = new File(MethodLoggingAspect.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-
-    createDirectories(sourceFile.getParent());
-    Files.writeString(sourceFile, SERVICE_SOURCE, UTF_8);
-
-    val messages = new MessageHandler();
-    new Main().run(new String[] {
-        "-21", "-parameters",
-        "-aspectpath", libraryClasses.toString(),
-        "-classpath", System.getProperty("java.class.path"),
-        "-d", classesDir.toString(),
-        sourceFile.toString()
-    }, messages);
-    assertEquals(0, messages.numMessages(IMessage.ERROR, true),
-        () -> Arrays.toString(messages.getMessages(IMessage.ERROR, true)));
-
-    try(val classLoader = new URLClassLoader(new URL[] { classesDir.toUri().toURL() }, getClass().getClassLoader());
+    try(val classLoader = compileWovenService();
         val context = new AnnotationConfigApplicationContext()) {
       val serviceClass = classLoader.loadClass("ctw.Service");
 
@@ -149,6 +131,31 @@ class AspectJTest
       FACTORY.log.clear();
       serviceClass.getMethod("outer", String.class).invoke(serviceClass.getConstructor().newInstance(), "bob");
       assertEquals(EXPECTED_LOG, FACTORY.log);
+    }
+  }
+
+
+  @Test
+  @DisplayName("Closing the context configuring the aspect disables method logging")
+  void closeContext() throws Exception
+  {
+    try(val classLoader = compileWovenService()) {
+      val serviceClass = classLoader.loadClass("ctw.Service");
+      val outer = serviceClass.getMethod("outer", String.class);
+      val service = serviceClass.getConstructor().newInstance();
+
+      val olderContext = new AnnotationConfigApplicationContext(AspectJConfig.class);
+      val newerContext = new AnnotationConfigApplicationContext(AspectJConfig.class);
+
+      // closing a context which no longer configures the aspect keeps the newer context's configuration
+      olderContext.close();
+      outer.invoke(service, "bob");
+      assertEquals(EXPECTED_LOG, FACTORY.log);
+
+      FACTORY.log.clear();
+      newerContext.close();
+      outer.invoke(service, "bob");
+      assertTrue(FACTORY.log.isEmpty(), FACTORY.log::toString);
     }
   }
 
@@ -195,6 +202,35 @@ class AspectJTest
       service.outer("bob");
       assertTrue(FACTORY.log.isEmpty(), FACTORY.log::toString);
     }
+  }
+
+
+  /**
+   * Compiles {@link #SERVICE_SOURCE} with this library on the aspect path.
+   *
+   * @return  class loader for the woven service class, not {@code null}
+   */
+  private @NotNull URLClassLoader compileWovenService() throws Exception
+  {
+    val sourceFile = tempDir.resolve("src/ctw/Service.java");
+    val classesDir = createDirectories(tempDir.resolve("classes"));
+    val libraryClasses = new File(MethodLoggingAspect.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+
+    createDirectories(sourceFile.getParent());
+    Files.writeString(sourceFile, SERVICE_SOURCE, UTF_8);
+
+    val messages = new MessageHandler();
+    new Main().run(new String[] {
+        "-21", "-parameters",
+        "-aspectpath", libraryClasses.toString(),
+        "-classpath", System.getProperty("java.class.path"),
+        "-d", classesDir.toString(),
+        sourceFile.toString()
+    }, messages);
+    assertEquals(0, messages.numMessages(IMessage.ERROR, true),
+        () -> Arrays.toString(messages.getMessages(IMessage.ERROR, true)));
+
+    return new URLClassLoader(new URL[] { classesDir.toUri().toURL() }, getClass().getClassLoader());
   }
 
 
