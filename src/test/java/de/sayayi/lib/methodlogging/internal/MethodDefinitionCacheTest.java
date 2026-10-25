@@ -100,6 +100,69 @@ class MethodDefinitionCacheTest
 
 
   @Test
+  @DisplayName("Interface method and implementation share the definition")
+  void sharedDefinition() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+
+    final var methodDef = source.getMethodDefinition(Service.class.getMethod("logged", String.class), Bean.class);
+
+    assertNotNull(methodDef);
+    assertSame(methodDef, source.getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class));
+  }
+
+
+  @Test
+  @DisplayName("Interface method and implementation share the failed analysis")
+  void sharedFailure() throws Exception
+  {
+    final var analyses = new AtomicInteger();
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            analyses.incrementAndGet();
+            return false;
+          }
+        },
+        new DefaultResourceLoader(), true);
+    final var interfaceMethod = Service.class.getMethod("failing", String.class);
+    final var method = Bean.class.getMethod("failing", String.class);
+
+    final var ex = assertThrowsExactly(IllegalStateException.class,
+        () -> source.getMethodDefinition(interfaceMethod, Bean.class));
+    assertSame(ex, assertThrows(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class)));
+    assertEquals(1, analyses.get());
+
+    // reported once
+    assertTrue(source.isFirstFailureReport(method, Bean.class));
+    assertFalse(source.isFirstFailureReport(interfaceMethod, Bean.class));
+  }
+
+
+  @Test
+  @DisplayName("Class file is read once per declaring class")
+  void classLocationCached() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader());
+
+    final var logged = source.getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class);
+    final var other = source.getMethodDefinition(Bean.class.getMethod("otherLogged"), Bean.class);
+
+    assertNotNull(logged);
+    assertNotNull(other);
+    assertEquals(1, source.classLocationCache.size());
+    assertTrue(logged.location.getLineNumber() > 0);
+    assertTrue(other.location.getLineNumber() > logged.location.getLineNumber());
+    assertEquals("MethodDefinitionCacheTest.java", other.location.getFileName());
+  }
+
+
+  @Test
   @DisplayName("Failed analysis is cached and its failure passed on")
   void failedAnalysis() throws Exception
   {
@@ -284,15 +347,34 @@ class MethodDefinitionCacheTest
 
 
 
-  public static class Bean
+  public interface Service
   {
+    void logged(String value);
+
+
+    void failing(String value);
+  }
+
+
+
+
+  public static class Bean implements Service
+  {
+    @Override
     @MethodLogging
     public void logged(@SuppressWarnings("unused") String value) {
     }
 
 
+    @Override
     @MethodLogging(exclude = "missing")
     public void failing(@SuppressWarnings("unused") String value) {
+    }
+
+
+    @MethodLogging
+    public int otherLogged() {
+      return 0;
     }
 
 

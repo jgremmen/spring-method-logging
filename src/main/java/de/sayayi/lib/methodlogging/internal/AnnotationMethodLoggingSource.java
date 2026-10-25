@@ -49,17 +49,13 @@ import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
 import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
-import static java.lang.reflect.Modifier.PRIVATE;
-import static java.lang.reflect.Modifier.PROTECTED;
-import static java.lang.reflect.Modifier.PUBLIC;
-import static java.lang.reflect.Modifier.STATIC;
+import static java.lang.reflect.Modifier.*;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNull;
@@ -87,8 +83,10 @@ import static org.springframework.util.StringUtils.hasLength;
  * used.
  * <p>
  * Definitions are cached per method and target class, including the information that a method has no method logging.
- * The analysis runs without holding a lock, so concurrent analysis of the same method is possible; the definition
- * cached first is used. A failed analysis is cached as well, so it is not repeated on every invocation.
+ * Invoked methods resolving to the same method implementation, like an interface method and the implementing method,
+ * share the definition. The analysis runs without holding a lock, so concurrent analysis of the same method is
+ * possible; the definition cached first is used. A failed analysis is cached as well, so it is not repeated on every
+ * invocation.
  * <p>
  * Creating the configurer may require beans with method logging, and creating the configurer bean or invoking the
  * configurer methods may acquire the bean factory's singleton lock. No thread therefore waits for the configuration:
@@ -111,6 +109,7 @@ public final class AnnotationMethodLoggingSource
 
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
   final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
+  final @NotNull Map<Class<?>,ClassLocation> classLocationCache;
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
   private final @NotNull ResourceLoader resourceLoader;
   private final boolean resolveSpecificMethod;
@@ -159,6 +158,7 @@ public final class AnnotationMethodLoggingSource
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     methodLoggingFailureCache = new ConcurrentHashMap<>();
+    classLocationCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
   }
 
@@ -463,43 +463,83 @@ public final class AnnotationMethodLoggingSource
 
       // the specific method is the implementation providing parameter names/annotations and line numbers
       final var specificMethod = getSpecificMethod(method, targetClass);
-      final var methodLoggingAttributes = findMethodLoggingAttributes(specificMethod);
+      final var specificMethodClassKey = new MethodClassKey(specificMethod, targetClass);
 
-      if (methodLoggingAttributes == null)
-        methodDef = Optional.empty();
-      else
+      // invoked methods resolving to the same specific method (e.g. an interface method and the implementation) share
+      // the definition or the failure of the analysis
+      if (!specificMethodClassKey.equals(methodClassKey) &&
+          (failure = methodLoggingFailureCache.get(specificMethodClassKey)) != null)
       {
-        final Configuration config;
-
-        // the configuration is required for methods with method logging only
-        try {
-          config = findConfiguration();
-        } catch(RuntimeException ex) {
-          // the configurer bean may be available later on, unless the failure is cached
-          if (ex == configurationFailure)
-            methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(ex));
-
-          throw ex;
-        }
-
-        if (config == null)
-          return null;
-
-        try {
-          methodDef = Optional.of(
-              analyseMethodDefinition(method, specificMethod, methodLoggingAttributes, targetClass, config));
-        } catch(Throwable ex) {
-          final var analysisFailure = asRuntimeException(ex, "Method logging analysis failed for " + specificMethod);
-
-          methodLoggingFailureCache.putIfAbsent(methodClassKey, new AnalysisFailure(analysisFailure));
-          throw analysisFailure;
-        }
+        methodLoggingFailureCache.putIfAbsent(methodClassKey, failure);
+        throw failure.exception;
       }
 
-      methodDef = requireNonNullElse(methodLoggingDefinitionCache.putIfAbsent(methodClassKey, methodDef), methodDef);
+      var specificMethodDef = methodLoggingDefinitionCache.get(specificMethodClassKey);
+      if (specificMethodDef == null)
+      {
+        final var methodLoggingAttributes = findMethodLoggingAttributes(specificMethod);
+
+        if (methodLoggingAttributes == null)
+          specificMethodDef = Optional.empty();
+        else
+        {
+          final Configuration config;
+
+          // the configuration is required for methods with method logging only
+          try {
+            config = findConfiguration();
+          } catch(RuntimeException ex) {
+            // the configurer bean may be available later on, unless the failure is cached
+            if (ex == configurationFailure)
+              cacheFailure(methodClassKey, specificMethodClassKey, ex);
+
+            throw ex;
+          }
+
+          if (config == null)
+            return null;
+
+          try {
+            specificMethodDef = Optional.of(
+                analyseMethodDefinition(method, specificMethod, methodLoggingAttributes, targetClass, config));
+          } catch(Throwable ex) {
+            final var analysisFailure =
+                asRuntimeException(ex, "Method logging analysis failed for " + specificMethod);
+
+            cacheFailure(methodClassKey, specificMethodClassKey, analysisFailure);
+            throw analysisFailure;
+          }
+        }
+
+        specificMethodDef = requireNonNullElse(
+            methodLoggingDefinitionCache.putIfAbsent(specificMethodClassKey, specificMethodDef), specificMethodDef);
+      }
+
+      methodDef = requireNonNullElse(
+          methodLoggingDefinitionCache.putIfAbsent(methodClassKey, specificMethodDef), specificMethodDef);
     }
 
     return methodDef.orElse(null);
+  }
+
+
+  /**
+   * Caches the failure of the analysis for the invoked method and for the specific method it resolves to, so all
+   * invoked methods resolving to the same specific method share the failure and its report.
+   *
+   * @param methodClassKey          key of the invoked method and target class, not {@code null}
+   * @param specificMethodClassKey  key of the specific method and target class, not {@code null}
+   * @param exception               exception raised by the analysis, not {@code null}
+   *
+   * @since 0.6.0
+   */
+  private void cacheFailure(@NotNull MethodClassKey methodClassKey, @NotNull MethodClassKey specificMethodClassKey,
+                            @NotNull RuntimeException exception)
+  {
+    var failure = new AnalysisFailure(exception);
+
+    failure = requireNonNullElse(methodLoggingFailureCache.putIfAbsent(specificMethodClassKey, failure), failure);
+    methodLoggingFailureCache.putIfAbsent(methodClassKey, failure);
   }
 
 
@@ -1021,7 +1061,7 @@ public final class AnnotationMethodLoggingSource
   /**
    * Determines the source location of {@code method}: its declaring class, name, source file and the line of the first
    * statement. Source file and line are taken from the class file and are {@code null} and {@code -1} respectively, if
-   * not available.
+   * not available. The class file is read once per declaring class.
    *
    * @param method  method implementation, not {@code null}
    *
@@ -1032,39 +1072,19 @@ public final class AnnotationMethodLoggingSource
   private @NotNull StackTraceElement findMethodLocation(@NotNull Method method)
   {
     final var declaringClass = method.getDeclaringClass();
-    final var classResourceName = declaringClass.getName().replace('.', '/') + ".class";
-    final var methodDescriptor = method.getName().concat(Type.getMethodDescriptor(method));
 
-    final var sourceFile = new AtomicReference<String>();
-    final var lineNumber = new AtomicInteger(-1);
-    final var methodVisitor = new MethodVisitor(ASM_VERSION) {
-      @Override
-      public void visitLineNumber(int line, Label start) {
-        lineNumber.compareAndSet(-1, line);
-      }
-    };
-
-    try(var classInputStream = requireNonNull(
-        declaringClass.getClassLoader().getResourceAsStream(classResourceName))) {
-      new ClassReader(classInputStream).accept(
-          new ClassVisitor(ASM_VERSION) {
-            @Override
-            public void visitSource(String source, String debug) {
-              sourceFile.set(source);
-            }
-
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
-                                             String[] ex) {
-              return methodDescriptor.equals(name.concat(descriptor)) ? methodVisitor : null;
-            }
-          },
-          SKIP_FRAMES);
-    } catch(IOException | RuntimeException ignored) {
-      // class file not available or not readable by ASM (e.g. unsupported class file version)
+    var classLocation = classLocationCache.get(declaringClass);
+    if (classLocation == null)
+    {
+      // read the class file without holding a lock; concurrently read locations are equal
+      classLocation = ClassLocation.read(declaringClass);
+      classLocation = requireNonNullElse(classLocationCache.putIfAbsent(declaringClass, classLocation), classLocation);
     }
 
-    return new StackTraceElement(declaringClass.getName(), method.getName(), sourceFile.get(), lineNumber.get());
+    final var name = method.getName();
+
+    return new StackTraceElement(declaringClass.getName(), name, classLocation.sourceFile(),
+        classLocation.lineNumbers().getOrDefault(name.concat(Type.getMethodDescriptor(method)), -1));
   }
 
 
@@ -1106,6 +1126,65 @@ public final class AnnotationMethodLoggingSource
       }
 
     return null;
+  }
+
+
+
+
+  /**
+   * Source file and line of the first statement of each method of a class, as read from its class file.
+   *
+   * @param sourceFile   source file name or {@code null} if not available
+   * @param lineNumbers  line of the first statement, by method name and descriptor, not {@code null}
+   *
+   * @since 0.6.0
+   */
+  record ClassLocation(String sourceFile, @NotNull @Unmodifiable Map<String,Integer> lineNumbers)
+  {
+    /**
+     * Reads the source file and the line numbers of the methods of {@code type} from its class file. If the class file
+     * is not available or cannot be read, the information read so far is returned.
+     *
+     * @param type  class to read the class file for, not {@code null}
+     *
+     * @return  class location, never {@code null}
+     */
+    @Contract(pure = true)
+    private static @NotNull ClassLocation read(@NotNull Class<?> type)
+    {
+      final var classResourceName = type.getName().replace('.', '/') + ".class";
+      final var sourceFile = new AtomicReference<String>();
+      final var lineNumbers = new HashMap<String,Integer>();
+
+      try(var classInputStream = requireNonNull(type.getClassLoader().getResourceAsStream(classResourceName))) {
+        new ClassReader(classInputStream).accept(
+            new ClassVisitor(ASM_VERSION) {
+              @Override
+              public void visitSource(String source, String debug) {
+                sourceFile.set(source);
+              }
+
+              @Override
+              public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                               String[] ex)
+              {
+                final var methodDescriptor = name.concat(descriptor);
+
+                return new MethodVisitor(ASM_VERSION) {
+                  @Override
+                  public void visitLineNumber(int line, Label start) {
+                    lineNumbers.putIfAbsent(methodDescriptor, line);
+                  }
+                };
+              }
+            },
+            SKIP_FRAMES);
+      } catch(IOException | RuntimeException ignored) {
+        // class file not available or not readable by ASM (e.g. unsupported class file version)
+      }
+
+      return new ClassLocation(sourceFile.get(), Map.copyOf(lineNumbers));
+    }
   }
 
 
