@@ -88,9 +88,8 @@ requirements are listed on the [Thread Safety](../reference/thread-safety.md) pa
 throw on the [Error Handling](../reference/error-handling.md#failures-while-logging) page.
 
 /// note | Internal classes
-The package `de.sayayi.lib.methodlogging.internal` is not exported and is not part of the API. The public methods
-`setMethodInterceptor` and `removeMethodInterceptor` of `MethodLoggingAspect` are used by the method logging
-configuration only and are not intended to be called by applications.
+The package `de.sayayi.lib.methodlogging.internal` is not exported and is not part of the API. Its public types are
+public only because Spring or the `MethodLoggingAspect` access them, and are not intended to be used by applications.
 ///
 
 [jd-configurer]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/MethodLoggingConfigurer.html

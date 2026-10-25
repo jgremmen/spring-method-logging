@@ -22,10 +22,8 @@ import de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect;
 import lombok.val;
 import org.aspectj.bridge.IMessage;
 import org.aspectj.bridge.MessageHandler;
-import org.aspectj.lang.Aspects;
 import org.aspectj.tools.ajc.Main;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -101,13 +99,6 @@ class AspectJTest
   }
 
 
-  @AfterEach
-  void cleanup() {
-    // the aspect is a singleton; do not leak the interceptor of the closed context to other tests
-    Aspects.aspectOf(MethodLoggingAspect.class).setMethodInterceptor(null);
-  }
-
-
   @Test
   @DisplayName("Compile-time weaving with library on aspect path")
   void compileTimeWeaving() throws Exception
@@ -144,18 +135,20 @@ class AspectJTest
       val outer = serviceClass.getMethod("outer", String.class);
       val service = serviceClass.getConstructor().newInstance();
 
-      val olderContext = new AnnotationConfigApplicationContext(AspectJConfig.class);
-      val newerContext = new AnnotationConfigApplicationContext(AspectJConfig.class);
+      // the aspect is a singleton; both contexts are closed even if an assertion fails, so they do not configure the
+      // aspect for other tests
+      try(val olderContext = new AnnotationConfigApplicationContext(AspectJConfig.class);
+          val newerContext = new AnnotationConfigApplicationContext(AspectJConfig.class)) {
+        // closing a context which no longer configures the aspect keeps the newer context's configuration
+        olderContext.close();
+        outer.invoke(service, "bob");
+        assertEquals(EXPECTED_LOG, FACTORY.log);
 
-      // closing a context which no longer configures the aspect keeps the newer context's configuration
-      olderContext.close();
-      outer.invoke(service, "bob");
-      assertEquals(EXPECTED_LOG, FACTORY.log);
-
-      FACTORY.log.clear();
-      newerContext.close();
-      outer.invoke(service, "bob");
-      assertTrue(FACTORY.log.isEmpty(), FACTORY.log::toString);
+        FACTORY.log.clear();
+        newerContext.close();
+        outer.invoke(service, "bob");
+        assertTrue(FACTORY.log.isEmpty(), FACTORY.log::toString);
+      }
     }
   }
 

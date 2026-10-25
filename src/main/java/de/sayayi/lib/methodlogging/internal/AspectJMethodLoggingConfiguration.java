@@ -78,21 +78,22 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
 
 
   /**
-   * Sets the method interceptor on the aspect singleton and removes it when the bean is destroyed. Once all singleton
-   * beans have been created, the configuration is created.
+   * Sets the method interceptor used by the aspect and removes it when the bean is destroyed. Once all singleton beans
+   * have been created, the configuration is created.
    */
   static final class MethodLoggingAspectRegistration implements SmartInitializingSingleton, DisposableBean
   {
     private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
-    private final @NotNull MethodLoggingAspect aspect;
     private final @NotNull MethodInterceptor methodInterceptor;
 
 
     /**
-     * Creates the registration and sets {@code methodInterceptor} on the aspect singleton.
+     * Creates the registration and sets {@code methodInterceptor} as the method interceptor used by the aspect.
      *
      * @param annotationMethodLoggingSource  method logging source, not {@code null}
      * @param methodInterceptor              method logging interceptor, not {@code null}
+     *
+     * @throws org.aspectj.lang.NoAspectBoundException  if the aspect is not available
      */
     MethodLoggingAspectRegistration(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource,
                                     @NotNull MethodInterceptor methodInterceptor)
@@ -100,8 +101,9 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
       this.annotationMethodLoggingSource = annotationMethodLoggingSource;
       this.methodInterceptor = methodInterceptor;
 
-      aspect = Aspects.aspectOf(MethodLoggingAspect.class);
-      aspect.setMethodInterceptor(methodInterceptor);
+      // fails if the AspectJ runtime is missing or the aspect has not been completed by the AspectJ compiler or weaver
+      Aspects.aspectOf(MethodLoggingAspect.class);
+      AspectJMethodInterceptor.set(methodInterceptor);
     }
 
 
@@ -122,7 +124,7 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
      */
     @Override
     public void destroy() {
-      aspect.removeMethodInterceptor(methodInterceptor);
+      AspectJMethodInterceptor.remove(methodInterceptor);
     }
   }
 }

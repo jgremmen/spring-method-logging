@@ -197,11 +197,6 @@ the aspect, and its configuration applies to all woven classes. When that contex
 is not handed back to a context created earlier. Applications with several contexts, such as test suites that create a
 context per test class, therefore see the configuration of the most recently created context.
 
-/// note | Public methods of the aspect
-`MethodLoggingAspect` has the public methods `setMethodInterceptor` and `removeMethodInterceptor`, which the method
-logging configuration uses to attach and detach the aspect. They are not intended to be called by applications.
-///
-
 ### Analysis on First Invocation
 
 In AspectJ mode, a method is analyzed when it is executed for the first time. The configurer is still created at
