@@ -57,6 +57,8 @@ import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
 import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
 import static java.lang.reflect.Modifier.PRIVATE;
+import static java.lang.reflect.Modifier.PROTECTED;
+import static java.lang.reflect.Modifier.PUBLIC;
 import static java.lang.reflect.Modifier.STATIC;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
@@ -766,7 +768,8 @@ public final class AnnotationMethodLoggingSource
 
   /**
    * Tells whether {@code candidate} is overridden by {@code specificMethod}. Generic parameter types of
-   * {@code candidate} are resolved against {@code targetClass}.
+   * {@code candidate} are resolved against {@code targetClass}. A package-private {@code candidate} is only overridden
+   * by a method declared in the same runtime package, i.e. the same package of the same class loader.
    *
    * @param candidate       method declared by a superclass or interface of {@code targetClass}, not {@code null}
    * @param specificMethod  method implementation, not {@code null}
@@ -780,10 +783,15 @@ public final class AnnotationMethodLoggingSource
   private static boolean isOverriddenBy(@NotNull Method candidate, @NotNull Method specificMethod,
                                         @NotNull Class<?> targetClass)
   {
-    if ((candidate.getModifiers() & (PRIVATE | STATIC)) != 0 || candidate.isBridge() || candidate.isSynthetic())
+    final var modifiers = candidate.getModifiers();
+    if ((modifiers & (PRIVATE | STATIC)) != 0 || candidate.isBridge() || candidate.isSynthetic())
       return false;
 
     if (!candidate.getName().equals(specificMethod.getName()))
+      return false;
+
+    if ((modifiers & (PUBLIC | PROTECTED)) == 0 &&
+        !isSameRuntimePackage(candidate.getDeclaringClass(), specificMethod.getDeclaringClass()))
       return false;
 
     final var parameterTypes = specificMethod.getParameterTypes();
@@ -795,6 +803,22 @@ public final class AnnotationMethodLoggingSource
         return false;
 
     return true;
+  }
+
+
+  /**
+   * Tells whether both classes belong to the same runtime package: the same package defined by the same class loader.
+   *
+   * @param type1  first class, not {@code null}
+   * @param type2  second class, not {@code null}
+   *
+   * @return  {@code true} if both classes belong to the same runtime package, {@code false} otherwise
+   *
+   * @since 0.6.0
+   */
+  @Contract(pure = true)
+  private static boolean isSameRuntimePackage(@NotNull Class<?> type1, @NotNull Class<?> type2) {
+    return type1.getClassLoader() == type2.getClassLoader() && type1.getPackageName().equals(type2.getPackageName());
   }
 
 

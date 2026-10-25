@@ -18,15 +18,16 @@ package de.sayayi.lib.methodlogging.internal;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
+import de.sayayi.lib.methodlogging.internal.other.PackagePrivateBase;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import static de.sayayi.lib.methodlogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.Level.INFO;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -62,6 +63,36 @@ class SpecificMethodTest
   }
 
 
+  @Test
+  @DisplayName("Package-private superclass method of another package is not overridden")
+  void packagePrivateMethodOfOtherPackage() throws Exception
+  {
+    final var methodDef = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
+        .getMethodDefinition(OtherPackageSub.class.getMethod("work", String.class), OtherPackageSub.class);
+
+    assertNotNull(methodDef);
+
+    // the exclusion of the unrelated superclass method does not apply
+    assertEquals(1, methodDef.inlineParameters.size());
+  }
+
+
+  @Test
+  @DisplayName("Package-private superclass method of the same package is overridden")
+  void packagePrivateMethodOfSamePackage() throws Exception
+  {
+    final var methodDef = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
+        .getMethodDefinition(SamePackageSub.class.getDeclaredMethod("work", String.class), SamePackageSub.class);
+
+    assertNotNull(methodDef);
+
+    // the exclusion of the overridden superclass method applies
+    assertTrue(methodDef.inlineParameters.isEmpty());
+  }
+
+
 
 
   public static class Base
@@ -81,6 +112,38 @@ class SpecificMethodTest
     @MethodLogging(entryExitLevel = INFO)
     public void work(@ParamLog(name = "subName") String name, @ParamLog(name = "pwd") String secret) {
       super.work(name, secret);
+    }
+  }
+
+
+
+
+  public static class OtherPackageSub extends PackagePrivateBase
+  {
+    @MethodLogging
+    @SuppressWarnings("unused")
+    public void work(String value) {
+    }
+  }
+
+
+
+
+  public static class SamePackageBase
+  {
+    @SuppressWarnings("unused")
+    void work(@ParamLog(exclude = true) String value) {
+    }
+  }
+
+
+
+
+  public static class SamePackageSub extends SamePackageBase
+  {
+    @Override
+    @MethodLogging
+    void work(String value) {
     }
   }
 }
