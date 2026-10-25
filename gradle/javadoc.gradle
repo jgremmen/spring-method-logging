@@ -55,6 +55,4 @@ javadoc {
     addStringOption('Xdoclint:-missing', '-quiet')
     addStringOption('-show-module-contents', 'api')
   }
-
-  failOnError = false
 }

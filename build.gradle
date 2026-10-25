@@ -1,5 +1,6 @@
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.time.Instant
 
 
 plugins {
@@ -258,18 +259,33 @@ dependencies {
 }
 
 
+def commitDate = providers
+    .exec {
+      commandLine 'git', 'log', '-1', '--format=%ct'
+      ignoreExitValue = true
+    }
+    .standardOutput
+    .asText
+    .map { it.trim() ? Instant.ofEpochSecond(it.trim() as long).toString() : '' }
+
+
 tasks.withType(Jar).configureEach {
   reproducibleFileOrder = true
+  preserveFileTimestamps = false
 
   manifest {
-    attributes(
+    def manifestAttributes = [
         'Implementation-Vendor': 'Jeroen Gremmen',
         'Implementation-Vendor-Id': 'de.sayayi',
         'Implementation-Title': project.name,
         'Implementation-Version': project.version,
-        'Created-By': System.getProperty('java.version'),
-        'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
-    )
+        'Created-By': System.getProperty('java.version')
+    ]
+
+    if (commitDate.get())
+      manifestAttributes['Built-Date'] = commitDate.get()
+
+    attributes(manifestAttributes)
   }
 
   metaInf {
