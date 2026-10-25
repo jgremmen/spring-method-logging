@@ -166,11 +166,13 @@ a method of such a class fails with an `IllegalStateException`. Because `getLogg
 field declared, for example, as `java.util.logging.Logger` fails the analysis, as it can never hold a `ShopLog`. A
 logger field holding `null` or another object disables logging for the invocation.
 
-The base class caches the method loggers it obtains. For a `static final` logger field, `createMethodLogger(Field,
-Object)` is called once and the result is cached per field. For a class without logger field,
-`createMethodLogger(Class)` is called once per class. For all other fields, `createMethodLogger(Field, Object)` is
-called on every invocation, as the content of the field may change. When a method logger is requested concurrently for
-the first time, the creation methods may be called more than once; the first cached result is used.
+The base class caches the method loggers it obtains. For a `static final` logger field,
+`createMethodLogger(Field, Object)` is called once and the result is cached per field. A result of `MethodLogger.NO_OP`
+is not cached, because a logged method invoked while its class is being initialized finds the field still `null`; the
+field is read again on the next invocation. For a class without logger field, `createMethodLogger(Class)` is called once
+per class. For all other fields, `createMethodLogger(Field, Object)` is called on every invocation, as the content of
+the field may change. When a method logger is requested concurrently for the first time, the creation methods may be
+called more than once; the first cached result is used.
 
 `createMethodLogger(Field, Object)` can return the constant `CLASS_METHOD_LOGGER` to use the method logger for the
 target class instead, as created by `createMethodLogger(Class)`. The base class then returns the method logger for the

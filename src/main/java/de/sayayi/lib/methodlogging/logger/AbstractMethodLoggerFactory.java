@@ -83,8 +83,9 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * <p>
    * Method loggers for static final logger fields are cached per field and method loggers for classes without logger
    * field are cached per class. For all other logger fields, a method logger is created on each invocation, as the
-   * field content may change. If {@link #createMethodLogger(Field, Object)} returns {@link #CLASS_METHOD_LOGGER}, the
-   * cached method logger for {@code type} is returned.
+   * field content may change. {@link MethodLogger#NO_OP} is not cached for a static final logger field, as the field
+   * is {@code null} until its class has been initialized. If {@link #createMethodLogger(Field, Object)} returns
+   * {@link #CLASS_METHOD_LOGGER}, the cached method logger for {@code type} is returned.
    *
    * @throws IllegalStateException  if no logger field is available and this factory requires one
    */
@@ -108,9 +109,13 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
           // create the logger without holding a lock; concurrently created loggers are equivalent
           methodLogger = createMethodLogger(loggerField, obj);
 
-          var cachedMethodLogger = fieldLoggerCache.putIfAbsent(loggerField, methodLogger);
-          if (cachedMethodLogger != null)
-            methodLogger = cachedMethodLogger;
+          // a method invoked during class initialization finds the field still null
+          if (methodLogger != MethodLogger.NO_OP)
+          {
+            var cachedMethodLogger = fieldLoggerCache.putIfAbsent(loggerField, methodLogger);
+            if (cachedMethodLogger != null)
+              methodLogger = cachedMethodLogger;
+          }
         }
 
         return methodLogger == CLASS_METHOD_LOGGER ? getClassMethodLogger(type) : methodLogger;

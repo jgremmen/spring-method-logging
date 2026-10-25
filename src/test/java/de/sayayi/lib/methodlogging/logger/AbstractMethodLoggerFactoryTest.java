@@ -16,6 +16,7 @@
 package de.sayayi.lib.methodlogging.logger;
 
 import de.sayayi.lib.methodlogging.MethodLogger;
+import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Future;
 
+import static de.sayayi.lib.methodlogging.MethodLogger.NO_OP;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,6 +41,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Abstract method logger factory")
 class AbstractMethodLoggerFactoryTest
 {
+  private static final MethodLoggerFactory INIT_FACTORY = JULLoggerFactory.withFallback();
+  private static final Field INIT_LOG_FIELD = getInitLogField();
+
+
   @Test
   @DisplayName("Loggers for classes without logger field are cached per class")
   void classLoggerCached()
@@ -105,12 +111,36 @@ class AbstractMethodLoggerFactoryTest
 
 
   @Test
+  @DisplayName("No-op logger of a static final field read during class initialization is not cached")
+  void fieldLoggerDuringClassInitialization()
+  {
+    final var logger = InitializingLoggers.INSTANCE.logger;
+
+    assertSame(NO_OP, logger);
+    assertNotSame(NO_OP, INIT_FACTORY.from(INIT_LOG_FIELD, InitializingLoggers.INSTANCE, InitializingLoggers.class));
+  }
+
+
+  @Test
   @DisplayName("Loggers for classes without logger field are cached per factory")
   void classLoggerCachedPerFactory()
   {
     assertNotSame(
         new JCLLoggerFactory(true).from(null, new A(), A.class),
         new JCLLoggerFactory(true).from(null, new A(), A.class));
+  }
+
+
+
+  private static @NotNull Field getInitLogField()
+  {
+    try {
+      final var field = InitializingLoggers.class.getDeclaredField("log");
+      field.setAccessible(true);
+      return field;
+    } catch(NoSuchFieldException ex) {
+      throw new IllegalStateException(ex);
+    }
   }
 
 
@@ -161,5 +191,23 @@ class AbstractMethodLoggerFactoryTest
   {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("log");
     private static final java.util.logging.Logger auditLog = java.util.logging.Logger.getLogger("audit");
+  }
+
+
+
+  @SuppressWarnings("unused")
+  static final class InitializingLoggers
+  {
+    // created before the logger field is initialized
+    static final InitializingLoggers INSTANCE = new InitializingLoggers();
+
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("init");
+
+    private final MethodLogger logger;
+
+
+    private InitializingLoggers() {
+      logger = INIT_FACTORY.from(INIT_LOG_FIELD, this, InitializingLoggers.class);
+    }
   }
 }
