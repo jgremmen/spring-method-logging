@@ -43,10 +43,12 @@ publishing {
         inceptionYear = '2022'
 
         withXml {
-          def optionalArtifactIds = configurations.optionalApi
-              .resolvedConfiguration
-              .firstLevelModuleDependencies
-              .collect { it.moduleName }
+          // compile only dependencies, including the optional logging frameworks, are not required at runtime
+          def optionalModules = configurations
+              .compileOnlyApi
+              .allDependencies
+              .findAll { it instanceof ExternalModuleDependency }
+              .collect { "${it.group}:${it.name}".toString() }
               .toSet()
 
           // Maven has no preferred version within a range; publish the preferred version.
@@ -57,11 +59,13 @@ publishing {
               .collectEntries { [ "${it.group}:${it.name}".toString(), it.versionConstraint.preferredVersion ] }
 
           asNode().dependencies[0]?.dependency?.each { dependency ->
-            def preferredVersion = preferredVersions["${dependency.groupId.text()}:${dependency.artifactId.text()}"]
+            def module = "${dependency.groupId.text()}:${dependency.artifactId.text()}".toString()
+
+            def preferredVersion = preferredVersions[module]
             if (preferredVersion)
               dependency.version.each { it.value = preferredVersion }
 
-            if (dependency.artifactId.text() in optionalArtifactIds)
+            if (module in optionalModules)
               dependency.appendNode('optional', 'true')
           }
         }
