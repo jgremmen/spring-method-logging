@@ -259,14 +259,22 @@ dependencies {
 }
 
 
-def commitDate = providers
-    .exec {
-      commandLine 'git', 'log', '-1', '--format=%ct'
-      ignoreExitValue = true
-    }
-    .standardOutput
-    .asText
-    .map { it.trim() ? Instant.ofEpochSecond(it.trim() as long).toString() : '' }
+// commit date of HEAD; empty if git is not installed or the project is not a git repository
+def commitDate = providers.provider {
+  try {
+    def timestamp = providers
+        .exec {
+          commandLine 'git', 'log', '-1', '--format=%ct'
+          ignoreExitValue = true
+        }
+        .standardOutput.asText.get().trim()
+
+    return timestamp ? Instant.ofEpochSecond(timestamp as long).toString() : ''
+  } catch(Exception ignored) {
+    // git cannot be started
+    return ''
+  }
+}
 
 
 tasks.withType(Jar).configureEach {
@@ -282,8 +290,9 @@ tasks.withType(Jar).configureEach {
         'Created-By': System.getProperty('java.version')
     ]
 
-    if (commitDate.get())
-      manifestAttributes['Built-Date'] = commitDate.get()
+    def builtDate = commitDate.get()
+    if (builtDate)
+      manifestAttributes['Built-Date'] = builtDate
 
     attributes(manifestAttributes)
   }
