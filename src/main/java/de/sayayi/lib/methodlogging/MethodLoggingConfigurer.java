@@ -119,6 +119,10 @@ public interface MethodLoggingConfigurer
    * <p>
    * This method is queried for method parameters of non-primitive types without a @{@link ParamLog} annotation only.
    * Arrays, including arrays of primitives such as {@code byte[]}, are non-primitive types and are queried as well.
+   * <p>
+   * This method is invoked during the analysis of each method with method logging. Methods may be analyzed concurrently
+   * by multiple threads, so this method may be invoked concurrently and must be thread-safe. It should be free of side
+   * effects, as the same method may be analyzed more than once.
    *
    * @param methodParameterType  method parameter type
    *

@@ -432,19 +432,21 @@ public final class AnnotationMethodLoggingSource
 
   /**
    * Returns the method logging definition for {@code method} invoked on an instance of {@code targetClass}.
-   *
-   * @param method       invoked method, possibly an interface method, not {@code null}
-   * @param targetClass  class of the target instance, not {@code null}
-   *
+   * <p>
    * A failed analysis is cached: it is not repeated, but its failure is passed on by all subsequent invocations for the
    * same method and target class (see {@link #isFirstFailureReport(Method, Class)}). An error raised by the analysis,
    * like a {@link NoClassDefFoundError}, is passed on as {@link IllegalStateException}, unless it is a virtual machine
    * error the application cannot recover from.
    *
+   * @param method       invoked method, possibly an interface method, not {@code null}
+   * @param targetClass  class of the target instance, not {@code null}
+   *
    * @return  method logging definition or {@code null} if the method has no {@code @MethodLogging} annotation or the
    *          configuration is being created
    *
    * @throws RuntimeException  if the analysis of the method has failed
+   *
+   * @since 0.3.0
    */
   MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
   {

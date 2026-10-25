@@ -28,6 +28,9 @@ import java.lang.reflect.Field;
  * <p>
  * Exceptions thrown by a method logger do not affect the logged method; they are reported by the method logging
  * interceptor, the first failure of each kind per method at WARN level and subsequent ones at DEBUG level.
+ * <p>
+ * Implementations must be thread-safe. A method logger may be cached by its factory and is invoked concurrently by all
+ * threads invoking logged methods.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

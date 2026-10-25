@@ -29,6 +29,10 @@ import java.lang.reflect.Field;
  * The factory used for method logging is provided by {@link MethodLoggingConfigurer#methodLoggerFactory()}. If none is
  * provided, an {@link AutoDetectLoggerFactory} is used, which supports all built-in logging frameworks. Custom
  * factories can extend {@link AbstractMethodLoggerFactory}, which caches the created method loggers.
+ * <p>
+ * Implementations must be thread-safe. A single factory instance is shared by all threads invoking logged methods, and
+ * {@link #from(Field, Object, Class)} and {@link #validate(Field, Class)} may be invoked concurrently. Method loggers
+ * returned by the factory may be shared by multiple threads as well (see {@link MethodLogger}).
  *
  * @see AutoDetectLoggerFactory
  * @see JBossLoggerFactory
