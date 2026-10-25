@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.StringJoiner;
 
 import static java.lang.System.nanoTime;
-import static java.util.Objects.requireNonNull;
 import static org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass;
 import static org.springframework.core.NestedExceptionUtils.getMostSpecificCause;
 import static org.springframework.util.StringUtils.hasLength;
@@ -93,7 +92,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
   @Override
   public Object invoke(@NotNull MethodInvocation invocation) throws Throwable
   {
-    final var _this = requireNonNull(invocation.getThis());
+    final var _this = invocation.getThis();
+    if (_this == null)
+      return invocation.proceed();
+
     final var thisType = ultimateTargetClass(_this);
     final var invocationMethod = invocation.getMethod();
     final MethodDef methodDef;

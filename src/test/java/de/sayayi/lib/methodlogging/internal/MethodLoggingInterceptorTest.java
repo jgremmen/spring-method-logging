@@ -22,6 +22,7 @@ import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.logger.JULLoggerFactory;
+import org.aopalliance.intercept.MethodInterceptor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,28 @@ class MethodLoggingInterceptorTest
     // interceptor applied without pointcut, as in a manually built proxy
     final var proxyFactory = new ProxyFactory((Supplier<String>)() -> "result");
     proxyFactory.addAdvice(interceptor);
+
+    @SuppressWarnings("unchecked")
+    final var proxy = (Supplier<String>)proxyFactory.getProxy();
+
+    assertEquals("result", proxy.get());
+  }
+
+
+  @Test
+  @DisplayName("Invocation without target is passed on")
+  void noTarget()
+  {
+    final var interceptor = new MethodLoggingInterceptor(
+        new AnnotationMethodLoggingSource(
+            new MethodLoggingConfigurer() {},
+            new DefaultResourceLoader()));
+
+    // proxy without target, as with an EmptyTargetSource; the last advice provides the result
+    final var proxyFactory = new ProxyFactory();
+    proxyFactory.addInterface(Supplier.class);
+    proxyFactory.addAdvice(interceptor);
+    proxyFactory.addAdvice((MethodInterceptor)invocation -> "result");
 
     @SuppressWarnings("unchecked")
     final var proxy = (Supplier<String>)proxyFactory.getProxy();
