@@ -15,7 +15,7 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 - **Line numbers** - optionally includes the source line number in log messages
 - **Exception logging** - logs exception type and message when a method exits with an error
 - **Multiple logging frameworks** - supports SLF4J, Log4j2, Logback, JUL, JBoss Logging, Tinylog
-  and JCL (Java Commons Logging) out of the box
+  and JCL (Apache Commons Logging) out of the box
 - **Customizable** - log levels, message formats, parameter visibility and more can be configured
   globally, per class or per method
 
@@ -107,9 +107,10 @@ different formatters by `MethodLoggingConfigurer.messageSupport()`.
 
 ### Using a logger instance
 
-The basic configuration uses the JCL logger (also used internally by the Spring Framework), which in turn delegates to 
-another logging framework such as Log4j or SLF4J. Method logging can instead be configured to use a logger field 
-provided by the bean that contains the methods to be logged.
+By default, method logging uses the logger held by a field named `log` of the bean that contains the methods to be
+logged. The logging framework is detected from the type of the logger. A bean without such a field is logged with a
+JCL logger (also used internally by the Spring Framework), which in turn delegates to another logging framework such
+as Log4j or SLF4J.
 
 A typical scenario for Log4j2 looks like this:
 
@@ -131,23 +132,22 @@ public class MyBean
 }
 ```
 
-To use the `logger` field, configure the method logger factory and the field name by implementing
-`MethodLoggingConfigurer`:
+The Log4j2 logger is detected automatically. As the field is not named `log`, configure the field name by
+implementing `MethodLoggingConfigurer`:
 
 ```java
 @Configuration
 @EnableMethodLogging
 public class LetsDoSomeLoggingConfiguration implements MethodLoggingConfigurer 
 {
-   public MethodLoggerFactory methodLoggerFactory() {
-     return Log4j2LoggerFactory.withFallback();
-   }
-
    public String defaultLoggerFieldName() {
      return "logger";
    }
 }
 ```
+
+To log beans without logger field with a Log4j2 logger instead of a JCL logger, additionally return
+`Log4j2LoggerFactory.withFallback()` from `methodLoggerFactory()`.
 
 This way, the method entry/exit messages and your application log messages all go through the same logger, keeping the
 output consistent.
@@ -166,7 +166,9 @@ module com.example.app
 }
 ```
 
-If such a package is not opened, creating the bean fails with an `IllegalStateException` that names the package.
+If such a package is not opened, the method analysis fails with an `IllegalStateException` that names the package.
+For proxy based method logging of singleton beans, the application context fails to start; for beans created later
+and in AspectJ mode, a warning is logged and the method is invoked without logging.
 
 With Spring Framework 7, logging uses the `org.apache.commons.logging` module, which Spring requires on the module path
 as well. As it is not required by the (automatic) Spring modules, it must be added to the module graph, for example with

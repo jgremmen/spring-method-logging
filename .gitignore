@@ -4,6 +4,7 @@
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+/preview-libdoc-site.sh
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
