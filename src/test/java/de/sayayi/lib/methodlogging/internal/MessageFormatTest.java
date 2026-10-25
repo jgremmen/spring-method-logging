@@ -29,6 +29,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.Objects.requireNonNull;
@@ -103,6 +104,17 @@ class MessageFormatTest
 
 
   @Test
+  @DisplayName("Invalid parameter format fails the analysis if parameters are hidden")
+  void invalidHiddenParameterFormat()
+  {
+    final var ex = assertThrowsExactly(IllegalStateException.class,
+        () -> methodDefinition(Bean.class, "invalidHiddenParameterFormat"));
+
+    assertTrue(ex.getMessage().startsWith("Invalid @ParamLog format of parameter 'value' '%{value'"), ex.getMessage());
+  }
+
+
+  @Test
   @DisplayName("Logging failures are reported first once per phase")
   void firstFailureReport() throws Exception
   {
@@ -151,6 +163,12 @@ class MessageFormatTest
 
     @MethodLogging
     public String invalidParameterFormat(@UncheckedParamLog("%{value") String value) {
+      return value;
+    }
+
+
+    @MethodLogging(parameters = HIDE)
+    public String invalidHiddenParameterFormat(@UncheckedParamLog("%{value") String value) {
       return value;
     }
   }

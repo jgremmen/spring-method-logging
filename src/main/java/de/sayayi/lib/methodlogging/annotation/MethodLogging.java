@@ -281,7 +281,7 @@ public @interface MethodLogging
    * start; for beans created later (e.g. lazy beans) and for AspectJ based method logging, the method is invoked
    * without logging. Only if parameter names are available and the names are excluded by a composed annotation
    * (meta-annotated with {@code @MethodLogging}), a name matching no parameter is accepted, so a composed annotation
-   * may exclude names not present on every method. The names are not validated for methods without parameters or if
+   * may exclude names not present on every method. The names are validated even for methods without parameters and if
    * parameter logging is disabled with {@link #parameters()} set to {@link Visibility#HIDE}.
    *
    * @return  parameter names to exclude, empty by default

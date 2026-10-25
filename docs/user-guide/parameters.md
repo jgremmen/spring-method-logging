@@ -216,10 +216,10 @@ public class LoginService
 //   .login(java.lang.String,java.lang.String)
 ```
 
-The check makes a misspelled or outdated name visible instead of silently logging the value it was meant to hide. Two
-exceptions apply. Names excluded by a [composed annotation](../developer-guide/composed-annotations.md) are not checked
-if parameter names are available, so the composed annotation can be used on methods with different parameters. The names
-are also not checked if the method has no parameters or parameter logging is disabled with `parameters = HIDE`.
+The check makes a misspelled or outdated name visible instead of silently logging the value it was meant to hide. The
+names are checked even if the method has no parameters or parameter logging is disabled with `parameters = HIDE`. Names
+excluded by a [composed annotation](../developer-guide/composed-annotations.md) are not checked if parameter names are
+available, so the composed annotation can be used on methods with different parameters.
 
 ### Excluding by Type
 

@@ -33,8 +33,9 @@ import java.util.Locale;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -115,6 +116,44 @@ class ExcludeMethodParameterTest
   {
     assertEquals(List.of("id"), inlineParameterNames(
         StringSecretHandler.class.getMethod("handle", String.class, String.class), StringSecretHandler.class));
+  }
+
+
+  @Test
+  @DisplayName("Excluded names are validated for methods without parameters or with hidden parameters")
+  void excludeUnmatchedNameNotLogged() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader());
+
+    final var ex1 = assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(
+        ExcludeParams.class.getMethod("excludeWithoutParameters"), ExcludeParams.class));
+    assertTrue(ex1.getMessage().startsWith("Excluded parameter 'pasword' matches no parameter of "), ex1.getMessage());
+
+    final var ex2 = assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(
+        ExcludeParams.class.getMethod("excludeHidden", String.class), ExcludeParams.class));
+    assertTrue(ex2.getMessage().startsWith("Excluded parameter 'pasword' matches no parameter of "), ex2.getMessage());
+  }
+
+
+  @Test
+  @DisplayName("Hidden parameters are not passed to the configurer")
+  void hiddenParametersNotQueried() throws Exception
+  {
+    final var parameterTypes = new ArrayList<Class<?>>();
+    final var methodDef = new AnnotationMethodLoggingSource(
+        new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            parameterTypes.add(methodParameterType.resolve());
+            return false;
+          }
+        },
+        new DefaultResourceLoader())
+        .getMethodDefinition(ExcludeParams.class.getMethod("hidden", String.class, String.class), ExcludeParams.class);
+
+    assertTrue(requireNonNull(methodDef).inlineParameters.isEmpty());
+    assertTrue(parameterTypes.isEmpty(), parameterTypes::toString);
   }
 
 
@@ -271,6 +310,23 @@ class ExcludeMethodParameterTest
     public void excludeAnnotated(String user, @ParamLog(exclude = true) String password,
                                  @ParamLog(name = "secret", inline = false, exclude = true) String token,
                                  @Sensitive String apiKey) {
+    }
+
+
+    @MethodLogging(exclude = "pasword")
+    public void excludeWithoutParameters() {
+    }
+
+
+    @MethodLogging(parameters = HIDE, exclude = "pasword")
+    @SuppressWarnings("unused")
+    public void excludeHidden(String password) {
+    }
+
+
+    @MethodLogging(parameters = HIDE, exclude = "password")
+    @SuppressWarnings("unused")
+    public void hidden(String user, String password) {
     }
   }
 }

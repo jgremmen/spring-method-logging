@@ -583,7 +583,8 @@ public final class AnnotationMethodLoggingSource
    * A name excluded by {@link MethodLogging#exclude()} matches a parameter if it equals the {@code @ParamLog} name or
    * the discovered name of any declaration. Each excluded name must match a parameter, unless parameter names are
    * available and the names are excluded by a composed annotation. Otherwise, a misspelled or outdated name would leave
-   * the parameter meant to be excluded in the log output.
+   * the parameter meant to be excluded in the log output. Excluded names and {@code @ParamLog} formats are validated
+   * even if the method has no parameters or parameter logging is disabled.
    * <p>
    * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
    * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
@@ -608,9 +609,11 @@ public final class AnnotationMethodLoggingSource
                                                                      @NotNull Configuration config)
   {
     final var parameterCount = specificMethod.getParameterCount();
-    if (parameterCount == 0 || methodLogging.parameters() != SHOW)
+    if (parameterCount == 0 && methodLogging.exclude().length == 0)
       return List.of();
 
+    // excluded names and @ParamLog formats are validated even if parameters are not logged
+    final var showParameters = methodLogging.parameters() == SHOW;
     final var parameterDefs = new ArrayList<ParameterDef>(8);
     final var specificParameters = specificMethod.getParameters();
     final var declarations = findMethodDeclarations(specificMethod, method, targetClass);
@@ -634,13 +637,18 @@ public final class AnnotationMethodLoggingSource
           excludedByName = true;
         }
 
-      if ((paramLog == null || !paramLog.exclude()) && !excludedByName &&
+      if (paramLog != null && paramLog.exclude())
+        continue;
+
+      final var parameterMessage = messageSupplier(
+          messageFactory, paramLog != null ? paramLog.format() : "",
+          DEFAULT_PARAMETER_VALUE_FORMAT,
+          "@ParamLog format of parameter '" + name + '\'',
+          specificMethod);
+
+      if (showParameters && !excludedByName &&
           (paramLog != null || isParameterIncluded(config, forMethodParameter(specificMethod, p, targetClass))))
-      {
-        parameterDefs.add(new ParameterDef(p, name, paramLog == null || paramLog.inline(),
-            messageSupplier(messageFactory, paramLog != null ? paramLog.format() : "", DEFAULT_PARAMETER_VALUE_FORMAT,
-                "@ParamLog format of parameter '" + name + '\'', specificMethod)));
-      }
+        parameterDefs.add(new ParameterDef(p, name, paramLog == null || paramLog.inline(), parameterMessage));
     }
 
     validateExcludedParameterNames(specificMethod, methodLogging.exclude(), matchedExcludeParameters,
