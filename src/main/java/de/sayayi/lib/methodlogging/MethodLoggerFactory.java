@@ -53,7 +53,8 @@ public interface MethodLoggerFactory
    * <p>
    * If the logger field contains {@code null} or an object the factory does not support, it should return a fallback
    * method logger or {@link MethodLogger#NO_OP}, which disables logging for the method. An exception thrown by this
-   * method does not affect the logged method; it is reported at WARN level and the method is invoked without logging.
+   * method does not affect the logged method; the method is invoked without logging. The first failure per method is
+   * reported at WARN level, subsequent ones at DEBUG level.
    *
    * @param loggerField  logger field or {@code null} if no logger field was found
    * @param obj          spring bean to create a method logger for, not {@code null}

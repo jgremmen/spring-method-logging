@@ -35,7 +35,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * {@link MethodLogging @MethodLogging} within the annotated class. Settings defined here serve as defaults that can
  * be overridden on individual methods via {@code @MethodLogging} attributes.
  * <p>
- * If this annotation is not present on a class, the global defaults from {@link MethodLoggingConfigurer} are used.
+ * If this annotation is not present on a class, the defaults of its attributes are used, as if the class was annotated
+ * with {@code @MethodLoggingConfig} without attributes. The logger field name, the log levels and the line number are
+ * then taken from {@link MethodLoggingConfigurer}.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -71,9 +73,11 @@ public @interface MethodLoggingConfig
    * The method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle
    * the contents of the field.
    * <p>
-   * If the field contains {@code null}, the method is not logged. The handling of an object not supported by the method
-   * logger factory depends on the factory: the default factory falls back to a JCL logger, the logging framework
-   * specific factories do not log the method. An empty name disables the logger field lookup.
+   * The handling of a field containing {@code null} or an object not supported by the method logger factory depends
+   * on the factory. The default factory does not log the method if the field contains {@code null} and falls back to a
+   * JCL logger for an unsupported object. The logging framework specific factories do not log the method in either
+   * case, except for {@code TinylogLoggerFactory}, which falls back to the static Tinylog logger. An empty name
+   * disables the logger field lookup.
    *
    * @return  logger field name
    *
@@ -205,7 +209,9 @@ public @interface MethodLoggingConfig
   /**
    * The log level used for logging method parameters on separate lines.
    * <p>
-   * Parameters are only logged if method entry and exit messages are logged as well (see {@link #entryExitLevel()}).
+   * The level applies to the inline parameters of the method entry message as well: they are only included if this
+   * level is enabled. Parameters are only logged if method entry and exit messages are logged as well (see
+   * {@link #entryExitLevel()}).
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfigurer#defaultParameterLevel()}

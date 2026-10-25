@@ -26,8 +26,8 @@ import java.lang.reflect.Field;
  * Instances are created by a {@link MethodLoggerFactory} and are used by the method logging interceptor to emit entry,
  * exit, parameter and result messages at the configured log level.
  * <p>
- * Exceptions thrown by a method logger do not affect the logged method; they are reported at WARN level by the method
- * logging interceptor.
+ * Exceptions thrown by a method logger do not affect the logged method; they are reported by the method logging
+ * interceptor, the first failure of each kind per method at WARN level and subsequent ones at DEBUG level.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0

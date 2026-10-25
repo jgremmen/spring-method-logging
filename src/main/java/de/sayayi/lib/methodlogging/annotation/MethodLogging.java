@@ -135,9 +135,11 @@ public @interface MethodLogging
    * method logger factory provided by {@link MethodLoggingConfigurer#methodLoggerFactory()} must be able to handle the
    * contents of the field.
    * <p>
-   * If the field contains {@code null}, the method is not logged. The handling of an object not supported by the method
-   * logger factory depends on the factory: the default factory falls back to a JCL logger, the logging framework
-   * specific factories do not log the method. An empty name disables the logger field lookup.
+   * The handling of a field containing {@code null} or an object not supported by the method logger factory depends
+   * on the factory. The default factory does not log the method if the field contains {@code null} and falls back to a
+   * JCL logger for an unsupported object. The logging framework specific factories do not log the method in either
+   * case, except for {@code TinylogLoggerFactory}, which falls back to the static Tinylog logger. An empty name
+   * disables the logger field lookup.
    *
    * @return  logger field name
    */
@@ -241,7 +243,9 @@ public @interface MethodLogging
   /**
    * The log level used for logging method parameters on separate lines.
    * <p>
-   * Parameters are only logged if method entry and exit messages are logged as well (see {@link #entryExitLevel()}).
+   * The level applies to the inline parameters of the method entry message as well: they are only included if this
+   * level is enabled. Parameters are only logged if method entry and exit messages are logged as well (see
+   * {@link #entryExitLevel()}).
    *
    * @return  the log level, or {@link Level#DEFAULT} to use the setting from
    *          {@link MethodLoggingConfig#parameterLevel()}
@@ -272,11 +276,13 @@ public @interface MethodLogging
    * <p>
    * A name matching no parameter, e.g. because it is misspelled or the parameter has been renamed, would leave the
    * parameter meant to be excluded in the log output. In that case the method analysis fails with an
-   * {@link IllegalStateException}: for proxy based method logging of singleton beans, the application context fails to
-   * start; for other beans (e.g. lazy or prototype beans) and for AspectJ based method logging, the method is invoked
+   * {@link IllegalStateException}: for proxy based method logging of singleton beans and of beans created while the
+   * singleton beans are created (e.g. prototype beans injected into a singleton), the application context fails to
+   * start; for beans created later (e.g. lazy beans) and for AspectJ based method logging, the method is invoked
    * without logging. Only if parameter names are available and the names are excluded by a composed annotation
    * (meta-annotated with {@code @MethodLogging}), a name matching no parameter is accepted, so a composed annotation
-   * may exclude names not present on every method.
+   * may exclude names not present on every method. The names are not validated for methods without parameters or if
+   * parameter logging is disabled with {@link #parameters()} set to {@link Visibility#HIDE}.
    *
    * @return  parameter names to exclude, empty by default
    */

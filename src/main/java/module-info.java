@@ -56,7 +56,9 @@
  * <h2>Logger fields</h2>
  * Method logging reads logger fields of the logged classes by reflection. If a logged class resides in a named module,
  * its package must be opened to this module (e.g. {@code opens com.example.service to de.sayayi.lib.methodlogging;}).
- * Otherwise, creating the bean fails with an {@link IllegalStateException}.
+ * Otherwise, the method analysis fails with an {@link IllegalStateException} naming the package. For proxy based
+ * method logging of singleton beans, the application context fails to start; for beans created later and for AspectJ
+ * based method logging, a warning is logged and the method is invoked without logging.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0

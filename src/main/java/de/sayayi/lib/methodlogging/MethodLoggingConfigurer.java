@@ -41,7 +41,9 @@ import org.springframework.core.ResolvableType;
  * together with the method logging infrastructure. For proxy based method logging, the methods of singleton beans are
  * analyzed after all singleton beans have been created, so the configurer may depend on beans with method logging.
  * Methods invoked by any thread while the configurer is being created are not logged, as waiting for the configurer
- * could deadlock. The configurer methods are invoked once.
+ * could deadlock. The methods {@link #messageSupport()}, {@link #methodLoggerFactory()} and the {@code default...()}
+ * methods are invoked once, when the configuration is created. {@link #excludeMethodParameter(ResolvableType)} is
+ * invoked during the analysis of each method with method logging.
  * <p>
  * The configurer provides global defaults for the logger field name, the entry/exit, parameter and result log levels
  * and the line number visibility. All other settings, like the elapsed time, parameter and result visibility, the
@@ -80,8 +82,8 @@ public interface MethodLoggingConfigurer
    * Construct the method logger factory to be used with method logging.
    * <p>
    * The default is an instance of {@link AutoDetectLoggerFactory} which selects the appropriate logger based on the
-   * type of the logger held by the logger field. If no logger field is available, it falls back to a JCL (Java Commons
-   * Logging) based logger.
+   * type of the logger held by the logger field. If no logger field is available, it falls back to a JCL (Apache
+   * Commons Logging) based logger.
    *
    * @return  Method logger factory or {@code null} to use the default method logger factory
    *
@@ -115,8 +117,8 @@ public interface MethodLoggingConfigurer
    * like {@link java.util.function.Supplier Supplier} or {@link Iterable} implementations which are evaluated lazily,
    * can be iterated only once or are infinite, should be excluded as well (see {@link MethodLogging}).
    * <p>
-   * This method is queried for non-primitive types (except if it is an array, e.g. {@code byte[]}) and method
-   * parameters without a @{@link ParamLog} annotation only.
+   * This method is queried for method parameters of non-primitive types without a @{@link ParamLog} annotation only.
+   * Arrays, including arrays of primitives such as {@code byte[]}, are non-primitive types and are queried as well.
    *
    * @param methodParameterType  method parameter type
    *
@@ -154,7 +156,8 @@ public interface MethodLoggingConfigurer
    * {@link MethodLoggingConfig#parameterLevel()} nor {@link MethodLogging#parameterLevel()} specifies an explicit
    * level.
    * <p>
-   * Parameters are only logged if method entry and exit messages are logged as well (see
+   * The level applies to the inline parameters of the method entry message as well: they are only included if this
+   * level is enabled. Parameters are only logged if method entry and exit messages are logged as well (see
    * {@link #defaultEntryExitLevel()}).
    *
    * @return  default parameter log level, never {@code null} or {@link Level#DEFAULT}. The default is
