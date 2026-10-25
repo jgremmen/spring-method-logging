@@ -201,7 +201,8 @@ depend on other beans, including beans with logged methods, and these dependenci
 
 The methods `messageSupport()`, `methodLoggerFactory()` and the five default methods are invoked once, when the
 configuration is created. The method `excludeMethodParameter(ResolvableType)` is invoked during the analysis of each
-logged method, once for each parameter it applies to.
+logged method, once for each parameter it applies to, as described in
+[Excluding by Type](parameters.md#excluding-by-type).
 
 Methods invoked while the configurer is being created are not logged. Waiting for the configurer could deadlock, as
 creating it may require locks of the bean factory that the invoking thread holds. A logged method that the configurer

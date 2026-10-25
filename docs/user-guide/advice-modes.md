@@ -82,7 +82,8 @@ With weaving, no proxy is involved. The logging code is part of the class itself
 - Calls within the same class are logged, including calls of private methods.
 - Methods of objects not created by Spring are logged as well, once an application context has configured the aspect.
 - `@MethodLogging` must be placed on the executed method itself. Annotations on interface or superclass methods are not
-  considered, because AspectJ does not inherit method annotations, and composed annotations are not supported.
+  considered, because AspectJ does not inherit method annotations, and composed `@MethodLogging` annotations are not
+  supported. `@ParamLog` annotations, including composed ones, are still taken from interface and superclass methods.
 - Static methods are not logged.
 
 The attributes `proxyTargetClass` and `order` of `@EnableMethodLogging` are ignored in this mode.
@@ -215,9 +216,11 @@ a method, however, is reported as a warning on the first execution, and the meth
 | additional setup                         | none                           | AspectJ runtime and weaving             |
 | calls within the same class              | not logged                     | logged                                  |
 | private methods                          | not logged                     | logged                                  |
+| final methods                            | not logged with CGLIB proxies  | logged                                  |
+| static methods                           | not logged                     | not logged                              |
 | objects not created by Spring            | not logged                     | logged                                  |
-| annotation on interface or superclass    | supported                      | not supported                           |
-| composed annotations                     | supported                      | not supported                           |
+| `@MethodLogging` on interface or superclass | supported                   | not supported                           |
+| composed `@MethodLogging` annotations    | supported                      | not supported                           |
 | method configuration errors              | fail the startup (singletons)  | reported as warning on first execution  |
 | ordering relative to other advice        | `order` attribute              | determined by AspectJ                   |
 

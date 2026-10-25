@@ -56,7 +56,9 @@ parameter is excluded with `@ParamLog(exclude = true)`, which does not depend on
 ## A Warning "contains an unsupported logger of type ..."
 
 The logger field holds an object that the `AutoDetectLoggerFactory` does not recognize, such as a custom logging facade.
-The method is logged through a Commons Logging logger instead. A [custom method logger
+The warning is logged once per logger field under the logger name
+`de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory`. The method is logged through a Commons Logging logger
+instead. A [custom method logger
 factory](../developer-guide/custom-loggers.md) connects the facade. If the field merely has the default name `log` but
 is not meant to be used for method logging, another logger field name is configured.
 
@@ -65,9 +67,11 @@ loader the library cannot see.
 
 ## The Log Shows a Location Inside the Library
 
-Patterns such as `%C`, `%M` and `%L` print a class and line of the library instead of the logged method. Only Log4j2,
-Logback and Java Util Logging receive the location of the logged method, and only when the class has a logger field of
-that framework. Classes without logger field are logged through Commons Logging, which does not support locations. The
+Patterns such as `%C`, `%M` and `%L` print a class and line of the library instead of the logged method. Only the
+method loggers for Log4j2, Logback and Java Util Logging pass the location of the logged method to the framework. With
+the `AutoDetectLoggerFactory`, a class needs a logger field of one of these frameworks, as classes without logger field
+are logged through Commons Logging, which does not support locations. A framework-specific factory created with
+`withFallback()` uses a logger of its framework for such classes instead. The
 [Source Locations](../user-guide/loggers.md#source-locations) section has the complete list.
 
 ## Numbers and Dates Look Different on Another Server

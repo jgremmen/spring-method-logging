@@ -18,11 +18,11 @@ of their attributes. See [Composed Annotations](../developer-guide/composed-anno
 The **configurer** (`MethodLoggingConfigurer`) is the bean that provides the global defaults, the message support and
 the method logger factory. See [Global Configuration](../user-guide/configuration.md#global-configuration).
 
-The **entry message** is the message logged before a method is invoked. It contains the entry prefix, the method name,
-the inline parameters and the line number.
-
 The **elapsed time** (`elapsedTime`) is the duration of an invocation, shown at the end of the exit message if it is
 enabled. It is hidden by default.
+
+The **entry message** is the message logged before a method is invoked. It contains the entry prefix, the method name,
+the inline parameters and the line number.
 
 The **entry prefix** (`methodEntryPrefix`) is the text at the start of the entry message, `> ` by default.
 
@@ -35,16 +35,17 @@ prefix, the method name, the line number, the elapsed time and the exception, if
 The **exit prefix** (`methodExitPrefix`) is the text at the start of the exit message, `< ` by default.
 
 The **fallback logger** is the logger used for a class without logger field. It is a Commons Logging logger with the
-`AutoDetectLoggerFactory`, or a logger of the respective framework with a factory created by `withFallback()`.
+`AutoDetectLoggerFactory`, or a logger of the respective framework with a factory created by `withFallback()`. See
+[Logger Fields and Frameworks](../user-guide/loggers.md).
 
 An **inline parameter** is a parameter logged as part of the entry message, which is the default (`@ParamLog(inline =
 true)`).
 
-A **location-aware method logger** passes the source location of the logged method to the logging framework, so location
-patterns show the logged method. See [Source Locations](../user-guide/loggers.md#source-locations).
-
 **Load-time weaving** is the weaving of the `MethodLoggingAspect` into the classes while the JVM loads them, performed
 by the AspectJ weaver running as a Java agent. See [AspectJ Mode](../user-guide/advice-modes.md#aspectj-mode).
+
+A **location-aware method logger** passes the source location of the logged method to the logging framework, so location
+patterns show the logged method. See [Source Locations](../user-guide/loggers.md#source-locations).
 
 A **logged method** is a method annotated with `@MethodLogging`, directly or through a composed annotation.
 
@@ -80,6 +81,10 @@ proxies.
 The **result level** (`resultLevel`) is the log level of the result message.
 
 The **result message** contains the return value of a method and is logged before the exit message.
+
+A **self-invocation** is the call of a method by another method of the same object. It bypasses the proxy and is
+therefore not logged in proxy mode, but it is logged in AspectJ mode. See
+[Self-Invocation](../user-guide/advice-modes.md#self-invocation).
 
 A **separately logged parameter** is a parameter logged in a message of its own after the entry message
 (`@ParamLog(inline = false)`).

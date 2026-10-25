@@ -4,8 +4,9 @@ Applications often repeat the same combination of method logging settings, such 
 level with elapsed time, or parameters that are always masked. A composed annotation captures such a combination under a
 name of its own. This page shows how to define composed annotations for methods and parameters.
 
-Composed annotations are supported in [proxy mode](../user-guide/advice-modes.md#proxy-mode) only. In AspectJ mode, only
-`@MethodLogging` placed directly on the method is recognized.
+Composed `@MethodLogging` annotations are supported in [proxy mode](../user-guide/advice-modes.md#proxy-mode) only. In
+AspectJ mode, only `@MethodLogging` placed directly on the method is recognized. Composed `@ParamLog` annotations work
+in both modes, as the parameters of a logged method are analyzed the same way in either mode.
 
 ## Composing @MethodLogging
 

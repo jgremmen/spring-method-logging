@@ -120,21 +120,22 @@ messages. The [Configuration](user-guide/configuration.md) page explains how set
 ## Requirements
 
 The library requires Java 21 or later and Spring Framework 5.3 (from 5.3.26), 6 (from 6.0.5) or 7. The logging
-frameworks and the AspectJ runtime are optional dependencies, which are only needed when they are used. The [Getting
-Started](getting-started.md#dependencies) page lists the supported versions.
+frameworks and the AspectJ runtime are optional dependencies, which are only needed when they are used. The
+[Getting Started](getting-started.md#dependencies) page lists the supported versions.
 
 ## Where to Continue
 
-The [Getting Started](getting-started.md) page sets up a first logged method. The User Guide explains the [logged
-messages](user-guide/logging-methods.md), [parameter logging](user-guide/parameters.md), [message
-formats](user-guide/message-formats.md), [configuration](user-guide/configuration.md), [logger
-fields](user-guide/loggers.md), the [advice modes](user-guide/advice-modes.md) and the [module
-system](user-guide/java-modules.md). The Developer Guide covers [composed
-annotations](developer-guide/composed-annotations.md) and [custom method loggers](developer-guide/custom-loggers.md).
-The Reference section documents [error handling](reference/error-handling.md), [thread
-safety](reference/thread-safety.md), [troubleshooting](reference/troubleshooting.md) and a
-[glossary](reference/glossary.md). The [version update](changelog/version-0.6.0.md) pages describe the changes of each
-release, including the migration from earlier versions.
+The [Getting Started](getting-started.md) page sets up a first logged method. The User Guide explains the
+[logged messages](user-guide/logging-methods.md), [parameter logging](user-guide/parameters.md),
+[message formats](user-guide/message-formats.md), [configuration](user-guide/configuration.md),
+[logger fields](user-guide/loggers.md), the [advice modes](user-guide/advice-modes.md) and the
+[module system](user-guide/java-modules.md). The [Developer Guide](developer-guide/index.md) gives an overview of the
+integration points and covers [composed annotations](developer-guide/composed-annotations.md) and
+[custom method loggers](developer-guide/custom-loggers.md). The Reference section documents
+[error handling](reference/error-handling.md), [thread safety](reference/thread-safety.md),
+[troubleshooting](reference/troubleshooting.md) and a [glossary](reference/glossary.md). The
+[version update](changelog/version-0.6.0.md) pages describe the changes of each release, including the migration from
+earlier versions.
 
 The [Javadoc](https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/) documents every type and attribute of
 the public API.

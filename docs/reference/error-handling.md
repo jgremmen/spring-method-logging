@@ -26,7 +26,10 @@ Fields and Frameworks](../user-guide/loggers.md) page.
 
 Errors of the configurer bean itself are passed on as they are. If the application context contains two configurers and
 none is marked with `@Primary`, Spring's `NoUniqueBeanDefinitionException` is raised. An exception thrown while the
-configurer bean is created is passed on in the same way.
+configurer bean is created is passed on in the same way. A runtime exception thrown by one of the configurer methods,
+such as `messageSupport()`, is passed on unchanged as well. Any other error is wrapped in an `IllegalStateException`
+with the message `Method logging configurer failed`, or `Method logging configurer is not available` if obtaining the
+configurer bean fails.
 
 ### When Configuration Errors Are Reported
 
@@ -46,9 +49,10 @@ beans created so far are destroyed. The startup failure points directly to the m
 When a warning is reported instead, the exception is logged at WARN level once per method and bean class, with the
 message `Method logging analysis failed for method 'name'` and the exception as cause. The result of the analysis is
 cached, so the analysis is not repeated: the method keeps running without logging until the application is restarted
-with a corrected configuration. One case is not cached: in AspectJ mode, a method executed while the singleton beans are
-still being created may find the configurer bean not yet available. This is reported on every such execution, because
-the configurer may become available a moment later.
+with a corrected configuration. One case is not cached: a logged method invoked while the singleton beans are still
+being created, for example from an initialization method of another bean, may find the configurer bean not yet
+available. This is reported on every such invocation, in both modes, because the configurer may become available a
+moment later.
 
 /// tip | Test the configuration of lazy beans
 Methods of lazy beans and of beans in AspectJ mode are only analyzed when they are used. A test that obtains and invokes

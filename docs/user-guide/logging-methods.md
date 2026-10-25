@@ -141,8 +141,9 @@ public class AuditService
 ```
 
 The example also shows a consequence of the first rule: the result level `INFO` is higher than the entry/exit level
-`DEBUG`, but the result is still only logged if `DEBUG` is enabled. A result level above the entry/exit level has no
-effect.
+`DEBUG`, but the result is still only logged if `DEBUG` is enabled. A result level above the entry/exit level only
+changes the level the result message is written at; it never makes the result appear without the entry and exit
+messages.
 
 Class-level defaults and global defaults for the levels are described on the [Configuration](configuration.md) page.
 
@@ -202,7 +203,8 @@ significant:
 | 1 hour, 29 seconds        | `1h`      |
 | 1 hour, 30 seconds        | `1h1m`    |
 
-Durations below one minute include the milliseconds unless they are zero. Durations from one minute show minutes and
+Durations below one second are shown in milliseconds, including `0ms`. Durations below one minute show the seconds,
+followed by the milliseconds unless these are zero. Durations from one minute show minutes and seconds, omitting zero
 seconds. Durations from one hour show hours and minutes, rounded to the nearest minute.
 
 The time is measured with a monotonic clock, so adjustments of the system clock do not affect it. The measurement starts
@@ -219,8 +221,8 @@ asynchronous result, it does not include the time until the result is completed.
 Whether an annotated method is intercepted depends on the advice mode. In the default proxy mode, only calls through the
 Spring proxy are logged. A call from one method of a bean to another method of the same bean bypasses the proxy and is
 not logged. Private and static methods cannot be intercepted, nor can final methods of beans proxied by subclassing
-(CGLIB). The AspectJ mode does not have these restrictions, but requires weaving. The [Proxy and AspectJ
-Mode](advice-modes.md) page compares both modes.
+(CGLIB). The AspectJ mode logs calls within the same bean as well as private and final methods, but requires weaving.
+Static methods are not logged in either mode. The [Proxy and AspectJ Mode](advice-modes.md) page compares both modes.
 
 In proxy mode, `@MethodLogging` is also found on the method of an interface or superclass that the bean method
 implements or overrides. The annotation can therefore be placed on a service interface, so all implementations are

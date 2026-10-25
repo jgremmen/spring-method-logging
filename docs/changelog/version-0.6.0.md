@@ -29,12 +29,12 @@ implementations.
 
 ### Configuration Errors Fail on Startup
 
-Method logging configuration is now validated when a method is analyzed. For proxy based method logging, all methods of
-singleton beans are analyzed once all singleton beans have been created, so an invalid configuration fails the start of
-the application context with an `IllegalStateException`. For lazy or prototype beans and for AspectJ based method
-logging, the analysis takes place on the first invocation; a failure is reported once at WARN level and the method is
-invoked without logging. The following configurations, which were accepted or failed on invocation before, are now
-rejected.
+Method logging configuration is now validated when a method is analyzed. In proxy mode, all methods of singleton beans
+are analyzed once all singleton beans have been created, so an invalid configuration fails the start of the application
+context with an `IllegalStateException`. For beans created after startup, such as lazy beans, the analysis takes place
+when their proxy is created, and in AspectJ mode on the first invocation. In both cases, a failure is reported once at
+WARN level on the first invocation and the method is invoked without logging. The following configurations, which were
+accepted or failed on invocation before, are now rejected.
 
 #### Excluded Parameter Names Matching No Parameter
 
@@ -59,7 +59,7 @@ fails the creation of the method logging configuration.
 
 #### Logger Field Errors
 
-The framework specific factories reject a logger field whose declared type can never hold a logger of their framework,
+The framework-specific factories reject a logger field whose declared type can never hold a logger of their framework,
 e.g. a `java.util.logging.Logger` field with `Slf4jLoggerFactory`. A factory created with `createLoggerOnNoField =
 false` (or `strict()`) rejects a class without logger field; previously, every invocation of the method threw an
 `IllegalStateException` to the caller. These checks are performed by the new `MethodLoggerFactory.validate(Field,
@@ -178,8 +178,8 @@ The AspectJ runtime (`aspectjrt` or `aspectjweaver`) must be present on the clas
 load-time weaving, using the `META-INF/aop.xml` provided by this library, or by compile-time weaving, with this library
 on the aspect path. The `proxyTargetClass` and `order` attributes of `@EnableMethodLogging` are ignored in this mode. As
 AspectJ does not inherit method annotations, only non-static methods annotated with `@MethodLogging` themselves are
-logged; composed annotations are not supported in this mode. When the application context is closed, the aspect is
-detached from it.
+logged; composed `@MethodLogging` annotations are not supported in this mode. When the application context is closed,
+the aspect is detached from it.
 
 ### Excluding Parameters with `@ParamLog(exclude = true)`
 
@@ -249,8 +249,9 @@ public @interface Timed
 // @Timed(exclude = "password") logs at DEBUG with the elapsed time
 ```
 
-Composed annotations are supported for proxy based method logging only. The [Composed
-Annotations](../developer-guide/composed-annotations.md) page shows composed method and parameter annotations in detail.
+Composed `@MethodLogging` annotations are supported in proxy mode only; composed `@ParamLog` annotations work in both
+modes. The [Composed Annotations](../developer-guide/composed-annotations.md) page shows composed method and parameter
+annotations in detail.
 
 ### Source Location for Location-Aware Loggers
 
@@ -259,9 +260,9 @@ the logged method: its declaring class, method name, source file and the line of
 `null` and the line number is negative, if not available. The default implementation ignores the location and invokes
 `log(Level, String)`.
 
-The built-in loggers for Log4j2, Logback and JUL pass the location to the logging framework. Patterns for class, method,
-file and line number (e.g. `%C`, `%M`, `%F` and `%L` in Log4j2 and Logback) now show the logged method instead of the
-method logging implementation. JUL supports the class and method name only.
+The built-in loggers for Log4j2, Logback and Java Util Logging pass the location to the logging framework. Patterns for
+class, method, file and line number (e.g. `%C`, `%M`, `%F` and `%L` in Log4j2 and Logback) now show the logged method
+instead of the method logging implementation. Java Util Logging supports the class and method name only.
 
 ```java title="ConsoleMethodLogger.java"
 package com.example.bookstore;
@@ -294,7 +295,7 @@ final class ConsoleMethodLogger implements MethodLogger
 
 ### Factory Methods `withFallback()` and `strict()`
 
-All framework specific logger factories (`JBossLoggerFactory`, `JCLLoggerFactory`, `JULLoggerFactory`,
+All framework-specific logger factories (`JBossLoggerFactory`, `JCLLoggerFactory`, `JULLoggerFactory`,
 `Log4j2LoggerFactory`, `LogbackLoggerFactory`, `Slf4jLoggerFactory` and `TinylogLoggerFactory`) provide the static
 factory methods `withFallback()` and `strict()`. `withFallback()` creates a factory using a logger for the target class
 if no logger field is available, which is equivalent to `new ...LoggerFactory(true)`. `strict()` creates a factory
@@ -321,7 +322,7 @@ public class ShopConfiguration implements MethodLoggingConfigurer
 // classes without logger field are logged with a Log4j2 logger
 ```
 
-The framework specific factories now reject logger fields whose declared type can never hold a logger of their framework
+The framework-specific factories now reject logger fields whose declared type can never hold a logger of their framework
 (see Breaking Changes). A logger field holding `null` or an object of another type disables logging for the method.
 
 ### Logger Field Validation with `MethodLoggerFactory.validate`
@@ -397,11 +398,11 @@ logged.
   different logger fields (`loggerFieldName`) were all logged with the logger of the first field. The cache is now keyed
   by field.
 - The built-in logger adapters threw a `ClassCastException` if the logger field held an object of another type. Such a
-  logger field now disables logging for the method with the framework specific factories.
+  logger field now disables logging for the method with the framework-specific factories.
 - `LogbackLoggerFactory` threw a `ClassCastException` for classes without logger field if SLF4J was not bound to
   Logback. The SLF4J logger is now used instead.
-- `JULLoggerFactory` failed with a `NullPointerException` for classes without logger field if no JUL logger with the
-  class name existed yet. The logger is now created if necessary.
+- `JULLoggerFactory` failed with a `NullPointerException` for classes without logger field if no Java Util Logging
+  logger with the class name existed yet. The logger is now created if necessary.
 - Generic parameter types declared in a superclass were passed unresolved to
   `MethodLoggingConfigurer.excludeMethodParameter(ResolvableType)`. They are now resolved against the target class.
 - A class file not readable by ASM (e.g. an unsupported class file version) made the method analysis fail when looking

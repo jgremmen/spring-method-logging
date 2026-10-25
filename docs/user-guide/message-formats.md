@@ -230,11 +230,11 @@ public class ShopConfiguration implements MethodLoggingConfigurer
 ```
 
 With the generic formatter service, values are formatted by `toString()` only: a list is logged as `[1, 2]`, a map as
-`{Dune=2}` and a `BigDecimal` without grouping separators. Map entries such as `null:'<none>'` and `empty:'-'` still
-work. Named formatters are not available, so `%{value,format:size}` logs the `toString()` of the value instead of its
-size. Post formatters are not registered either: a format using `clip` fails when it is formatted, and the parameter
-value is logged as `<format failed: NullPointerException>`. Custom formats are therefore reviewed when the formatter
-service is replaced.
+`{Dune=2}` and a `BigDecimal` without grouping separators. The map entry `null:'<none>'` still works, and `empty:'-'`
+still applies to an empty string, but no longer to an empty collection, which is logged as `[]`. Named formatters are
+not available, so `%{value,format:size}` logs the `toString()` of the value instead of its size. Post formatters are not
+registered either: a format using `clip` fails when it is formatted, and the parameter value is logged as
+`<format failed: NullPointerException>`. Custom formats are therefore reviewed when the formatter service is replaced.
 
 The message support is used concurrently by all threads invoking logged methods. It is configured completely before it
 is returned from `messageSupport()` and not changed afterwards.

@@ -226,7 +226,9 @@ available, so the composed annotation can be used on methods with different para
 Some types should never be logged, wherever they appear. A credit card number, an `InputStream` or a large binary
 document is excluded by type through the global configurer. The method
 [`excludeMethodParameter(ResolvableType)`][jd-configurer] of `MethodLoggingConfigurer` is asked for each parameter that
-is neither of a primitive type nor annotated with `@ParamLog`:
+is neither of a primitive type, nor annotated with `@ParamLog`, nor already excluded by name. It is not asked at all for
+a method whose parameter logging is disabled with `parameters = HIDE`. The following configurer excludes credit cards,
+streams and byte arrays:
 
 ```java title="ShopConfiguration.java"
 package com.example.bookstore;

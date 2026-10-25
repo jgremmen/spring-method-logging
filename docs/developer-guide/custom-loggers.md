@@ -30,8 +30,8 @@ logged methods.
 ## Connecting a Logging Facade
 
 The bookstore logs through its own facade `ShopLog`, which adds the name of the shop to every message. A logger field of
-this type is not recognized by the `AutoDetectLoggerFactory`, which logs such classes with a JCL fallback logger and
-reports a warning. A custom factory makes method logging use the facade.
+this type is not recognized by the `AutoDetectLoggerFactory`, which logs such classes with a Commons Logging fallback
+logger and reports a warning. A custom factory makes method logging use the facade.
 
 ```java title="ShopLog.java"
 package com.example.bookstore;
@@ -174,7 +174,7 @@ the first time, the creation methods may be called more than once; the first cac
 
 `createMethodLogger(Field, Object)` can return the constant `CLASS_METHOD_LOGGER` to use the method logger for the
 target class instead, as created by `createMethodLogger(Class)`. The base class then returns the method logger for the
-class of the logged method, also when a `static final` logger field is inherited by several classes.
+class of the object whose method is invoked, also when a `static final` logger field is inherited by several classes.
 
 ### Step 3: Install the Factory
 

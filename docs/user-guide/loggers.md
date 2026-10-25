@@ -82,7 +82,7 @@ matter; a field declared as `Object` works.
 | SLF4J                         | `org.slf4j.Logger`                 |
 | Log4j2                        | `org.apache.logging.log4j.Logger`  |
 | Java Util Logging             | `java.util.logging.Logger`         |
-| Apache Commons Logging (JCL)  | `org.apache.commons.logging.Log`   |
+| Apache Commons Logging        | `org.apache.commons.logging.Log`   |
 | JBoss Logging                 | `org.jboss.logging.Logger`         |
 | Tinylog                       | `org.tinylog.TaggedLogger`         |
 | JDK platform logger           | `java.lang.System.Logger`          |
@@ -95,10 +95,10 @@ Depending on the content of the logger field, the factory behaves as follows:
 | Situation                                              | Behavior                                                   |
 |--------------------------------------------------------|------------------------------------------------------------|
 | field holds a logger of a detected type                | messages go to that logger                                 |
-| no logger field                                        | messages go to a JCL logger named after the bean class     |
+| no logger field                                        | messages go to a Commons Logging logger for the bean class |
 | field holds `null`                                     | the method is not logged                                   |
-| field holds an object of another type                  | messages go to a JCL logger named after the bean class     |
-| field holds a logger of a framework not visible to the library | messages go to a JCL logger named after the bean class |
+| field holds an object of another type                  | messages go to a Commons Logging logger for the bean class |
+| field holds a logger of a framework not visible to the library | messages go to a Commons Logging logger for the bean class |
 
 In the last two cases, a warning is logged once per logger field, naming the field and the type of the object it holds.
 The last case occurs when the logging framework is loaded by a class loader that the library cannot see, for example in
@@ -228,7 +228,7 @@ Whether the location is used depends on the logging framework:
 | Log4j2 logger                                                        | class, method, file and line of the logged method |
 | Logback logger, from `AutoDetectLoggerFactory` or `LogbackLoggerFactory` | class, method, file and line of the logged method |
 | Java Util Logging logger                                             | class and method of the logged method             |
-| SLF4J logger from `Slf4jLoggerFactory`, JCL, JBoss Logging, Tinylog, JDK platform logger | a location inside the library |
+| SLF4J logger from `Slf4jLoggerFactory`, Commons Logging, JBoss Logging, Tinylog, JDK platform logger | a location inside the library |
 
 An SLF4J logger backed by Logback reports correct locations with the `AutoDetectLoggerFactory`, which detects it as a
 Logback logger, but not with the `Slf4jLoggerFactory`, which uses the SLF4J API only.
@@ -239,19 +239,21 @@ filters are consulted for the level only, without the message, so turbo filters 
 the messages of method logging.
 ///
 
-The fallback logger of the `AutoDetectLoggerFactory` is a JCL logger, which does not support locations. A class without
-logger field is therefore logged with a location inside the library, even if JCL forwards to Log4j2 or Logback. A logger
-field of the framework type provides correct locations.
+The fallback logger of the `AutoDetectLoggerFactory` is a Commons Logging logger, which does not support locations. A
+class without logger field is therefore logged with a location inside the library, even if Commons Logging forwards to
+Log4j2 or Logback. A logger field of the framework type provides correct locations. So does the fallback logger of
+`Log4j2LoggerFactory`, `LogbackLoggerFactory` or `JULLoggerFactory` created with `withFallback()`, which is a logger of
+the respective framework.
 
 ## Level Mapping
 
 The three levels of method logging map to the levels of the logging frameworks as follows:
 
-| Method logging | Log4j2, Logback, SLF4J, JCL, JBoss, Tinylog | Java Util Logging | JDK platform logger |
-|----------------|---------------------------------------------|-------------------|---------------------|
-| `TRACE`        | `TRACE`                                     | `FINEST`          | `TRACE`             |
-| `DEBUG`        | `DEBUG`                                     | `FINE`            | `DEBUG`             |
-| `INFO`         | `INFO`                                      | `INFO`            | `INFO`              |
+| Method logging | Log4j2, Logback, SLF4J, Commons Logging, JBoss Logging, Tinylog | Java Util Logging | JDK platform logger |
+|----------------|-----------------------------------------------------------------|-------------------|---------------------|
+| `TRACE`        | `TRACE`                                                         | `FINEST`          | `TRACE`             |
+| `DEBUG`        | `DEBUG`                                                         | `FINE`            | `DEBUG`             |
+| `INFO`         | `INFO`                                                          | `INFO`            | `INFO`              |
 
 The JDK platform logger forwards to Java Util Logging by default, which maps `TRACE` to `FINER` and `DEBUG` to `FINE` on
 its own.
@@ -259,8 +261,8 @@ its own.
 ## Performance
 
 The factories of the library cache method loggers where possible. For a `static final` logger field, the method logger
-is created once and cached for the field. For a class without logger field, the fallback method logger is created once
-per class. For all other fields, the value can change, so the field is read and a method logger is created on every
+is created once and cached for the field. For a class without logger field, the fallback logger is created once per
+class. For all other fields, the value can change, so the field is read and a method logger is created on every
 invocation.
 
 /// tip | Prefer static final logger fields

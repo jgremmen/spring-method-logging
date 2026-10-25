@@ -1,12 +1,12 @@
 nav:
   - Home:
     - index.md
+    - Getting Started: getting-started.md
     - Version Update:
       - changelog/version-0.6.0.md
       - changelog/version-0.5.0.md
       - changelog/version-0.4.3.md
     - License: license.md
-  - Getting Started: getting-started.md
   - User Guide:
       - Logging Methods: user-guide/logging-methods.md
       - Parameters: user-guide/parameters.md
@@ -16,6 +16,7 @@ nav:
       - Proxy and AspectJ Mode: user-guide/advice-modes.md
       - Java Modules: user-guide/java-modules.md
   - Developer Guide:
+      - developer-guide/index.md
       - Composed Annotations: developer-guide/composed-annotations.md
       - Custom Method Loggers: developer-guide/custom-loggers.md
   - Reference:
