@@ -42,7 +42,7 @@ versions are:
 
 | Dependency                           | Supported versions                     |
 |--------------------------------------|----------------------------------------|
-| `org.springframework:spring-context` | 5.3 or later, before 8.0 (5.3, 6 and 7) |
+| `org.springframework:spring-context` | 5.3.x from 5.3.26, 6.x from 6.0.5, 7.x |
 | `de.sayayi.lib:message-format`       | 0.23.x                                 |
 
 The logging frameworks and the AspectJ runtime are optional dependencies. They are not added transitively, as an

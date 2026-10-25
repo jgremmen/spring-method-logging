@@ -124,10 +124,11 @@ are required transitively by the module descriptor.
 
 | Dependency                           | Type    | Old Version      | New Version      |
 |--------------------------------------|---------|------------------|------------------|
-| `org.springframework:spring-context` | compile | `[5.3.0,6.0.0)`  | `[5.3.0,8.0.0)`  |
+| `org.springframework:spring-context` | compile | `[5.3.0,6.0.0)`  | `[5.3.26,8.0.0)` |
 | `ch.qos.logback:logback-classic`     | compile | `[1.3.0,1.4.0)`  | `[1.3.0,1.6.0)`  |
+| `org.slf4j:slf4j-api`                | compile | `[1.1.0,2.1.0)`  | `[1.7.0,2.1.0)`  |
 | `org.apache.logging.log4j:log4j-api` | compile | `[2.10.0,3.0.0)` | `[2.13.0,3.0.0)` |
-| `org.aspectj:aspectjrt`              | compile | -                | `[1.9.21,2.0)`   |
+| `org.aspectj:aspectjrt`              | compile | -                | `[1.9.21.1,2.0)` |
 
 The minimum Log4j2 version has been raised to 2.13.0, which is required for passing the source location to Log4j2. The
 minimum SLF4J version has been raised to 1.7.0. Spring Framework 5.3.26 and 6.0.5 are the first versions reading the

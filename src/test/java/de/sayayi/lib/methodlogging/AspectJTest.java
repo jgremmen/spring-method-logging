@@ -174,6 +174,7 @@ class AspectJTest
     val process = new ProcessBuilder(
         ProcessHandle.current().info().command().orElseThrow(),
         "-javaagent:" + weaverAgent,
+        "-Dlog4j2.loggerContextFactory=" + System.getProperty("log4j2.loggerContextFactory"),
         "-classpath", classpath,
         LoadTimeWeavingApplication.class.getName())
         .redirectError(errorFile.toFile())

@@ -49,7 +49,18 @@ publishing {
               .collect { it.moduleName }
               .toSet()
 
+          // Maven has no preferred version within a range; publish the preferred version.
+          // The range is kept in the Gradle module metadata
+          def preferredVersions = [ configurations.api, configurations.compileOnlyApi ]
+              .collectMany { it.allDependencies }
+              .findAll { it instanceof ExternalModuleDependency && it.versionConstraint.preferredVersion }
+              .collectEntries { [ "${it.group}:${it.name}".toString(), it.versionConstraint.preferredVersion ] }
+
           asNode().dependencies[0]?.dependency?.each { dependency ->
+            def preferredVersion = preferredVersions["${dependency.groupId.text()}:${dependency.artifactId.text()}"]
+            if (preferredVersion)
+              dependency.version.each { it.value = preferredVersion }
+
             if (dependency.artifactId.text() in optionalArtifactIds)
               dependency.appendNode('optional', 'true')
           }
