@@ -114,7 +114,8 @@ per class instead of on every invocation of a logged method. Method loggers for 
 cached per field instead of per target class.
 
 The new methods `getLoggerType()` (protected) and `getClassMethodLogger(Class)` (protected, final) have been added. A
-subclass declaring a method with one of these signatures must be adapted.
+subclass declaring a method with one of these signatures must be adapted. The new constant `CLASS_METHOD_LOGGER`,
+returned by `createMethodLogger(Field, Object)`, selects the method logger for the target class.
 
 ### Dependency Changes
 

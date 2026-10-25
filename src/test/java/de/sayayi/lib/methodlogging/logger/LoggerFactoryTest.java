@@ -75,6 +75,23 @@ class LoggerFactoryTest
 
 
   @Test
+  @DisplayName("Fallback loggers for an inherited static logger field are selected by target class")
+  void autoDetectUnsupportedInherited() throws Exception
+  {
+    final var factory = new AutoDetectLoggerFactory();
+    final var field = field(UnsupportedStaticLoggerBase.class, "log");
+    final var loggerA = factory.from(field, new UnsupportedStaticLoggerA(), UnsupportedStaticLoggerA.class);
+    final var loggerB = factory.from(field, new UnsupportedStaticLoggerB(), UnsupportedStaticLoggerB.class);
+
+    assertInstanceOf(JCLLogger.class, loggerA);
+    assertNotSame(loggerA, loggerB);
+    assertSame(loggerA, factory.from(null, new UnsupportedStaticLoggerA(), UnsupportedStaticLoggerA.class));
+    assertSame(loggerB, factory.from(null, new UnsupportedStaticLoggerB(), UnsupportedStaticLoggerB.class));
+    assertSame(loggerA, factory.from(field, new UnsupportedStaticLoggerA(), UnsupportedStaticLoggerA.class));
+  }
+
+
+  @Test
   @DisplayName("Auto detection falls back to a JCL logger for loggers not accessible to the library")
   void autoDetectInaccessible() throws Exception
   {
@@ -261,6 +278,26 @@ class LoggerFactoryTest
 
       return super.loadClass(name, resolve);
     }
+  }
+
+
+
+
+  @SuppressWarnings("unused")
+  static class UnsupportedStaticLoggerBase {
+    private static final Object log = "not a logger";
+  }
+
+
+
+
+  static final class UnsupportedStaticLoggerA extends UnsupportedStaticLoggerBase {
+  }
+
+
+
+
+  static final class UnsupportedStaticLoggerB extends UnsupportedStaticLoggerBase {
   }
 
 

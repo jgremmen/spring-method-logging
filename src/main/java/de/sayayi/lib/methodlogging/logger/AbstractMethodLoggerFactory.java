@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
+import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLogger;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.jetbrains.annotations.Contract;
@@ -31,7 +32,8 @@ import static java.lang.reflect.Modifier.STATIC;
 /**
  * Base class for {@link MethodLoggerFactory} implementations that provides caching for loggers obtained from
  * static final fields and handles the case where no logger field is available on the target class. Loggers created
- * for a class without logger field are cached per class.
+ * for a class without logger field are cached per class. A subclass returns {@link #CLASS_METHOD_LOGGER} for a logger
+ * field to use the method logger for the target class instead.
  * <p>
  * Subclasses only need to implement the two {@code createMethodLogger} methods to bridge to a specific logging
  * framework.
@@ -43,6 +45,18 @@ import static java.lang.reflect.Modifier.STATIC;
  */
 public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 {
+  /**
+   * Method logger returned by {@link #createMethodLogger(Field, Object)} to use the method logger for the target class,
+   * as created by {@link #createMethodLogger(Class)}, instead. This method logger is never returned by
+   * {@link #from(Field, Object, Class)}.
+   *
+   * @since 0.6.0
+   */
+  protected static final @NotNull MethodLogger CLASS_METHOD_LOGGER = new MethodLogger() {
+    @Override public void log(@NotNull Level level, String message) {}
+    @Override public boolean isLogEnabled(@NotNull Level level) { return false; }
+  };
+
   /** Method loggers for static final logger fields, by logger field. */
   private final Map<Field,MethodLogger> fieldLoggerCache = new ConcurrentHashMap<>();
 
@@ -69,7 +83,8 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * <p>
    * Method loggers for static final logger fields are cached per field and method loggers for classes without logger
    * field are cached per class. For all other logger fields, a method logger is created on each invocation, as the
-   * field content may change.
+   * field content may change. If {@link #createMethodLogger(Field, Object)} returns {@link #CLASS_METHOD_LOGGER}, the
+   * cached method logger for {@code type} is returned.
    *
    * @throws IllegalStateException  if no logger field is available and this factory requires one
    */
@@ -98,10 +113,12 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
             methodLogger = cachedMethodLogger;
         }
 
-        return methodLogger;
+        return methodLogger == CLASS_METHOD_LOGGER ? getClassMethodLogger(type) : methodLogger;
       }
 
-      return createMethodLogger(loggerField, obj);
+      final var methodLogger = createMethodLogger(loggerField, obj);
+
+      return methodLogger == CLASS_METHOD_LOGGER ? getClassMethodLogger(type) : methodLogger;
     }
   }
 
@@ -194,7 +211,8 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * @param loggerField  the field containing the logger instance, not {@code null}
    * @param obj          the target object owning the field, not {@code null}
    *
-   * @return  a method logger instance, never {@code null}
+   * @return  a method logger instance or {@link #CLASS_METHOD_LOGGER} to use the method logger for the target class,
+   *          never {@code null}
    */
   protected abstract @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj);
 }

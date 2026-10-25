@@ -172,6 +172,10 @@ Object)` is called once and the result is cached per field. For a class without 
 called on every invocation, as the content of the field may change. When a method logger is requested concurrently for
 the first time, the creation methods may be called more than once; the first cached result is used.
 
+`createMethodLogger(Field, Object)` can return the constant `CLASS_METHOD_LOGGER` to use the method logger for the
+target class instead, as created by `createMethodLogger(Class)`. The base class then returns the method logger for the
+class of the logged method, also when a `static final` logger field is inherited by several classes.
+
 ### Step 3: Install the Factory
 
 ```java title="ShopConfiguration.java"

@@ -125,32 +125,31 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
     }
 
     if (methodLogger == null)
-      return createFallbackMethodLogger(loggerField, logger, obj, "an unsupported", null);
+      return createFallbackMethodLogger(loggerField, logger, "an unsupported", null);
 
     // the logger is not an instance of the logging framework type visible to this library
     return methodLogger == NO_OP
-        ? createFallbackMethodLogger(loggerField, logger, obj, "an inaccessible", linkageError)
+        ? createFallbackMethodLogger(loggerField, logger, "an inaccessible", linkageError)
         : methodLogger;
   }
 
 
   /**
-   * Returns the JCL fallback method logger for a logger field holding an unsupported or inaccessible logger. The logger
-   * is reported once per logger field.
+   * Returns the fallback method logger for a logger field holding an unsupported or inaccessible logger. The logger is
+   * reported once per logger field.
    *
    * @param loggerField  logger field, not {@code null}
    * @param logger       unsupported or inaccessible logger held by the logger field, not {@code null}
-   * @param obj          object owning the logger field, not {@code null}
    * @param kind         kind of logger for the report ({@code "an unsupported"} or {@code "an inaccessible"}), not
    *                     {@code null}
    * @param cause        error raised while accessing the logger or {@code null}
    *
-   * @return  JCL method logger for the class of {@code obj}, never {@code null}
+   * @return  {@link #CLASS_METHOD_LOGGER}, selecting the JCL method logger for the target class, never {@code null}
    *
    * @since 0.6.0
    */
   private @NotNull MethodLogger createFallbackMethodLogger(@NotNull Field loggerField, @NotNull Object logger,
-                                                           @NotNull Object obj, @NotNull String kind, Throwable cause)
+                                                           @NotNull String kind, Throwable cause)
   {
     final var declaringClass = loggerField.getDeclaringClass();
 
@@ -160,7 +159,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
           " logger of type " + logger.getClass().getName() + "; a JCL logger is used instead", cause);
     }
 
-    return getClassMethodLogger(obj.getClass());
+    return CLASS_METHOD_LOGGER;
   }
 
 
