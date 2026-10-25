@@ -47,12 +47,12 @@ When the application context fails to start, `refresh()` throws the `IllegalStat
 beans created so far are destroyed. The startup failure points directly to the method and the setting to correct.
 
 When a warning is reported instead, the exception is logged at WARN level once per method and bean class, with the
-message `Method logging analysis failed for method 'name'` and the exception as cause. The result of the analysis is
-cached, so the analysis is not repeated: the method keeps running without logging until the application is restarted
-with a corrected configuration. One case is not cached: a logged method invoked while the singleton beans are still
-being created, for example from an initialization method of another bean, may find the configurer bean not yet
-available. This is reported on every such invocation, in both modes, because the configurer may become available a
-moment later.
+message `Method logging analysis failed for method 'class#name'` and the exception as cause. The class is the bean
+class, such as `com.example.bookstore.OrderService#placeOrder`. The result of the analysis is cached, so the analysis is
+not repeated: the method keeps running without logging until the application is restarted with a corrected
+configuration. One case is not cached: a logged method invoked while the singleton beans are still being created, for
+example from an initialization method of another bean, may find the configurer bean not yet available. This is reported
+on every such invocation, in both modes, because the configurer may become available a moment later.
 
 /// tip | Test the configuration of lazy beans
 Methods of lazy beans and of beans in AspectJ mode are only analyzed when they are used. A test that obtains and invokes
@@ -94,7 +94,8 @@ public class BrokenToString
 ```
 
 All other failures are reported through Commons Logging, with the logger name
-`de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor`. The report names the phase that failed and the method:
+`de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor`. The report names the phase that failed and the method
+with its class:
 
 | Phase           | Failure                                                     | Consequence for the invocation                 |
 |-----------------|-------------------------------------------------------------|------------------------------------------------|
@@ -103,9 +104,10 @@ All other failures are reported through Commons Logging, with the logger name
 | `result`        | logging the result message fails                            | the exit is still logged                       |
 | `exit`          | logging the exit message fails                              | none                                           |
 
-The first failure of each phase for a method is reported at WARN level, with the message `Method logging (entry) failed
-for method 'name'; subsequent failures are reported at DEBUG level`. Later failures of the same phase for that method
-are reported at DEBUG level, so a permanently failing backend does not flood the log.
+The first failure of each phase for a method is reported at WARN level, with the message
+`Method logging (entry) failed for method 'class#name'; subsequent failures are reported at DEBUG level`. The class is
+the class declaring the logged method. Later failures of the same phase for that method are reported at DEBUG level, so
+a permanently failing backend does not flood the log.
 
 This also applies to a `StackOverflowError`, for example from objects whose `toString()` methods refer to each other,
 and to linkage errors from a logging framework that is not visible to the library. Only errors from which the virtual

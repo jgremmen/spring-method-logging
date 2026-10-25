@@ -31,8 +31,9 @@ the JVM was started without the weaver agent. The application context must also 
 once it has been configured.
 
 **The method was analyzed with an error.** A configuration error found after startup is reported once as a warning, and
-the method is executed without logging from then on. The log contains a message `Method logging analysis failed for
-method 'name'`, as described on the [Error Handling](error-handling.md#when-configuration-errors-are-reported) page.
+the method is executed without logging from then on. The log contains a message
+`Method logging analysis failed for method 'class#name'`, as described on the
+[Error Handling](error-handling.md#when-configuration-errors-are-reported) page.
 
 ## Parameters Are Missing in the Entry Message
 

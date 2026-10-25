@@ -108,7 +108,10 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
 
       // a failed analysis is cached, so it is reported once instead of on every invocation
       if (annotationMethodLoggingSource.isFirstFailureReport(invocationMethod, thisType))
-        LOG.warn("Method logging analysis failed for method '" + invocationMethod.getName() + '\'', ex);
+      {
+        LOG.warn("Method logging analysis failed for method '" + thisType.getName() + '#' +
+            invocationMethod.getName() + '\'', ex);
+      }
 
       return invocation.proceed();
     }
@@ -453,7 +456,8 @@ public final class MethodLoggingInterceptor implements MethodInterceptor
    */
   private static void logFailure(@NotNull MethodDef methodDef, @NotNull String phase, @NotNull Throwable ex)
   {
-    final var message = "Method logging (" + phase + ") failed for method '" + methodDef.methodName + '\'';
+    final var message = "Method logging (" + phase + ") failed for method '" + methodDef.location.getClassName() +
+        '#' + methodDef.methodName + '\'';
 
     if (methodDef.isFirstFailureReport(phase))
       LOG.warn(message + "; subsequent failures are reported at DEBUG level", ex);
