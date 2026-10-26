@@ -148,9 +148,9 @@ messages.
 Class-level defaults and global defaults for the levels are described on the [Configuration](configuration.md) page.
 
 /// note | Mapping to the logging framework
-The levels are mapped to the levels of the same name of the logging framework. Java Util Logging has no levels of these
-names; `TRACE`, `DEBUG` and `INFO` are mapped to `FINEST`, `FINE` and `INFO` there. Method logging never logs at WARN or
-ERROR level.
+The levels are mapped to the levels of the same name of the logging framework. Java Util Logging has no TRACE and DEBUG
+levels, so `TRACE`, `DEBUG` and `INFO` are mapped to `FINEST`, `FINE` and `INFO` there. Method logging never logs at
+WARN or ERROR level.
 ///
 
 ## Line Numbers

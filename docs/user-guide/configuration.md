@@ -97,7 +97,7 @@ Two global components complete the configuration:
 
 | Component             | Configurer method       | Default when `null` is returned                                        |
 |-----------------------|-------------------------|------------------------------------------------------------------------|
-| message support       | `messageSupport()`      | `DefaultFormatterService` for the context class loader, cache size 128 |
+| message support       | `messageSupport()`      | `DefaultFormatterService` for the class loader of the application context, cache size 128 |
 | method logger factory | `methodLoggerFactory()` | `AutoDetectLoggerFactory`                                              |
 
 The meaning of each setting is explained on the pages [Logging Methods](logging-methods.md),

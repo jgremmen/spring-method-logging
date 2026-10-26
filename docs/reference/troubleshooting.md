@@ -18,8 +18,8 @@ the class is set to WARN, nothing is logged, including the parameters and the re
 logger name of the class in the configuration of the logging framework.
 
 **The logger field holds `null`.** A logger field containing `null` disables logging for the method, with all factories
-except the Tinylog factory. A framework-specific factory also disables logging if the field holds a logger of another
-framework.
+except the Tinylog factory. Apart from the Tinylog factory, a framework-specific factory also disables logging if the
+field holds a logger of another framework.
 
 **Commons Logging forwards to a framework without a backend.** A class without logger field is logged through Commons
 Logging. Spring's Commons Logging bridge prefers the Log4j2 API if it is on the class path, even if the application logs
@@ -47,6 +47,14 @@ the levels is explained on the [Logging Methods](../user-guide/logging-methods.m
 The classes are compiled without parameter names. With Spring Framework 6.1 and later, the compiler option `-parameters`
 is required; the [Getting Started](../getting-started.md#compiling-with-parameter-names) page shows the build
 configuration. A name can also be given explicitly with `@ParamLog(name = ...)`.
+
+## NoClassDefFoundError for a Logging Framework with Gradle
+
+The application uses a logging framework, such as SLF4J or Log4j2, without declaring it as a dependency. The Gradle
+module metadata of method logging puts the optional logging frameworks on the compile classpath of the application, but
+not on its runtime classpath, so the build succeeds and the missing class is only noticed at runtime. The framework is
+declared as an `implementation` dependency of the application, as listed on the
+[Getting Started](../getting-started.md#dependencies) page.
 
 ## The Application Context Fails with "Excluded parameter ... matches no parameter"
 

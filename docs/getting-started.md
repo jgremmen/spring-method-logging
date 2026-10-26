@@ -45,8 +45,10 @@ versions are:
 | `org.springframework:spring-context` | 5.3.x from 5.3.26, 6.x from 6.0.5, 7.x |
 | `de.sayayi.lib:message-format`       | 0.23.x                                 |
 
-The logging frameworks and the AspectJ runtime are optional dependencies. They are not added transitively, as an
-application uses only one or two of them. The application declares the one it uses itself:
+The logging frameworks and the AspectJ runtime are optional dependencies, as an application uses only one or two of
+them. The Maven POM marks them as optional, so Maven does not add them to the project at all. The Gradle module metadata
+places them on the compile classpath of the project, but not on its runtime classpath. In both cases, the application
+declares the framework it uses as a dependency of its own:
 
 | Optional dependency                  | Supported versions          | Used for                                                |
 |--------------------------------------|-----------------------------|---------------------------------------------------------|
@@ -58,6 +60,9 @@ application uses only one or two of them. The application declares the one it us
 | `org.aspectj:aspectjrt`              | 1.9.21.1 or later, before 2 | [AspectJ mode](user-guide/advice-modes.md#aspectj-mode) |
 
 Spring Framework 7 requires Log4j API 2.15.0 or later when Log4j2 is used.
+
+With Gradle, code using one of these frameworks compiles even without such a declaration, because the framework is on
+the compile classpath. The missing declaration only shows at runtime, as a `NoClassDefFoundError`.
 
 Java Util Logging and the JDK platform logger are part of the JDK. Apache Commons Logging is provided by Spring itself,
 through `spring-jcl` in Spring Framework 5.3 and 6 and through `commons-logging` in Spring Framework 7.

@@ -103,8 +103,8 @@ factory](developer-guide/custom-loggers.md) connects any other logging API.
 Methods are intercepted with Spring AOP proxies by default. Alternatively, the AspectJ mode weaves the logging into the
 classes, so calls within the same class and calls on objects not managed by Spring are logged as well.
 
-Configuration errors are detected when the application context starts. Failures of the logging itself never affect the
-logged method.
+In proxy mode, configuration errors in the methods of singleton beans are detected when the application context starts.
+Failures of the logging itself never affect the logged method.
 
 ## How It Works
 
