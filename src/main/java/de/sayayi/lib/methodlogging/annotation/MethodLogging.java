@@ -20,6 +20,7 @@ import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Visibility;
 import org.intellij.lang.annotations.Language;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -114,6 +115,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target({ METHOD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
+@Documented
 public @interface MethodLogging
 {
   /**

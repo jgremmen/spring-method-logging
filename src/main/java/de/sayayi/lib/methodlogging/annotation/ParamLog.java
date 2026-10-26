@@ -21,6 +21,7 @@ import org.intellij.lang.annotations.Language;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AliasFor;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -66,6 +67,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target({ PARAMETER, ANNOTATION_TYPE })
 @Retention(RUNTIME)
+@Documented
 public @interface ParamLog
 {
   /**

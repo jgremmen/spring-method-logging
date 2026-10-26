@@ -20,6 +20,7 @@ import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Visibility;
 import org.intellij.lang.annotations.Language;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -47,6 +48,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(TYPE)
 @Retention(RUNTIME)
+@Documented
 @SuppressWarnings({"UnknownLanguage", "RedundantSuppression"})
 public @interface MethodLoggingConfig
 {
