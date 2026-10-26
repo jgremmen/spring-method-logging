@@ -58,7 +58,7 @@ orderService.cancelOrder(42, "customer request");
 orderService.findTitles("Ada", 10);
 // INFO  > findTitles(customer=Ada):28
 // DEBUG parameter 'limit' = 10
-// DEBUG result = Dune, Emma
+// DEBUG result = [Dune, Emma]
 // INFO  < findTitles:28 (elapsed 1ms)
 ```
 

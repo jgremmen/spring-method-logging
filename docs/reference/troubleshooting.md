@@ -85,9 +85,11 @@ are logged through Commons Logging, which does not support locations. A framewor
 
 ## Numbers and Dates Look Different on Another Server
 
-The default message support formats numbers and dates according to the default locale of the JVM. A server with a German
-locale logs `1.234,5` where a server with a US locale logs `1,234.5`. A message support with a fixed locale, as shown on
-the [Message Formats](../user-guide/message-formats.md#custom-message-support) page, produces consistent output.
+The default message support logs numbers and dates with their `toString()` method, independent of the locale. A message
+support based on the `DefaultFormatterService` formats them according to its locale, which is the default locale of the
+JVM unless it is configured otherwise. A server with a German locale then logs `1.234,5` where a server with a US locale
+logs `1,234.5`. Setting a fixed locale, as shown on the
+[Message Formats](../user-guide/message-formats.md#custom-message-support) page, produces consistent output.
 
 ## A Supplier Is Called Twice or a Stream Is Empty
 

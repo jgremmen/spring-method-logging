@@ -1136,7 +1136,8 @@ final class AnnotationMethodLoggingSource
 
   /**
    * Creates the default message support, used if the configurer provides none. Iterables and arrays are enclosed in
-   * square brackets and limited to 20 elements.
+   * square brackets, maps in braces; both are limited to 20 elements. Paths and exceptions are formatted by their
+   * {@code toString()} representation.
    *
    * @return  sealed default message support, never {@code null}
    *

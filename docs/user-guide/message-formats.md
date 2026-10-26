@@ -95,8 +95,8 @@ public class RecommendationService
 }
 // recommend("Ada", List.of("Dune", "Emma")) logs:
 // INFO  > recommend(customer: Ada):18
-// DEBUG with history = Dune, Emma
-// DEBUG recommended: Hyperion, Foundation
+// DEBUG with history = [Dune, Emma]
+// DEBUG recommended: [Hyperion, Foundation]
 // INFO  < recommend:18
 ```
 
@@ -140,16 +140,19 @@ With the default message support, values are formatted as follows:
 | `null`                            | `null`                      | empty text            |
 | string                            | `"Dune"`                    | `Dune`, without quotes |
 | record or other object            | `new Order(42, "0441013597", 2)` | `Order[id=42, isbn=0441013597, quantity=2]` |
-| collection or array               | `List.of(1, 2, 3)`          | `1, 2, 3`             |
-| map                               | `Map.of("Dune", 2)`         | `Dune=2`              |
-| `BigDecimal` with US locale       | `new BigDecimal("1234.5")`  | `1,234.5`             |
-| `BigDecimal` with German locale   | `new BigDecimal("1234.5")`  | `1.234,5`             |
-| `LocalDate` with US locale        | `LocalDate.of(2026, 10, 25)` | `Oct 25, 2026`       |
+| collection or array               | `List.of(1, 2, 3)`          | `[1, 2, 3]`           |
+| collection with 25 elements       | `List.of(1, 2, ..., 25)`    | `[1, 2, ..., 20, …]`  |
+| map                               | `Map.of("Dune", 2)`         | `{Dune=2}`            |
+| number                            | `new BigDecimal("1234.5")`  | `1234.5`              |
+| date                              | `LocalDate.of(2026, 10, 25)` | `2026-10-25`         |
+| path                              | `Path.of("/var/shop")`      | `/var/shop`           |
+| `Optional`                        | `Optional.of(7)`            | `7`                   |
 | `Supplier`                        | `() -> "Dune"`              | `Dune`, by calling `get()` |
 
-Some formatters depend on the locale of the message support, which is the default locale of the JVM unless it is
-configured otherwise. The same application can therefore produce different log output on servers with different locale
-settings.
+Collections, arrays and maps are logged with at most 20 elements; an ellipsis (`…`) marks the elements left out.
+Numbers, dates and all other values without a formatter of their own are logged with their `toString()` method, so the
+output does not depend on the locale of the server. Locale-dependent formatting requires a [custom message
+support](#custom-message-support).
 
 Values are written to the log verbatim. In particular, line breaks contained in a value are not escaped.
 
@@ -162,13 +165,15 @@ line breaks or produces structured output.
 
 ## Custom Message Support
 
-The message support creates and formats all messages of method logging. By default, it uses the
-`DefaultFormatterService` of message-format, created for the class loader of the application context with a formatter
-cache size of 128. The method `messageSupport()` of the
-[`MethodLoggingConfigurer`](configuration.md#global-configuration) replaces it. Returning `null`, which is the default
-implementation, keeps the default message support.
+The message support creates and formats all messages of method logging. By default, method logging uses a message
+support of its own, which formats values as shown in the table above. Besides the formatters for these types, it
+provides the named formatters `bool`, `choice` and `size` and the post formatters `case` and `clip`. The method
+`messageSupport()` of the [`MethodLoggingConfigurer`](configuration.md#global-configuration) replaces it. Returning
+`null`, which is the default implementation, keeps the default message support.
 
-A fixed locale makes the log output independent of the server configuration:
+The `DefaultFormatterService` of message-format formats many more types, among them numbers and dates according to the
+locale of the message support. It does not enclose collections in brackets and does not limit their elements. A fixed
+locale keeps the log output independent of the server configuration:
 
 ```java title="ShopConfiguration.java"
 package com.example.bookstore;
@@ -199,8 +204,8 @@ public class ShopConfiguration implements MethodLoggingConfigurer
 // BigDecimal 1234.5 is logged as 1,234.5 on every server
 ```
 
-The default formatter service evaluates suppliers and iterates iterables, with the side effects described on the
-[Parameters](parameters.md#side-effects-of-formatting) page. The `GenericFormatterService` of message-format formats
+Like the default message support, the `DefaultFormatterService` evaluates suppliers and iterates iterables, with the
+side effects described on the [Parameters](parameters.md#side-effects-of-formatting) page. The `GenericFormatterService` of message-format formats
 every value with its `toString()` method instead. A message support based on it never evaluates or iterates a value
 beyond what `toString()` does:
 
@@ -228,8 +233,9 @@ public class ShopConfiguration implements MethodLoggingConfigurer
 // List.of(1, 2) is logged as [1, 2], a Supplier by its toString()
 ```
 
-With the generic formatter service, values are formatted by `toString()` only: a list is logged as `[1, 2]`, a map as
-`{Dune=2}` and a `BigDecimal` without grouping separators. The map entry `null:'<none>'` still works, and `empty:'-'`
+With the generic formatter service, values are formatted by `toString()` only: a list is logged as `[1, 2]` and a map
+as `{Dune=2}`, with all of their elements, an `Optional` as `Optional[7]` and an array by its type and identity hash,
+such as `[I@7ba18f1b`. The map entry `null:'<none>'` still works, and `empty:'-'`
 still applies to an empty string, but no longer to an empty collection, which is logged as `[]`. Named formatters are
 not available, so `%{value,format:size}` logs the `toString()` of the value instead of its size. Post formatters are not
 registered either: a format using `clip` fails when it is formatted, and the parameter value is logged as

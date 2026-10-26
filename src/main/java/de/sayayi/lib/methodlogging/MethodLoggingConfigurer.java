@@ -61,15 +61,31 @@ public interface MethodLoggingConfigurer
   /**
    * Returns the message support to be used with method, parameter and result logging.
    * <p>
-   * If {@code null} is returned (the default), a message support is created with a new {@link DefaultFormatterService}
-   * for the class loader of the application context, using a formatter cache size of 128, and the default message
-   * factory.
+   * If {@code null} is returned (the default), a default message support with the default message factory is used. Its
+   * output does not depend on the locale:
+   * <ul>
+   *   <li>
+   *     iterables and arrays are enclosed in square brackets (e.g. {@code [1, 2, 3]}) and maps in braces (e.g.
+   *     {@code {Dune=2}}). At most 20 elements are logged; if there are more, an ellipsis (&hellip;) follows them;
+   *   </li>
+   *   <li>
+   *     a {@link java.util.function.Supplier Supplier} (and its primitive variants), an {@link java.util.Optional
+   *     Optional} and a {@link java.lang.ref.Reference Reference} are logged by their content, e.g. {@code 7} for
+   *     {@code Optional.of(7)};
+   *   </li>
+   *   <li>
+   *     all other values, including numbers, dates, paths and exceptions, are logged by their {@code toString()}
+   *     representation, e.g. {@code 1234.5} for a {@code BigDecimal} and {@code 2026-10-25} for a {@code LocalDate}.
+   *   </li>
+   * </ul>
+   * The named formatters {@code bool}, {@code choice} and {@code size} and the post formatters {@code case} and
+   * {@code clip} are available to custom formats. Locale-dependent formatting of numbers and dates requires a custom
+   * message support, e.g. with a {@link DefaultFormatterService}.
    * <p>
-   * The default formatter service formats a {@link java.util.function.Supplier Supplier} (and its primitive variants)
-   * by evaluating it and an {@link Iterable}, collection, array or map with all of its elements. Formatting a parameter
-   * or result of such a type may therefore execute code of the value, with effects on the logged method (see
-   * {@link MethodLogging}). A message support with a formatter service lacking these formatters, or with formatters
-   * limiting the output, avoids this for all logged methods.
+   * The default message support formats a supplier by evaluating it and an {@link Iterable} by iterating it. Formatting
+   * a parameter or result of such a type may therefore execute code of the value, with effects on the logged method
+   * (see {@link MethodLogging}). A message support with a formatter service lacking these formatters avoids this for
+   * all logged methods.
    *
    * @return  message support or {@code null} to use the default message support
    */
