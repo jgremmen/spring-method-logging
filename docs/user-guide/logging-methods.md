@@ -78,8 +78,7 @@ with long values. The [Parameters](parameters.md#inline-and-separate-parameters)
 ### Result Message
 
 The result message is logged after the method has returned and before the exit message. It is not logged for `void`
-methods and not logged if the method throws an exception. A `null` result is formatted as an empty value, so the message
-reads `result =` in that case, as surrounding spaces of a message are trimmed.
+methods and not logged if the method throws an exception. A `null` result is logged as `result = (null)`.
 
 ### Exit Message
 

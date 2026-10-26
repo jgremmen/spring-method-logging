@@ -52,15 +52,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @SuppressWarnings({"UnknownLanguage", "RedundantSuppression"})
 public @interface MethodLoggingConfig
 {
-  /** Default message format for inline parameters: {@code %{parameter}=%{value,null:'(null)'}}. */
+  /** Default message format for inline parameters: {@code %{parameter}=%{value}}. */
   @Language("MessageFormat")
-  String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value,null:'(null)'}";
+  String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value}";
 
   /**
-   * Default message format for separately logged parameters: {@code parameter '%{parameter}' = %{value,null:'(null)'}}.
+   * Default message format for separately logged parameters: {@code parameter '%{parameter}' = %{value}}.
    */
   @Language("MessageFormat")
-  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value,null:'(null)'}";
+  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value}";
 
   /** Default message format for the method result: {@code result = %{result,null:'(null)'}}. */
   @Language("MessageFormat")

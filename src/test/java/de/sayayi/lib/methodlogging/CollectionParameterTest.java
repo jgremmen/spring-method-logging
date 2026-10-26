@@ -116,7 +116,7 @@ class CollectionParameterTest
     bean.emptyAndNull(new int[0], List.of(), Set.of(), null);
 
     assertEquals(List.of(
-        "INFO|> emptyAndNull(array=[],list=[],set=[],nothing=)",
+        "INFO|> emptyAndNull(array=[],list=[],set=[],nothing=(null))",
         "INFO|< emptyAndNull"), FACTORY.log);
   }
 

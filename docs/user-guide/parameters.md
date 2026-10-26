@@ -76,9 +76,9 @@ configurable, see [Message Formats](message-formats.md#parameter-and-result-form
 ## Formatting a Parameter Value
 
 The `format` attribute replaces the format of the parameter value. In the format, the parameter value is available as
-the variable `value`, written `%{value}`. The default format is `%{value}`, which formats the value with the formatter
-the message support provides for its type. As `value` is an alias of `format`, the format can be given without the
-attribute name.
+the variable `value`, written `%{value}`. The default format is `%{value,null:'(null)'}`, which formats the value with
+the formatter the message support provides for its type and a `null` value as `(null)`. As `value` is an alias of
+`format`, the format can be given without the attribute name.
 
 ```java title="CouponService.java"
 package com.example.bookstore;
@@ -103,7 +103,8 @@ public class CouponService
 // INFO  > redeem(coupon=<none>,orders=2,note=[gift]):16
 ```
 
-The first format replaces a `null` coupon by `<none>`; without it, `null` is formatted as an empty value. The second
+The first format replaces a `null` coupon by `<none>`. A custom format replaces the default format completely, so a
+format without a `null` entry, such as the third one, formats `null` as an empty value. The second
 format logs the number of orders instead of the order numbers. The third format encloses the value in brackets. The
 format syntax is that of the message-format library and is introduced on the [Message Formats](message-formats.md) page.
 

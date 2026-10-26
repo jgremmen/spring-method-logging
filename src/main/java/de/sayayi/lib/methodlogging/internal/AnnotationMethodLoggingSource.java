@@ -115,28 +115,38 @@ final class AnnotationMethodLoggingSource
 {
   /** Default format of a parameter value. */
   @Language("MessageFormat")
-  private static final String DEFAULT_PARAMETER_VALUE_FORMAT = "%{value}";
+  private static final String DEFAULT_PARAMETER_VALUE_FORMAT = "%{value,null:'(null)'}";
 
   /** Method logging definitions by method and target class, empty if the method has no method logging. */
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
+
   /** Failed analyses by method and target class. */
   final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
+
   /** Source file and method line numbers by declaring class. */
   final @NotNull Map<Class<?>,ClassLocation> classLocationCache;
+
   /** Supplier of the method logging configurer, invoked when the configuration is created. */
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
+
   /** Tells whether invoked methods are resolved to the most specific method of the target class. */
   private final boolean resolveSpecificMethod;
+
   /** Tells whether the configuration is being created. */
   private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
+
   /** Configuration or {@code null} if it has not been created yet. */
   private volatile Configuration configuration;
+
   /** Cached failure of the configurer bean or the configurer methods or {@code null} if there is none. */
   private volatile RuntimeException configurationFailure;
+
   /** Tells whether all singleton beans have been created. */
   private volatile boolean singletonsInstantiated;
+
   /** Discoverer of the method parameter names. */
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
+
   /** Supplier of the default message support, created on first use. */
   private final Supplier<MessageSupport> messageSupportSupplier;
 

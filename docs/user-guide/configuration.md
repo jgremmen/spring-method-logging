@@ -78,7 +78,7 @@ setting cannot be configured on that level.
 | result                   | `result`                | `SHOW`                         | -                                   |
 | inline parameter format  | `inlineParameterFormat` | `%{parameter}=%{value}`        | -                                   |
 | parameter format         | `parameterFormat`       | `parameter '%{parameter}' = %{value}` | -                            |
-| result format            | `resultFormat`          | `result = %{result}`           | -                                   |
+| result format            | `resultFormat`          | `result = %{result,null:'(null)'}` | -                               |
 | entry prefix             | -                       | `methodEntryPrefix`: `"> "`    | -                                   |
 | exit prefix              | -                       | `methodExitPrefix`: `"< "`     | -                                   |
 | excluded parameters      | `exclude`: by name, none | -                             | `excludeMethodParameter(type)`: none |

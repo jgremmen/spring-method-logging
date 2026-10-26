@@ -119,6 +119,23 @@ The new methods `getLoggerType()` (protected) and `getClassMethodLogger(Class)` 
 subclass declaring a method with one of these signatures must be adapted. The new constant `CLASS_METHOD_LOGGER`,
 returned by `createMethodLogger(Field, Object)`, selects the method logger for the target class.
 
+### `null` Values Logged as `(null)`
+
+A `null` parameter or result is now logged as `(null)` instead of an empty value, so it can be told apart from an empty
+string. The default parameter value format is now `%{value,null:'(null)'}` and the constant
+`MethodLoggingConfig.DEFAULT_RESULT_FORMAT` is now `result = %{result,null:'(null)'}`. A custom `@ParamLog` format or
+result format without a `null` entry still formats `null` as an empty value.
+
+```java title="Logging of null values"
+// before
+// INFO  > redeem(coupon=):16
+// DEBUG result =
+
+// after
+// INFO  > redeem(coupon=(null)):16
+// DEBUG result = (null)
+```
+
 ### Dependency Changes
 
 `spring-context` and `message-format` are now `api` dependencies, as their types are part of the public API (e.g.

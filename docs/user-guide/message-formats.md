@@ -55,10 +55,10 @@ Four formats are involved in logging parameters and results. Each one provides i
 
 | Format                  | Set with                                       | Variables                 | Default                                 |
 |-------------------------|------------------------------------------------|---------------------------|-----------------------------------------|
-| parameter value format  | `@ParamLog(format)`                            | `value`                   | `%{value}`                              |
+| parameter value format  | `@ParamLog(format)`                            | `value`                   | `%{value,null:'(null)'}`                |
 | inline parameter format | `inlineParameterFormat`                        | `parameter`, `value`      | `%{parameter}=%{value}`                 |
 | parameter format        | `parameterFormat`                              | `parameter`, `value`      | `parameter '%{parameter}' = %{value}`   |
-| result format           | `resultFormat`                                 | `result`                  | `result = %{result}`                    |
+| result format           | `resultFormat`                                 | `result`                  | `result = %{result,null:'(null)'}`      |
 
 The parameter value format is applied first. Its variable `value` holds the parameter value as passed to the method. The
 inline parameter format and the parameter format then build the text for one parameter. In these formats, `parameter` is
@@ -137,7 +137,7 @@ With the default message support, values are formatted as follows:
 
 | Value                             | Example value               | Formatted as          |
 |-----------------------------------|-----------------------------|-----------------------|
-| `null`                            | `null`                      | empty text            |
+| `null`                            | `null`                      | empty text; `(null)` with the default parameter value and result formats |
 | string                            | `"Dune"`                    | `Dune`, without quotes |
 | record or other object            | `new Order(42, "0441013597", 2)` | `Order[id=42, isbn=0441013597, quantity=2]` |
 | collection or array               | `List.of(1, 2, 3)`          | `[1, 2, 3]`           |

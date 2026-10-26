@@ -87,8 +87,10 @@ public @interface ParamLog
    * Returns the format for the parameter value. The message context will provide a variable named {@code value}
    * containing the object passed to the method.
    * <p>
-   * The default format is {@code %{value}}, which will format the parameter value using the default formatter for this
-   * type from the message context. An invalid format fails the method analysis (see {@link MethodLogging}).
+   * The default format is {@code %{value,null:'(null)'}}, which will format the parameter value using the default
+   * formatter for this type from the message context and a {@code null} value as {@code (null)}. A custom format
+   * replaces it completely; without a {@code null} entry, a {@code null} value is formatted as empty text. An invalid
+   * format fails the method analysis (see {@link MethodLogging}).
    *
    * @return  a message format string, or empty to use the default format
    *
