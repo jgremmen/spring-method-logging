@@ -114,16 +114,27 @@ final class AnnotationMethodLoggingSource
   @Language("MessageFormat")
   private static final String DEFAULT_PARAMETER_VALUE_FORMAT = "%{value}";
 
+  /** Method logging definitions by method and target class, empty if the method has no method logging. */
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
+  /** Failed analyses by method and target class. */
   final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
+  /** Source file and method line numbers by declaring class. */
   final @NotNull Map<Class<?>,ClassLocation> classLocationCache;
+  /** Supplier of the method logging configurer, invoked when the configuration is created. */
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
+  /** Tells whether invoked methods are resolved to the most specific method of the target class. */
   private final boolean resolveSpecificMethod;
+  /** Tells whether the configuration is being created. */
   private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
+  /** Configuration or {@code null} if it has not been created yet. */
   private volatile Configuration configuration;
+  /** Cached failure of the configurer bean or the configurer methods or {@code null} if there is none. */
   private volatile RuntimeException configurationFailure;
+  /** Tells whether all singleton beans have been created. */
   private volatile boolean singletonsInstantiated;
+  /** Discoverer of the method parameter names. */
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
+  /** Supplier of the default message support, created on first use. */
   private final Supplier<MessageSupport> messageSupportSupplier;
 
 
@@ -1120,6 +1131,14 @@ final class AnnotationMethodLoggingSource
   }
 
 
+  /**
+   * Creates the default message support, used if the configurer provides none. Iterables and arrays are enclosed in
+   * square brackets and limited to 20 elements.
+   *
+   * @return  sealed default message support, never {@code null}
+   *
+   * @since 0.6.0
+   */
   @Contract(pure = true)
   @SuppressWarnings("UnnecessaryUnicodeEscape")
   private @NotNull MessageSupport buildInternalMessageSupport()
@@ -1234,6 +1253,8 @@ final class AnnotationMethodLoggingSource
 
   /**
    * Cached failure of a method analysis.
+   *
+   * @since 0.6.0
    */
   static final class AnalysisFailure
   {
@@ -1259,16 +1280,33 @@ final class AnnotationMethodLoggingSource
 
   /**
    * Configuration provided by the method logging configurer, with validated defaults.
+   *
+   * @since 0.6.0
    */
   private static final class Configuration
   {
+    /** Method logging configurer deciding on the exclusion of parameters by type. */
     private final @NotNull MethodLoggingConfigurer methodLoggingConfigurer;
+
+    /** Message support provided by the configurer or the default message support. */
     private final @NotNull MessageSupport messageSupport;
+
+    /** Method logger factory provided by the configurer or the default method logger factory. */
     private final @NotNull MethodLoggerFactory methodLoggerFactory;
+
+    /** Default logger field name provided by the configurer. */
     private final @NotNull String defaultLoggerFieldName;
+
+    /** Default entry/exit log level provided by the configurer, never {@link Level#DEFAULT}. */
     private final @NotNull Level defaultEntryExitLevel;
+
+    /** Default parameter log level provided by the configurer, never {@link Level#DEFAULT}. */
     private final @NotNull Level defaultParameterLevel;
+
+    /** Default result log level provided by the configurer, never {@link Level#DEFAULT}. */
     private final @NotNull Level defaultResultLevel;
+
+    /** Default line number visibility provided by the configurer, never {@link Visibility#DEFAULT}. */
     private final @NotNull Visibility defaultLineNumber;
 
 
@@ -1277,6 +1315,7 @@ final class AnnotationMethodLoggingSource
      * support and method logger factory if the configurer provides none.
      *
      * @param methodLoggingConfigurer  method logging configurer, not {@code null}
+     * @param messageSupportSupplier   supplier of the default message support, not {@code null}
      *
      * @throws IllegalStateException  if the configurer returns an invalid default
      */

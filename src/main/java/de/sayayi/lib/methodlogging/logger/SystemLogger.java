@@ -35,6 +35,7 @@ import static java.util.Objects.requireNonNull;
  */
 final class SystemLogger implements MethodLogger
 {
+  /** Platform logger levels, indexed by the ordinal of {@link Level}; there is none for {@link Level#DEFAULT}. */
   private static final System.Logger.Level[] LEVELS = new System.Logger.Level[] {
       null,
       System.Logger.Level.TRACE,
@@ -42,6 +43,7 @@ final class SystemLogger implements MethodLogger
       System.Logger.Level.INFO
   };
 
+  /** Platform logger receiving the log messages. */
   private final @NotNull System.Logger logger;
 
 
@@ -56,7 +58,9 @@ final class SystemLogger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the platform logger at the corresponding platform logger level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the platform logger at the corresponding platform logger level.
    */
   @Override
   public void log(@NotNull Level level, String message) {
@@ -65,7 +69,9 @@ final class SystemLogger implements MethodLogger
 
 
   /**
-   * Tells whether the platform logger is enabled for the corresponding platform logger level.
+   * {@inheritDoc}
+   * <p>
+   * The platform logger is queried for the corresponding platform logger level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level) {

@@ -59,7 +59,7 @@ import org.springframework.core.ResolvableType;
 public interface MethodLoggingConfigurer
 {
   /**
-   * Construct the message support to be used with method/parameter/result logging.
+   * Returns the message support to be used with method, parameter and result logging.
    * <p>
    * If {@code null} is returned (the default), a message support is created with a new {@link DefaultFormatterService}
    * for the class loader of the application context, using a formatter cache size of 128, and the default message
@@ -71,7 +71,7 @@ public interface MethodLoggingConfigurer
    * {@link MethodLogging}). A message support with a formatter service lacking these formatters, or with formatters
    * limiting the output, avoids this for all logged methods.
    *
-   * @return  Message support or {@code null} to use the default message support
+   * @return  message support or {@code null} to use the default message support
    */
   default MessageSupport messageSupport() {
     return null;
@@ -79,13 +79,13 @@ public interface MethodLoggingConfigurer
 
 
   /**
-   * Construct the method logger factory to be used with method logging.
+   * Returns the method logger factory to be used with method logging.
    * <p>
    * The default is an instance of {@link AutoDetectLoggerFactory} which selects the appropriate logger based on the
    * type of the logger held by the logger field. If no logger field is available, it falls back to a JCL (Apache
    * Commons Logging) based logger.
    *
-   * @return  Method logger factory or {@code null} to use the default method logger factory
+   * @return  method logger factory or {@code null} to use the default method logger factory
    *
    * @see MethodLogger
    */
@@ -102,7 +102,9 @@ public interface MethodLoggingConfigurer
    * <p>
    * An empty name disables the logger field lookup, so the method logger factory is invoked without logger field.
    *
-   * @return  logger field name, never {@code null}
+   * @return  logger field name, never {@code null}. The default is {@code "log"}
+   *
+   * @since 0.2.0
    */
   @Contract(pure = true)
   default @NotNull String defaultLoggerFieldName() {
@@ -124,7 +126,7 @@ public interface MethodLoggingConfigurer
    * by multiple threads, so this method may be invoked concurrently and must be thread-safe. It should be free of side
    * effects, as the same method may be analyzed more than once.
    *
-   * @param methodParameterType  method parameter type
+   * @param methodParameterType  method parameter type, not {@code null}
    *
    * @return  {@code true} if the parameter must be excluded, {@code false} otherwise
    *

@@ -35,6 +35,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("DuplicatedCode")
 final class TinylogTaggedLogger implements MethodLogger
 {
+  /** Tinylog tagged logger receiving the log messages. */
   private final @NotNull TaggedLogger logger;
 
 
@@ -49,7 +50,9 @@ final class TinylogTaggedLogger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the Tinylog tagged logger at the corresponding Tinylog level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the Tinylog tagged logger at the corresponding Tinylog level.
    */
   @Override
   public void log(@NotNull Level level, String message)
@@ -64,7 +67,9 @@ final class TinylogTaggedLogger implements MethodLogger
 
 
   /**
-   * Tells whether the Tinylog tagged logger is enabled for the corresponding Tinylog level.
+   * {@inheritDoc}
+   * <p>
+   * The Tinylog tagged logger is queried for the corresponding Tinylog level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level)

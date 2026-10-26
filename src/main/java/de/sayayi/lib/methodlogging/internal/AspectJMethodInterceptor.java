@@ -35,9 +35,11 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public final class AspectJMethodInterceptor
 {
+  /** Method interceptors set by the open application contexts, the interceptor in use first. */
   private static final Deque<MethodInterceptor> METHOD_INTERCEPTORS = new ConcurrentLinkedDeque<>();
 
 
+  /** Prevents instantiation, as this class provides static methods only. */
   private AspectJMethodInterceptor() {
   }
 

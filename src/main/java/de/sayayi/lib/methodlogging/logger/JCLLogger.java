@@ -35,6 +35,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("DuplicatedCode")
 final class JCLLogger implements MethodLogger
 {
+  /** Commons Logging logger receiving the log messages. */
   private final @NotNull Log logger;
 
 
@@ -49,7 +50,9 @@ final class JCLLogger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the JCL logger at the corresponding JCL level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the JCL logger at the corresponding JCL level.
    */
   @Override
   public void log(@NotNull Level level, String message)
@@ -64,7 +67,9 @@ final class JCLLogger implements MethodLogger
 
 
   /**
-   * Tells whether the JCL logger is enabled for the corresponding JCL level.
+   * {@inheritDoc}
+   * <p>
+   * The JCL logger is queried for the corresponding JCL level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level)

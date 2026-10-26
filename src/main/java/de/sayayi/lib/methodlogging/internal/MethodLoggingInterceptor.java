@@ -61,8 +61,10 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 final class MethodLoggingInterceptor implements MethodInterceptor
 {
+  /** Logger reporting method logging failures. */
   private static final Log LOG = LogFactory.getLog(MethodLoggingInterceptor.class);
 
+  /** Method logging source providing the method logging definitions, the message support and the logger factory. */
   private final AnnotationMethodLoggingSource annotationMethodLoggingSource;
 
 
@@ -233,6 +235,8 @@ final class MethodLoggingInterceptor implements MethodInterceptor
    * @param parameterMessage  inline or in-method parameter message, not {@code null}
    * @param parameterDef      parameter definition, not {@code null}
    * @param value             parameter value
+   * @param inline            {@code true} if the parameter is logged inline with the method entry, {@code false} if it
+   *                          is logged separately
    *
    * @return  formatted parameter, never {@code null}
    *
@@ -481,6 +485,8 @@ final class MethodLoggingInterceptor implements MethodInterceptor
    * framework not visible to this library).
    *
    * @param throwable  throwable caught while logging, not {@code null}
+   *
+   * @throws VirtualMachineError  if {@code throwable} is a virtual machine error other than {@link StackOverflowError}
    *
    * @since 0.6.0
    */

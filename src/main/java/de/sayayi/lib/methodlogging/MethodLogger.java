@@ -40,7 +40,7 @@ import java.lang.reflect.Field;
 public interface MethodLogger
 {
   /**
-   * A method logger that does nothing.
+   * A method logger that does nothing. It discards all messages and reports all levels as disabled.
    *
    * @see MethodLoggerFactory#from(Field, Object, Class)
    */
@@ -51,7 +51,7 @@ public interface MethodLogger
 
 
   /**
-   * Log a message with a specific level to the underlying logging framework.
+   * Logs a message with a specific level to the underlying logging framework.
    *
    * @param level    logging level, never {@code null} or {@link Level#DEFAULT}
    * @param message  message to log, never {@code null}
@@ -60,7 +60,7 @@ public interface MethodLogger
 
 
   /**
-   * Log a message with a specific level and the source location of the logged method to the underlying logging
+   * Logs a message with a specific level and the source location of the logged method to the underlying logging
    * framework.
    * <p>
    * Logging frameworks supporting an explicit source location use {@code location} for location-aware output, like

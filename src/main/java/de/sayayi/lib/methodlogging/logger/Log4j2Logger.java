@@ -34,6 +34,7 @@ import static java.util.Objects.requireNonNull;
  */
 final class Log4j2Logger implements MethodLogger
 {
+  /** Log4j2 levels, indexed by the ordinal of {@link Level}; there is none for {@link Level#DEFAULT}. */
   private static final org.apache.logging.log4j.Level[] LEVELS = new org.apache.logging.log4j.Level[] {
       null,
       org.apache.logging.log4j.Level.TRACE,
@@ -41,6 +42,7 @@ final class Log4j2Logger implements MethodLogger
       org.apache.logging.log4j.Level.INFO
   };
 
+  /** Log4j2 logger receiving the log messages. */
   private final @NotNull Logger logger;
 
 
@@ -55,7 +57,9 @@ final class Log4j2Logger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the Log4j2 logger at the corresponding Log4j2 level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the Log4j2 logger at the corresponding Log4j2 level.
    */
   @Override
   public void log(@NotNull Level level, String message) {
@@ -77,7 +81,9 @@ final class Log4j2Logger implements MethodLogger
 
 
   /**
-   * Tells whether the Log4j2 logger is enabled for the corresponding Log4j2 level.
+   * {@inheritDoc}
+   * <p>
+   * The Log4j2 logger is queried for the corresponding Log4j2 level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level) {

@@ -22,5 +22,7 @@
  * the {@link MethodLoggingConfig @MethodLoggingConfig} annotation of the class and the
  * {@link de.sayayi.lib.methodlogging.MethodLoggingConfigurer MethodLoggingConfigurer}, in that order.
  * {@link ParamLog @ParamLog} controls the logging of individual parameters.
+ *
+ * @since 0.1.0
  */
 package de.sayayi.lib.methodlogging.annotation;

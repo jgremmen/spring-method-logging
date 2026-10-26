@@ -35,8 +35,12 @@ import static java.util.Objects.requireNonNull;
  */
 abstract class FrameworkMethodLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /** Logger type of the logging framework or {@code null} if the logger field type is not restricted. */
   private final Class<?> loggerType;
+  /** Function creating the method logger for a class without logger field. */
   private final @NotNull Function<Class<?>,MethodLogger> classMethodLoggerFactory;
+
+  /** Function creating the method logger for the logger instance held by a logger field. */
   private final @NotNull Function<Object,MethodLogger> fieldMethodLoggerFactory;
 
 
@@ -51,7 +55,7 @@ abstract class FrameworkMethodLoggerFactory extends AbstractMethodLoggerFactory
    * @param classMethodLoggerFactory  function creating the method logger for a class without logger field, not
    *                                  {@code null}
    * @param fieldMethodLoggerFactory  function creating the method logger for the logger instance held by a logger
-   *                                  field, which may be {@code null}, not {@code null}
+   *                                  field (the instance may be {@code null}), not {@code null}
    */
   FrameworkMethodLoggerFactory(boolean createLoggerOnNoField, Class<?> loggerType,
                                @NotNull Function<Class<?>,MethodLogger> classMethodLoggerFactory,
@@ -66,8 +70,10 @@ abstract class FrameworkMethodLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Returns the logger type of the logging framework, so logger fields which can never hold a logger of the logging
-   * framework are rejected.
+   * {@inheritDoc}
+   * <p>
+   * This factory returns the logger type of the logging framework, so logger fields which can never hold a logger of
+   * the logging framework are rejected.
    */
   @Override
   protected Class<?> getLoggerType() {
@@ -76,7 +82,9 @@ abstract class FrameworkMethodLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Creates a method logger for a logger of the logging framework for {@code clazz}.
+   * {@inheritDoc}
+   * <p>
+   * This factory creates a method logger for a logger of the logging framework for {@code clazz}.
    */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
@@ -85,7 +93,10 @@ abstract class FrameworkMethodLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Creates a method logger for the logger held by {@code loggerField}.
+   * {@inheritDoc}
+   * <p>
+   * This factory creates a method logger for the logger held by {@code loggerField}. If the field is not accessible,
+   * the method logger is created for a {@code null} logger.
    */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {

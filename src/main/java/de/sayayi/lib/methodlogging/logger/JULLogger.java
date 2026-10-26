@@ -38,8 +38,10 @@ import static java.util.logging.Level.*;
  */
 final class JULLogger implements MethodLogger
 {
+  /** JUL levels, indexed by the ordinal of {@link Level}; there is none for {@link Level#DEFAULT}. */
   private static final java.util.logging.Level[] LEVELS = new java.util.logging.Level[] { null, FINEST, FINE, INFO };
 
+  /** JUL logger receiving the log messages. */
   private final @NotNull Logger logger;
 
 
@@ -54,7 +56,9 @@ final class JULLogger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the JUL logger at the corresponding JUL level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the JUL logger at the corresponding JUL level.
    */
   @Override
   public void log(@NotNull Level level, String message) {
@@ -76,7 +80,9 @@ final class JULLogger implements MethodLogger
 
 
   /**
-   * Tells whether the JUL logger is enabled for the corresponding JUL level.
+   * {@inheritDoc}
+   * <p>
+   * The JUL logger is queried for the corresponding JUL level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level) {

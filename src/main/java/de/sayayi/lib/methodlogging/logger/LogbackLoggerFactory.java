@@ -78,6 +78,8 @@ public final class LogbackLoggerFactory extends FrameworkMethodLoggerFactory
    * @param clazz  the target class, not {@code null}
    *
    * @return  a method logger instance, never {@code null}
+   *
+   * @since 0.6.0
    */
   private static @NotNull MethodLogger createClassMethodLogger(@NotNull Class<?> clazz)
   {

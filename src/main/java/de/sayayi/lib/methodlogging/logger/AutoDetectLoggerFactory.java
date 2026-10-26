@@ -54,6 +54,7 @@ import static java.util.concurrent.ConcurrentHashMap.newKeySet;
  */
 public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 {
+  /** Logger reporting logger fields with an unsupported or inaccessible logger. */
   private static final Log LOG = LogFactory.getLog(AutoDetectLoggerFactory.class);
 
   /** Ordinal of the supported logger kind, by logger instance class. */
@@ -78,8 +79,9 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Creates a JCL-based method logger as a fallback when no logger field is available.
    * {@inheritDoc}
+   * <p>
+   * This factory creates a JCL based method logger as a fallback.
    */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
@@ -88,8 +90,11 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Creates a method logger matching the type of the logger instance held by the logger field.
    * {@inheritDoc}
+   * <p>
+   * This factory creates a method logger matching the type of the logger instance held by the logger field. For a field
+   * containing {@code null}, {@link MethodLogger#NO_OP} is returned. For an unsupported or inaccessible logger, the JCL
+   * based method logger for the target class is used.
    */
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
@@ -162,21 +167,41 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
 
   /**
    * Supported logger kinds, identified by type name, as the logging frameworks are optional dependencies.
+   *
+   * @since 0.6.0
    */
   private enum LoggerKind
   {
     // Logback loggers are SLF4J loggers as well, so Logback must be checked first
+    /** Logback logger. */
     LOGBACK("ch.qos.logback.classic.Logger"),
+
+    /** SLF4J logger. */
     SLF4J("org.slf4j.Logger"),
+
+    /** Log4j2 logger. */
     LOG4J2("org.apache.logging.log4j.Logger"),
+
+    /** JUL logger. */
     JUL("java.util.logging.Logger"),
+
+    /** Apache Commons Logging logger. */
     JCL("org.apache.commons.logging.Log"),
+
+    /** JBoss logger. */
     JBOSS("org.jboss.logging.Logger"),
+
+    /** Tinylog tagged logger. */
     TINYLOG("org.tinylog.TaggedLogger"),
+
+    /** JDK platform logger. */
     SYSTEM("java.lang.System$Logger"),
+
+    /** Any other logger. */
     UNSUPPORTED(null);
 
 
+    /** Fully qualified name of the logger type or {@code null} for unsupported loggers. */
     private final String typeName;
 
 

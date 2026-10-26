@@ -38,6 +38,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("DuplicatedCode")
 final class LogbackLogger implements MethodLogger
 {
+  /** Logback logger receiving the log messages. */
   private final @NotNull Logger logger;
 
 
@@ -52,7 +53,9 @@ final class LogbackLogger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the Logback logger at the corresponding Logback level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the Logback logger at the corresponding Logback level.
    */
   @Override
   public void log(@NotNull Level level, String message)
@@ -105,7 +108,9 @@ final class LogbackLogger implements MethodLogger
 
 
   /**
-   * Tells whether the Logback logger is enabled for the corresponding Logback level.
+   * {@inheritDoc}
+   * <p>
+   * The Logback logger is queried for the corresponding Logback level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level)

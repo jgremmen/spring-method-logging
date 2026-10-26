@@ -83,7 +83,10 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
    */
   static final class MethodLoggingAspectRegistration implements SmartInitializingSingleton, DisposableBean
   {
+    /** Method logging source creating the configuration. */
     private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
+
+    /** Method logging interceptor set as the method interceptor used by the aspect. */
     private final @NotNull MethodInterceptor methodInterceptor;
 
 

@@ -24,8 +24,7 @@ import org.tinylog.Logger;
 /**
  * {@link MethodLogger} implementation that delegates to the Tinylog {@link Logger}.
  * <p>
- * Since Tinylog uses a static logger API without logger instances, this implementation is modelled
- * as a singleton enum.
+ * Since Tinylog uses a static logger API without logger instances, this implementation is modelled as a singleton enum.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -40,7 +39,9 @@ enum TinylogLogger implements MethodLogger
 
 
   /**
-   * Logs {@code message} with the static Tinylog logger at the corresponding Tinylog level.
+   * {@inheritDoc}
+   * <p>
+   * The message is logged with the static Tinylog logger at the corresponding Tinylog level.
    */
   @Override
   public void log(@NotNull Level level, String message)
@@ -55,7 +56,9 @@ enum TinylogLogger implements MethodLogger
 
 
   /**
-   * Tells whether the static Tinylog logger is enabled for the corresponding Tinylog level.
+   * {@inheritDoc}
+   * <p>
+   * The static Tinylog logger is queried for the corresponding Tinylog level.
    */
   @Override
   public boolean isLogEnabled(@NotNull Level level)

@@ -33,7 +33,10 @@ import java.lang.reflect.Method;
  */
 final class JoinPointMethodInvocation implements MethodInvocation
 {
+  /** Method execution join point, proceeding with the method execution. */
   private final ProceedingJoinPoint joinPoint;
+
+  /** Executed method, as declared by the class of the join point. */
   private final Method method;
 
 

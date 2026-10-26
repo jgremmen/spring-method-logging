@@ -27,5 +27,7 @@
  * This package requires the AspectJ runtime, which is an optional dependency of this library.
  *
  * @see de.sayayi.lib.methodlogging.aspectj.MethodLoggingAspect
+ *
+ * @since 0.6.0
  */
 package de.sayayi.lib.methodlogging.aspectj;

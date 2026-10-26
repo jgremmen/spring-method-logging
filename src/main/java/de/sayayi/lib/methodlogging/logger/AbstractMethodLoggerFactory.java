@@ -66,6 +66,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   /** Method loggers for classes without logger field, by class. */
   private final Map<Class<?>,MethodLogger> classLoggerCache = new ConcurrentHashMap<>();
 
+  /** Tells whether a method logger for the target class is created if no logger field is available. */
   private final boolean createLoggerOnNoField;
 
 
@@ -141,6 +142,8 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * @param type         target type, not {@code null}
    *
    * @return  a method logger instance or {@link #CLASS_METHOD_LOGGER}, never {@code null}
+   *
+   * @since 0.6.0
    */
   private @NotNull MethodLogger getInstanceFieldMethodLogger(@NotNull Field loggerField, @NotNull Object obj,
                                                              @NotNull Class<?> type)
@@ -174,13 +177,10 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 
 
   /**
-   * Validates the logger field: fails if no logger field is available and this factory requires one, or if the declared
-   * type of the logger field can never hold a logger of the type returned by {@link #getLoggerType()}.
-   *
-   * @param loggerField  logger field or {@code null} if no logger field was found
-   * @param type         target type, not {@code null}
-   *
-   * @throws IllegalStateException  if no method logger can be provided for the logger field
+   * {@inheritDoc}
+   * <p>
+   * The validation fails if no logger field is available and this factory requires one, or if the declared type of the
+   * logger field can never hold a logger of the type returned by {@link #getLoggerType()}.
    *
    * @since 0.6.0
    */
@@ -276,6 +276,8 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    *
    * @param logger        logger instance read from the logger field, may be {@code null}
    * @param methodLogger  method logger created for {@code logger}, not {@code null}
+   *
+   * @since 0.6.0
    */
   private record FieldMethodLogger(Object logger, @NotNull MethodLogger methodLogger) {
   }

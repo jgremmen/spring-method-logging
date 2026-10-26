@@ -52,15 +52,17 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @SuppressWarnings({"UnknownLanguage", "RedundantSuppression"})
 public @interface MethodLoggingConfig
 {
-  /** Default message format for inline parameters: {@code %{parameter}=%{value}} */
+  /** Default message format for inline parameters: {@code %{parameter}=%{value,null:'(null)'}}. */
   @Language("MessageFormat")
   String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value,null:'(null)'}";
 
-  /** Default message format for separately logged parameters: {@code parameter '%{parameter}' = %{value}} */
+  /**
+   * Default message format for separately logged parameters: {@code parameter '%{parameter}' = %{value,null:'(null)'}}.
+   */
   @Language("MessageFormat")
   String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value,null:'(null)'}";
 
-  /** Default message format for the method result: {@code result = %{result}} */
+  /** Default message format for the method result: {@code result = %{result,null:'(null)'}}. */
   @Language("MessageFormat")
   String DEFAULT_RESULT_FORMAT = "result = %{result,null:'(null)'}";
 
@@ -109,7 +111,7 @@ public @interface MethodLoggingConfig
 
 
   /**
-   * Indicate whether the method line number is logged or not.
+   * Indicates whether the method line number is logged or not.
    * <p>
    * The line number is not necessarily the exact line of the method declaration. The reason is that a java class does
    * not provide line information of methods but only of statements. The line number presented is usually the line of
@@ -129,7 +131,7 @@ public @interface MethodLoggingConfig
 
 
   /**
-   * Indicate whether the elapsed time measured on a method is to be logged on method exit or not.
+   * Indicates whether the elapsed time measured on a method is to be logged on method exit or not.
    * <p>
    * The elapsed time is measured until the method returns. For methods returning asynchronous or reactive results, like
    * {@link java.util.concurrent.CompletableFuture CompletableFuture} or a Reactor {@code Mono}, it does not include the
@@ -144,7 +146,7 @@ public @interface MethodLoggingConfig
 
 
   /**
-   * Indicate whether method parameters are to be logged or not.
+   * Indicates whether method parameters are to be logged or not.
    *
    * @return  {@link Visibility#SHOW} (the default) logs the method parameters,
    *          {@link Visibility#HIDE} suppresses parameter logging
@@ -155,7 +157,7 @@ public @interface MethodLoggingConfig
 
 
   /**
-   * Indicate whether the method return value is to be logged or not.
+   * Indicates whether the method return value is to be logged or not.
    *
    * @return  {@link Visibility#SHOW} (the default) logs the return value,
    *          {@link Visibility#HIDE} suppresses return value logging

@@ -153,7 +153,7 @@ public @interface MethodLogging
 
 
   /**
-   * Indicate whether the method line number is logged or not.
+   * Indicates whether the method line number is logged or not.
    * <p>
    * The line number is not necessarily the exact line of the method declaration. The reason is that a java class does
    * not provide line information of methods but only of statements. The line number presented is usually the line of
@@ -168,7 +168,7 @@ public @interface MethodLogging
 
 
   /**
-   * Indicate whether the elapsed time measured on a method is to be logged on method exit or not.
+   * Indicates whether the elapsed time measured on a method is to be logged on method exit or not.
    * <p>
    * The elapsed time is measured until the method returns. For methods returning asynchronous or reactive results, like
    * {@link java.util.concurrent.CompletableFuture CompletableFuture} or a Reactor {@code Mono}, it does not include the
@@ -182,7 +182,7 @@ public @interface MethodLogging
 
 
   /**
-   * Indicate whether method parameters are to be logged or not.
+   * Indicates whether method parameters are to be logged or not.
    *
    * @return  {@link Visibility#SHOW} logs the method parameters, {@link Visibility#HIDE} suppresses parameter logging,
    *          {@link Visibility#DEFAULT} uses the default setting from {@link MethodLoggingConfig#parameters()}
@@ -191,7 +191,7 @@ public @interface MethodLogging
 
 
   /**
-   * Indicate whether the method return value is to be logged or not.
+   * Indicates whether the method return value is to be logged or not.
    *
    * @return  {@link Visibility#SHOW} logs the return value, {@link Visibility#HIDE} suppresses return value logging,
    *          {@link Visibility#DEFAULT} uses the default setting from {@link MethodLoggingConfig#result()}

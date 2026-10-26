@@ -25,5 +25,7 @@
  * loggers.
  *
  * @see de.sayayi.lib.methodlogging.annotation.EnableMethodLogging
+ *
+ * @since 0.1.0
  */
 package de.sayayi.lib.methodlogging;

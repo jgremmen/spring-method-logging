@@ -46,7 +46,7 @@ public final class TinylogLoggerFactory extends FrameworkMethodLoggerFactory
 
 
   /**
-   * Creates a new Tinylog logger factory which uses a logger for the target class if no logger field is available.
+   * Creates a new Tinylog logger factory which uses the static Tinylog logger if no logger field is available.
    *
    * @return  new Tinylog logger factory, never {@code null}
    *
@@ -79,6 +79,8 @@ public final class TinylogLoggerFactory extends FrameworkMethodLoggerFactory
    * @param logger  logger instance held by the logger field, may be {@code null}
    *
    * @return  a method logger instance, never {@code null}
+   *
+   * @since 0.6.0
    */
   private static @NotNull MethodLogger createFieldMethodLogger(Object logger)
   {

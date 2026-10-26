@@ -98,6 +98,7 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
   static final class MethodLoggingAdvisor extends AbstractBeanFactoryPointcutAdvisor
       implements SmartInitializingSingleton
   {
+    /** Pointcut matching the methods with method logging. */
     private final @NotNull MethodLoggingPointcut pointcut;
 
 
@@ -147,9 +148,13 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
    */
   static final class MethodLoggingPointcut extends StaticMethodMatcherPointcut
   {
+    /** Method logging source analyzing the matched methods. */
     private final @NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource;
+
     /** Target classes whose methods are to be analyzed by {@link #analyseDeferredMethods()}. */
     private final @NotNull Set<Class<?>> deferredClasses;
+
+    /** Tells whether the analysis of matched methods is deferred until {@link #analyseDeferredMethods()}. */
     private volatile boolean deferAnalysis;
 
 

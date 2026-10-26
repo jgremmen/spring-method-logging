@@ -52,22 +52,52 @@ import static java.util.stream.Collectors.partitioningBy;
  */
 final class MethodDef
 {
+  /** Prefix of the method entry message, not {@code null}. */
   final String methodEntryPrefix;
+
+  /** Prefix of the method exit message, not {@code null}. */
   final String methodExitPrefix;
+
+  /** Definitions of the parameters logged inline with the method entry, immutable and not {@code null}. */
   final List<ParameterDef> inlineParameters;
+
+  /** Definitions of the parameters logged separately after the method entry, immutable and not {@code null}. */
   final List<ParameterDef> inMethodParameters;
+
+  /** Supplier of the message for inline parameters, not {@code null}. */
   final Supplier<Message> inlineParameterMessage;
+
+  /** Supplier of the message for separately logged parameters, not {@code null}. */
   final Supplier<Message> parameterMessage;
+
+  /** Supplier of the message for the method result, not {@code null}. */
   final Supplier<Message> resultMessage;
+
+  /** Name of the logged method, not {@code null}. */
   final String methodName;
+
+  /** Line number to log or a value {@code <= 0} if no line number is logged. */
   final int line;
+
   /** Source location of the method, passed to the method logger. */
   final @NotNull StackTraceElement location;
+
+  /** Tells whether the elapsed time is logged with the method exit. */
   final boolean showElapsedTime;
+
+  /** Tells whether the method result is logged. Always {@code false} for {@code void} methods. */
   final boolean showResult;
+
+  /** Logger field or {@code null} if no logger field was found. */
   final Field loggerField;
+
+  /** Log level of the method entry and exit messages. */
   final Level entryExitLevel;
+
+  /** Log level of the parameter messages, also deciding whether inline parameters are logged. */
   final Level parameterLevel;
+
+  /** Log level of the result message. */
   final Level resultLevel;
 
   /** Logging phases whose failure has been reported. */
