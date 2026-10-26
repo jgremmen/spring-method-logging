@@ -17,7 +17,9 @@ package de.sayayi.lib.methodlogging.logger;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.read.ListAppender;
+import ch.qos.logback.core.spi.FilterReply;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.ExtendedLoggerWrapper;
@@ -31,6 +33,9 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static ch.qos.logback.core.spi.FilterReply.ACCEPT;
+import static ch.qos.logback.core.spi.FilterReply.DENY;
+import static ch.qos.logback.core.spi.FilterReply.NEUTRAL;
 import static de.sayayi.lib.methodlogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.Level.INFO;
 import static org.junit.jupiter.api.Assertions.*;
@@ -109,6 +114,44 @@ class LocationAwareLoggerTest
     assertEquals("> doWork", event.getFormattedMessage());
     assertEquals(ch.qos.logback.classic.Level.INFO, event.getLevel());
     assertArrayEquals(new StackTraceElement[] { LOCATION }, event.getCallerData());
+  }
+
+
+  @Test
+  @DisplayName("Logback logger passes the message to the turbo filters")
+  void logbackTurboFilter()
+  {
+    final var loggerContext = new LoggerContext();
+    final var logger = loggerContext.getLogger("location-aware-test");
+    final var appender = new ListAppender<ILoggingEvent>();
+    final var turboFilter = new TurboFilter() {
+      @Override
+      public FilterReply decide(org.slf4j.Marker marker, ch.qos.logback.classic.Logger logger,
+                                ch.qos.logback.classic.Level level, String format, Object[] params, Throwable t)
+      {
+        if (format == null)
+          return NEUTRAL;
+
+        return format.startsWith("denied") ? DENY : format.startsWith("accepted") ? ACCEPT : NEUTRAL;
+      }
+    };
+
+    appender.setContext(loggerContext);
+    appender.start();
+    turboFilter.start();
+    loggerContext.addTurboFilter(turboFilter);
+    logger.addAppender(appender);
+    logger.setLevel(ch.qos.logback.classic.Level.INFO);
+
+    final var logbackLogger = new LogbackLogger(logger);
+    logbackLogger.log(INFO, "denied at enabled level", LOCATION);
+    logbackLogger.log(DEBUG, "accepted at disabled level", LOCATION);
+    logbackLogger.log(INFO, "neutral at enabled level", LOCATION);
+    logbackLogger.log(DEBUG, "neutral at disabled level", LOCATION);
+
+    assertEquals(
+        List.of("accepted at disabled level", "neutral at enabled level"),
+        appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList());
   }
 
 

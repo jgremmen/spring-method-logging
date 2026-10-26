@@ -233,12 +233,6 @@ Whether the location is used depends on the logging framework:
 An SLF4J logger backed by Logback reports correct locations with the `AutoDetectLoggerFactory`, which detects it as a
 Logback logger, but not with the `Slf4jLoggerFactory`, which uses the SLF4J API only.
 
-/// note | Logback turbo filters
-To pass the location, the Logback method logger creates the logging event itself and hands it to the appenders. Turbo
-filters are consulted for the level only, without the message, so turbo filters that inspect the message text do not see
-the messages of method logging.
-///
-
 The fallback logger of the `AutoDetectLoggerFactory` is a Commons Logging logger, which does not support locations. A
 class without logger field is therefore logged with a location inside the library, even if Commons Logging forwards to
 Log4j2 or Logback. A logger field of the framework type provides correct locations. So does the fallback logger of

@@ -24,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
+import static ch.qos.logback.core.spi.FilterReply.ACCEPT;
+import static ch.qos.logback.core.spi.FilterReply.NEUTRAL;
 import static java.util.Objects.requireNonNull;
 
 
@@ -69,7 +71,9 @@ final class LogbackLogger implements MethodLogger
   /**
    * {@inheritDoc}
    * <p>
-   * The location is passed to Logback as caller data of the logging event.
+   * The location is passed to Logback as caller data of the logging event. As with the regular logging methods of
+   * Logback, the turbo filters decide on {@code message} first; the level of the logger only decides if they are
+   * neutral.
    *
    * @since 0.6.0
    */
@@ -83,7 +87,16 @@ final class LogbackLogger implements MethodLogger
       default -> null;
     };
 
-    if (logbackLevel != null && logger.isEnabledFor(logbackLevel))
+    if (logbackLevel == null)
+      return;
+
+    final var decision = logger
+        .getLoggerContext()
+        .getTurboFilterList()
+        .getTurboFilterChainDecision(null, logger, logbackLevel, message, null, null);
+
+    if (decision == ACCEPT ||
+        (decision == NEUTRAL && logbackLevel.isGreaterOrEqual(logger.getEffectiveLevel())))
     {
       final var event = new LoggingEvent(LogbackLogger.class.getName(), logger, logbackLevel, message, null, null);
       event.setCallerData(new StackTraceElement[] { location });
