@@ -287,7 +287,7 @@ tasks.withType(Jar).configureEach {
         'Implementation-Vendor-Id': 'de.sayayi',
         'Implementation-Title': project.name,
         'Implementation-Version': project.version,
-        'Created-By': System.getProperty('java.version')
+        'Created-By': javaToolchains.launcherFor(java.toolchain).map { it.metadata.javaRuntimeVersion }
     ]
 
     def builtDate = commitDate.get()
