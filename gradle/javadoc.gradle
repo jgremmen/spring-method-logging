@@ -15,31 +15,53 @@
  */
 
 
-ext.resolveVersion = { artifactName ->
-  configurations
-      .compileClasspath
-      .resolvedConfiguration
-      .resolvedArtifacts
-      .find { it.name == artifactName }
-      .moduleVersion.id.version
-}
+// the compile classpath is resolved when the javadoc task is executed, not when the build is configured
+def compileClasspathRoot = configurations.compileClasspath.incoming.resolutionResult.rootComponent
 
 
 javadoc {
   title = "Spring Method Logging Extension ${version}"
 
-  (options as StandardJavadocDocletOptions).with {
-    linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolveVersion('annotations')}/",
-                 'gradle/javadocs/jetbrains-annotations'
-    linksOffline "https://javadoc.io/doc/de.sayayi.lib/message-format/${resolveVersion('message-format')}/",
-                 'gradle/javadocs/message-format'
-    linksOffline "https://javadoc.io/doc/org.springframework/spring-beans/${resolveVersion('spring-beans')}/",
-                 'gradle/javadocs/spring-beans'
-    linksOffline "https://javadoc.io/doc/org.springframework/spring-context/${resolveVersion('spring-context')}/",
-                 'gradle/javadocs/spring-context'
-    linksOffline "https://javadoc.io/doc/org.springframework/spring-core/${resolveVersion('spring-core')}/",
-                 'gradle/javadocs/spring-core'
+  doFirst {
+    def versions = [:]
+    def visited = [] as Set
+    def pending = [ compileClasspathRoot.get() ]
 
+    while(pending) {
+      def component = pending.pop()
+
+      if (visited.add(component.id)) {
+        if (component.moduleVersion != null)
+          versions.putIfAbsent(component.moduleVersion.name, component.moduleVersion.version)
+
+        for(def dependency: component.dependencies)
+          if (dependency instanceof ResolvedDependencyResult)
+            pending << dependency.selected
+      }
+    }
+
+    def linkVersion = { String name ->
+      if (!versions.containsKey(name))
+        throw new GradleException("Module '${name}' not found on the compile classpath")
+
+      versions[name]
+    }
+
+    (options as StandardJavadocDocletOptions).with {
+      linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${linkVersion('annotations')}/",
+                   'gradle/javadocs/jetbrains-annotations'
+      linksOffline "https://javadoc.io/doc/de.sayayi.lib/message-format/${linkVersion('message-format')}/",
+                   'gradle/javadocs/message-format'
+      linksOffline "https://javadoc.io/doc/org.springframework/spring-beans/${linkVersion('spring-beans')}/",
+                   'gradle/javadocs/spring-beans'
+      linksOffline "https://javadoc.io/doc/org.springframework/spring-context/${linkVersion('spring-context')}/",
+                   'gradle/javadocs/spring-context'
+      linksOffline "https://javadoc.io/doc/org.springframework/spring-core/${linkVersion('spring-core')}/",
+                   'gradle/javadocs/spring-core'
+    }
+  }
+
+  (options as StandardJavadocDocletOptions).with {
     encoding = 'UTF-8'
 
     group('Spring Method Logging', [
