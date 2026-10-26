@@ -170,9 +170,12 @@ The base class caches the method loggers it obtains. For a `static final` logger
 `createMethodLogger(Field, Object)` is called once and the result is cached per field. A result of `MethodLogger.NO_OP`
 is not cached, because a logged method invoked while its class is being initialized finds the field still `null`; the
 field is read again on the next invocation. For a class without logger field, `createMethodLogger(Class)` is called once
-per class. For all other fields, `createMethodLogger(Field, Object)` is called on every invocation, as the content of
-the field may change. When a method logger is requested concurrently for the first time, the creation methods may be
-called more than once; the first cached result is used.
+per class. For all other fields, the base class reads the field on every invocation, as its content may change. It
+calls `createMethodLogger(Field, Object)` only if the field holds another logger instance than at the previous call for
+the same field and target class, and reuses the method logger otherwise. The method logger created for a field must
+therefore depend on the logger instance in the field only, not on other state of the target object. When a method
+logger is requested concurrently for the first time, the creation methods may be called more than once; the first
+cached result is used.
 
 `createMethodLogger(Field, Object)` can return the constant `CLASS_METHOD_LOGGER` to use the method logger for the
 target class instead, as created by `createMethodLogger(Class)`. The base class then returns the method logger for the

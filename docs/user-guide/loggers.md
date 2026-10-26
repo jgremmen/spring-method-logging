@@ -256,12 +256,12 @@ its own.
 
 The factories of the library cache method loggers where possible. For a `static final` logger field, the method logger
 is created once and cached for the field. For a class without logger field, the fallback logger is created once per
-class. For all other fields, the value can change, so the field is read and a method logger is created on every
-invocation.
+class. For all other fields, the value can change, so the field is read on every invocation. The method logger is
+reused as long as the field holds the same logger instance, so a new one is only created when the field is reassigned.
 
 /// tip | Prefer static final logger fields
-A `static final` logger field avoids reading the field by reflection and creating a method logger on each invocation.
-For frequently called methods, it is the most efficient choice.
+A `static final` logger field avoids reading the field by reflection on each invocation. For frequently called methods,
+it is the most efficient choice.
 ///
 
 The level check is the first thing done for an invocation. If the entry/exit level is disabled, the cost of method

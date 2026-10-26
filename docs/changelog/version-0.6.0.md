@@ -111,7 +111,9 @@ Tinylog is now detected by a `org.tinylog.TaggedLogger` instance. The previously
 Custom factories extending `AbstractMethodLoggerFactory` are affected by changes to the caching of method loggers.
 `createMethodLogger(Class)`, invoked for classes without logger field, is now cached per class, so it is invoked once
 per class instead of on every invocation of a logged method. Method loggers for `static final` logger fields are now
-cached per field instead of per target class.
+cached per field instead of per target class. For all other logger fields, `createMethodLogger(Field, Object)` is now
+only invoked when the field holds another logger instance than at the previous invocation for the same field and target
+class; the method logger created before is reused otherwise.
 
 The new methods `getLoggerType()` (protected) and `getClassMethodLogger(Class)` (protected, final) have been added. A
 subclass declaring a method with one of these signatures must be adapted. The new constant `CLASS_METHOD_LOGGER`,

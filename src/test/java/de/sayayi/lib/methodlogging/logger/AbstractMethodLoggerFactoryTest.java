@@ -81,6 +81,65 @@ class AbstractMethodLoggerFactoryTest
 
 
   @Test
+  @DisplayName("Loggers from instance fields are reused while the field holds the same logger")
+  void instanceFieldLoggerReused() throws Exception
+  {
+    final var factory = new RecordingLoggerFactory();
+    final var logField = WithInstanceLogger.class.getDeclaredField("log");
+    final var bean1 = new WithInstanceLogger();
+    final var bean2 = new WithInstanceLogger();
+
+    final var logger1 = factory.from(logField, bean1, WithInstanceLogger.class);
+    final var logger2 = factory.from(logField, bean1, WithInstanceLogger.class);
+    final var logger3 = factory.from(logField, bean2, WithInstanceLogger.class);
+
+    assertSame(logger1, logger2);
+    assertSame(logger1, logger3);
+    assertEquals(List.of("log"), factory.fields);
+  }
+
+
+  @Test
+  @DisplayName("Loggers from instance fields are created again when the field is reassigned")
+  void instanceFieldLoggerReassigned() throws Exception
+  {
+    final var factory = new RecordingLoggerFactory();
+    final var logField = WithInstanceLogger.class.getDeclaredField("log");
+    final var bean = new WithInstanceLogger();
+
+    final var logger1 = factory.from(logField, bean, WithInstanceLogger.class);
+    bean.log = java.util.logging.Logger.getLogger("other");
+    final var logger2 = factory.from(logField, bean, WithInstanceLogger.class);
+    final var logger3 = factory.from(logField, bean, WithInstanceLogger.class);
+
+    assertNotSame(logger1, logger2);
+    assertSame(logger2, logger3);
+    assertEquals(List.of("log", "log"), factory.fields);
+  }
+
+
+  @Test
+  @DisplayName("Loggers from an inherited instance field are cached per target class")
+  void instanceFieldLoggerPerTargetClass() throws Exception
+  {
+    final var factory = new RecordingLoggerFactory();
+    final var logField = LoggingBase.class.getDeclaredField("log");
+    final var subA = new SubA();
+    final var subB = new SubB();
+
+    final var loggerA1 = factory.from(logField, subA, SubA.class);
+    final var loggerB1 = factory.from(logField, subB, SubB.class);
+    final var loggerA2 = factory.from(logField, subA, SubA.class);
+    final var loggerB2 = factory.from(logField, subB, SubB.class);
+
+    assertNotSame(loggerA1, loggerB1);
+    assertSame(loggerA1, loggerA2);
+    assertSame(loggerB1, loggerB2);
+    assertEquals(List.of("log", "log"), factory.fields);
+  }
+
+
+  @Test
   @DisplayName("Concurrently requested static field loggers resolve to the same logger")
   void fieldLoggerConcurrent() throws Exception
   {
@@ -192,6 +251,34 @@ class AbstractMethodLoggerFactoryTest
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("log");
     private static final java.util.logging.Logger auditLog = java.util.logging.Logger.getLogger("audit");
   }
+
+
+
+  static final class WithInstanceLogger
+  {
+    java.util.logging.Logger log = java.util.logging.Logger.getLogger("log");
+  }
+
+
+
+
+  abstract static class LoggingBase
+  {
+    final java.util.logging.Logger log = java.util.logging.Logger.getLogger(getClass().getName());
+  }
+
+
+
+
+  static final class SubA extends LoggingBase {
+  }
+
+
+
+
+  static final class SubB extends LoggingBase {
+  }
+
 
 
 
