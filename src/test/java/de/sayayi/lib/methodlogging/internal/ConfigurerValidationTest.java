@@ -22,7 +22,6 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -119,7 +118,7 @@ class ConfigurerValidationTest
   private static void assertInvalid(@NotNull String message, @NotNull MethodLoggingConfigurer configurer)
       throws NoSuchMethodException
   {
-    final var source = new AnnotationMethodLoggingSource(() -> configurer, new DefaultResourceLoader(), true);
+    final var source = new AnnotationMethodLoggingSource(() -> configurer, true);
     final var method = Bean.class.getMethod("logged");
 
     // the configurer is validated when the first method with method logging is analyzed

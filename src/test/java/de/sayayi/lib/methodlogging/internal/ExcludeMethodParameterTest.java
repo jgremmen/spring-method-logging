@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -50,8 +49,7 @@ class ExcludeMethodParameterTest
   void excludeByName() throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true)
+        () -> new MethodLoggingConfigurer() {}, true)
         .getMethodDefinition(
             ExcludeParams.class.getMethod("excludeParams", int.class, int.class, String.class, Locale.class),
             ExcludeParams.class);
@@ -72,8 +70,7 @@ class ExcludeMethodParameterTest
   void excludeByParamLog() throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true)
+        () -> new MethodLoggingConfigurer() {}, true)
         .getMethodDefinition(
             ExcludeParams.class.getMethod("excludeAnnotated", String.class, String.class, String.class, String.class),
             ExcludeParams.class);
@@ -132,8 +129,7 @@ class ExcludeMethodParameterTest
   @DisplayName("@ParamLog on generic interface method is used for generic superclass implementation (JDK proxy)")
   void paramLogFromGenericInterfaceForGenericImplementationViaInterface() throws Exception
   {
-    final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+    final var source = new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true);
 
     // the pointcut matches the class methods first, so the definition of the specific method is analyzed before the
     // interface method is invoked
@@ -169,8 +165,7 @@ class ExcludeMethodParameterTest
   @DisplayName("Excluded names are validated for methods without parameters or with hidden parameters")
   void excludeUnmatchedNameNotLogged()
   {
-    final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+    final var source = new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true);
 
     final var ex1 = assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(
         ExcludeParams.class.getMethod("excludeWithoutParameters"), ExcludeParams.class));
@@ -195,8 +190,7 @@ class ExcludeMethodParameterTest
             parameterTypes.add(methodParameterType.resolve());
             return false;
           }
-        },
-        new DefaultResourceLoader(), true)
+        }, true)
         .getMethodDefinition(ExcludeParams.class.getMethod("hidden", String.class, String.class), ExcludeParams.class);
 
     assertTrue(requireNonNull(methodDef).inlineParameters.isEmpty());
@@ -207,8 +201,7 @@ class ExcludeMethodParameterTest
   private static List<String> inlineParameterNames(Method method, Class<?> targetClass)
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true)
+        () -> new MethodLoggingConfigurer() {}, true)
         .getMethodDefinition(method, targetClass);
 
     return requireNonNull(methodDef).inlineParameters.stream().map(ParameterDef::name).toList();
@@ -228,8 +221,7 @@ class ExcludeMethodParameterTest
             parameterTypes.add(methodParameterType.resolve());
             return methodParameterType.toClass() == String.class;
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
 
     final var methodDef = source.getMethodDefinition(
         AbstractRepository.class.getMethod("save", Object.class, Long.class),

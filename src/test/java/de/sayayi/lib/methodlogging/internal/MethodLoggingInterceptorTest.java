@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +48,7 @@ class MethodLoggingInterceptorTest
   void noMethodDefinition()
   {
     final var interceptor = new MethodLoggingInterceptor(
-        new AnnotationMethodLoggingSource(
-            () -> new MethodLoggingConfigurer() {},
-            new DefaultResourceLoader(), true));
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true));
 
     // interceptor applied without pointcut, as in a manually built proxy
     final var proxyFactory = new ProxyFactory((Supplier<String>)() -> "result");
@@ -69,9 +66,7 @@ class MethodLoggingInterceptorTest
   void noTarget()
   {
     final var interceptor = new MethodLoggingInterceptor(
-        new AnnotationMethodLoggingSource(
-            () -> new MethodLoggingConfigurer() {},
-            new DefaultResourceLoader(), true));
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true));
 
     // proxy without target, as with an EmptyTargetSource; the last advice provides the result
     final var proxyFactory = new ProxyFactory();
@@ -97,7 +92,7 @@ class MethodLoggingInterceptorTest
             return JULLoggerFactory.strict();
           }
         },
-        new DefaultResourceLoader(), true);
+        true);
 
     final var method = NoLoggerField.class.getMethod("get");
 
@@ -238,7 +233,7 @@ class MethodLoggingInterceptorTest
             return methodLoggerFactory;
           }
         },
-        new DefaultResourceLoader(), true)));
+        true)));
 
     return (T)proxyFactory.getProxy();
   }

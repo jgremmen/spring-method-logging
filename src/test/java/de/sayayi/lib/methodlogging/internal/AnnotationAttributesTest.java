@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -46,8 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AnnotationAttributesTest
 {
   private final AnnotationMethodLoggingSource source = new AnnotationMethodLoggingSource(
-      () -> new MethodLoggingConfigurer() {},
-      new DefaultResourceLoader(), true);
+      () -> new MethodLoggingConfigurer() {}, true);
 
 
   @Test

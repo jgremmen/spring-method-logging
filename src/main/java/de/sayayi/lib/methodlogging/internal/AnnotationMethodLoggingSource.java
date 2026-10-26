@@ -17,7 +17,15 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
-import de.sayayi.lib.message.formatter.DefaultFormatterService;
+import de.sayayi.lib.message.formatter.GenericFormatterService;
+import de.sayayi.lib.message.formatter.parameter.named.BoolFormatter;
+import de.sayayi.lib.message.formatter.parameter.named.ChoiceFormatter;
+import de.sayayi.lib.message.formatter.parameter.named.SizeFormatter;
+import de.sayayi.lib.message.formatter.parameter.named.StringFormatter;
+import de.sayayi.lib.message.formatter.parameter.runtime.*;
+import de.sayayi.lib.message.formatter.post.runtime.CasePostFormatter;
+import de.sayayi.lib.message.formatter.post.runtime.ClipPostFormatter;
+import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
@@ -25,6 +33,7 @@ import de.sayayi.lib.methodlogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
+import de.sayayi.lib.methodlogging.internal.format.WrapIterableOrArrayFormatter;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
@@ -39,7 +48,6 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.annotation.MergedAnnotationSelectors;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.RepeatableContainers;
-import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -110,13 +118,13 @@ final class AnnotationMethodLoggingSource
   final @NotNull Map<MethodClassKey,AnalysisFailure> methodLoggingFailureCache;
   final @NotNull Map<Class<?>,ClassLocation> classLocationCache;
   private final @NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer;
-  private final @NotNull ResourceLoader resourceLoader;
   private final boolean resolveSpecificMethod;
   private final @NotNull AtomicBoolean creatingConfiguration = new AtomicBoolean();
   private volatile Configuration configuration;
   private volatile RuntimeException configurationFailure;
   private volatile boolean singletonsInstantiated;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
+  private final Supplier<MessageSupport> messageSupportSupplier;
 
 
   /**
@@ -125,8 +133,6 @@ final class AnnotationMethodLoggingSource
    * configurer bean and its dependencies are not created during the creation of the method logging infrastructure.
    *
    * @param methodLoggingConfigurer  supplier of the method logging configurer, not {@code null}
-   * @param resourceLoader           resource loader providing the class loader for the default message support,
-   *                                 not {@code null}
    * @param resolveSpecificMethod    {@code true} if the invoked method is resolved to the most specific method of the
    *                                 target class (proxies), {@code false} if the invoked method is the executed
    *                                 method already (AspectJ)
@@ -134,16 +140,16 @@ final class AnnotationMethodLoggingSource
    * @since 0.6.0
    */
   AnnotationMethodLoggingSource(@NotNull Supplier<MethodLoggingConfigurer> methodLoggingConfigurer,
-                                @NotNull ResourceLoader resourceLoader, boolean resolveSpecificMethod)
+                                boolean resolveSpecificMethod)
   {
     this.methodLoggingConfigurer = methodLoggingConfigurer;
-    this.resourceLoader = resourceLoader;
     this.resolveSpecificMethod = resolveSpecificMethod;
 
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     methodLoggingFailureCache = new ConcurrentHashMap<>();
     classLocationCache = new ConcurrentHashMap<>();
     nameDiscoverer = new DefaultParameterNameDiscoverer();
+    messageSupportSupplier = SupplierDelegate.of(this::buildInternalMessageSupport);
   }
 
 
@@ -200,7 +206,7 @@ final class AnnotationMethodLoggingSource
             }
 
             try {
-              configuration = config = new Configuration(configurer, resourceLoader);
+              configuration = config = new Configuration(configurer, messageSupportSupplier);
             } catch(Throwable ex) {
               final var failure = asRuntimeException(ex, "Method logging configurer failed");
 
@@ -1114,6 +1120,53 @@ final class AnnotationMethodLoggingSource
   }
 
 
+  @Contract(pure = true)
+  @SuppressWarnings("UnnecessaryUnicodeEscape")
+  private @NotNull MessageSupport buildInternalMessageSupport()
+  {
+    final var formatterService = new GenericFormatterService(256);
+
+    // Add default formatters
+    formatterService.addFormatter(new ArrayFormatter());
+    formatterService.addFormatter(new AtomicBooleanFormatter());
+    formatterService.addFormatter(new BooleanSupplierFormatter());
+    formatterService.addFormatter(new DoubleSupplierFormatter());
+    formatterService.addFormatter(new EnumFormatter());
+    formatterService.addFormatter(new IntSupplierFormatter());
+    formatterService.addFormatter(new IterableFormatter());
+    formatterService.addFormatter(new LongSupplierFormatter());
+    formatterService.addFormatter(new MapFormatter());
+    formatterService.addFormatter(new OptionalFormatter());
+    formatterService.addFormatter(new OptionalDoubleFormatter());
+    formatterService.addFormatter(new OptionalIntFormatter());
+    formatterService.addFormatter(new OptionalLongFormatter());
+    formatterService.addFormatter(new ReferenceFormatter());
+    formatterService.addFormatter(new SupplierFormatter());
+    formatterService.addFormatter(new ToTemporalDelegate());
+
+    // Reconfigure list formatting
+    formatterService.addFormatter(new WrapIterableOrArrayFormatter());
+
+    // Add named formatters, only used by formats selecting them
+    formatterService.addFormatter(new BoolFormatter());
+    formatterService.addFormatter(new ChoiceFormatter());
+    formatterService.addFormatter(new SizeFormatter());
+    formatterService.addFormatter(new StringFormatter());
+
+    // Add post formatters
+    formatterService.addPostFormatter(new CasePostFormatter());
+    formatterService.addPostFormatter(new ClipPostFormatter());
+
+    final var messageSupport = MessageSupportFactory.create(formatterService.seal());
+
+    // Default list settings
+    messageSupport.setDefaultConfig("list-max-size", 20);
+    messageSupport.setDefaultConfig("list-value-more", "\u2026");
+
+    return messageSupport.seal();
+  }
+
+
 
 
   /**
@@ -1224,13 +1277,11 @@ final class AnnotationMethodLoggingSource
      * support and method logger factory if the configurer provides none.
      *
      * @param methodLoggingConfigurer  method logging configurer, not {@code null}
-     * @param resourceLoader           resource loader providing the class loader for the default message support, not
-     *                                 {@code null}
      *
      * @throws IllegalStateException  if the configurer returns an invalid default
      */
     private Configuration(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
-                          @NotNull ResourceLoader resourceLoader)
+                          @NotNull Supplier<MessageSupport> messageSupportSupplier)
     {
       this.methodLoggingConfigurer = methodLoggingConfigurer;
 
@@ -1242,9 +1293,7 @@ final class AnnotationMethodLoggingSource
       defaultLineNumber = requireDefault(methodLoggingConfigurer.defaultLineNumber(), "defaultLineNumber");
 
       final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
-      messageSupport = configuredMessageSupport != null
-          ? configuredMessageSupport
-          : MessageSupportFactory.create(new DefaultFormatterService(resourceLoader.getClassLoader(), 128));
+      messageSupport = configuredMessageSupport != null ? configuredMessageSupport : messageSupportSupplier.get();
 
       final var configuredMethodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory();
       methodLoggerFactory = configuredMethodLoggerFactory != null

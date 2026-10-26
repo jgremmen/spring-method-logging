@@ -22,9 +22,9 @@ import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
-import org.junit.jupiter.api.DisplayName;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,14 +32,9 @@ import org.springframework.aop.PointcutAdvisor;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.AdviceMode;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.*;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -73,7 +68,7 @@ class ConfigurerResolutionTest
           resolved.incrementAndGet();
           return new MethodLoggingConfigurer() {};
         },
-        new DefaultResourceLoader(), true);
+        true);
 
     // creating the interceptor and analyzing methods without method logging do not require the configurer
     new MethodLoggingInterceptor(source);
@@ -118,7 +113,7 @@ class ConfigurerResolutionTest
             }
           };
         },
-        new DefaultResourceLoader(), true);
+        true);
     final var logged = Bean.class.getMethod("logged");
     final var resolver = new Thread(() -> source.getMethodDefinition(logged, Bean.class));
     final var methodDef = new CompletableFuture<MethodDef>();
@@ -196,7 +191,7 @@ class ConfigurerResolutionTest
   void failedAnalysisOnInvocation() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+        () -> new MethodLoggingConfigurer() {}, true);
     final var pointcut = new ProxyMethodLoggingConfiguration.MethodLoggingPointcut(source);
     final var echo = LazyInvalid.class.getMethod("echo", String.class);
 
@@ -214,7 +209,7 @@ class ConfigurerResolutionTest
   void allMethodsOfMatchedClassAnalyzed() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+        () -> new MethodLoggingConfigurer() {}, true);
     final var pointcut = new ProxyMethodLoggingConfiguration.MethodLoggingPointcut(source);
 
     // Spring stops matching the methods of a class at the first matching method

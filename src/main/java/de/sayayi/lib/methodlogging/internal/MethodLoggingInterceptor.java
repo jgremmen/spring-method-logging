@@ -193,8 +193,8 @@ final class MethodLoggingInterceptor implements MethodInterceptor
 
         for(var parameterDef: methodDef.inlineParameters)
         {
-          parameterList.add(
-              formatParameter(methodDef.inlineParameterMessage.get(), parameterDef, arguments[parameterDef.index()]));
+          parameterList.add(formatParameter(methodDef.inlineParameterMessage.get(), parameterDef,
+              arguments[parameterDef.index()], true));
         }
 
         method.append(parameterList);
@@ -210,7 +210,7 @@ final class MethodLoggingInterceptor implements MethodInterceptor
         {
           methodLogger.log(
               methodDef.parameterLevel,
-              formatParameter(methodDef.parameterMessage.get(), parameterDef, arguments[parameterDef.index()]),
+              formatParameter(methodDef.parameterMessage.get(), parameterDef, arguments[parameterDef.index()], false),
               methodDef.location);
         }
     } catch(Throwable ex) {
@@ -233,13 +233,14 @@ final class MethodLoggingInterceptor implements MethodInterceptor
    */
   @Contract(pure = true)
   private @NotNull String formatParameter(@NotNull Message parameterMessage, @NotNull ParameterDef parameterDef,
-                                          Object value)
+                                          Object value, boolean inline)
   {
     return annotationMethodLoggingSource
         .getMessageSupport()
         .message(parameterMessage)
         .with("parameter", parameterDef.name())
         .with("value", formatParameterValue(parameterDef, value))
+        .with("inline", inline)
         .format();
   }
 

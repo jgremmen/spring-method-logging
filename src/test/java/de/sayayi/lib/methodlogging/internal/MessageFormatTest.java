@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -132,7 +131,7 @@ class MessageFormatTest
       throws NoSuchMethodException
   {
     return requireNonNull(
-        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true)
             .getMethodDefinition(type.getMethod(methodName, String.class), type));
   }
 

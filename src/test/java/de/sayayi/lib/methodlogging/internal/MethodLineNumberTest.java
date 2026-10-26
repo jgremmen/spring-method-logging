@@ -20,7 +20,6 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,7 +46,7 @@ class MethodLineNumberTest
   void lineNumber() throws Exception
   {
     final var methodDef =
-        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true)
             .getMethodDefinition(Bean.class.getMethod("logged"), Bean.class);
 
     assertTrue(requireNonNull(methodDef).line > 0);
@@ -67,7 +66,7 @@ class MethodLineNumberTest
     final var beanClass = new UnreadableClassFileLoader().loadClass(Bean.class.getName());
     final var methodDef = new AnnotationMethodLoggingSource(
         () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true)
+        true)
         .getMethodDefinition(beanClass.getMethod("logged"), beanClass);
 
     assertEquals(-1, requireNonNull(methodDef).line);

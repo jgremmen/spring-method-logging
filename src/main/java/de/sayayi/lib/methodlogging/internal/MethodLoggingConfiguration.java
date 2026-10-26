@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportAware;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.annotation.AnnotationAttributes;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
@@ -76,7 +75,6 @@ public abstract class MethodLoggingConfiguration implements ImportAware
    * none, the configurer defaults are used.
    *
    * @param methodLoggingConfigurer  provider of the optional configurer bean
-   * @param resourceLoader           resource loader of the application context
    *
    * @return  method logging source, never {@code null}
    *
@@ -84,12 +82,12 @@ public abstract class MethodLoggingConfiguration implements ImportAware
    */
   @Bean @Role(ROLE_INFRASTRUCTURE)
   AnnotationMethodLoggingSource internalAnnotationMethodLoggingSource(
-      ObjectProvider<MethodLoggingConfigurer> methodLoggingConfigurer, ResourceLoader resourceLoader)
+      ObjectProvider<MethodLoggingConfigurer> methodLoggingConfigurer)
   {
     // resolve the configurer lazily, so it is not created together with the method logging infrastructure
     return new AnnotationMethodLoggingSource(
         () -> methodLoggingConfigurer.getIfAvailable(() -> new MethodLoggingConfigurer() {}),
-        resourceLoader, isInvokedMethodResolved());
+        isInvokedMethodResolved());
   }
 
 

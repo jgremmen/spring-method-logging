@@ -22,7 +22,6 @@ import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -52,8 +51,7 @@ class LazyMessageTest
   {
     final var methodDef = requireNonNull(
         new AnnotationMethodLoggingSource(
-            () -> new MethodLoggingConfigurer() {},
-            new DefaultResourceLoader(), true)
+            () -> new MethodLoggingConfigurer() {}, true)
             .getMethodDefinition(Bean.class.getMethod("logged", String.class, String.class), Bean.class));
 
     assertEquals(1, methodDef.inlineParameters.size());

@@ -25,7 +25,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.MethodClassKey;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,8 +45,7 @@ class MethodDefinitionCacheTest
   void notAnnotated() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true);
+        () -> new MethodLoggingConfigurer() {}, true);
     final var method = Bean.class.getMethod("notLogged");
 
     assertNull(source.getMethodDefinition(method, Bean.class));
@@ -64,8 +62,7 @@ class MethodDefinitionCacheTest
   void annotated() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true);
+        () -> new MethodLoggingConfigurer() {}, true);
     final var method = Bean.class.getMethod("logged", String.class);
     final var methodDef = source.getMethodDefinition(method, Bean.class);
 
@@ -89,8 +86,7 @@ class MethodDefinitionCacheTest
             // e.g. a configurer delegating to a bean with method logging
             return source[0].getMethodDefinition(otherMethod, Bean.class) != null;
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
 
     assertNotNull(source[0].getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class));
     assertEquals(2, source[0].methodLoggingDefinitionCache.size());
@@ -103,8 +99,7 @@ class MethodDefinitionCacheTest
   @DisplayName("Interface method and implementation share the definition")
   void sharedDefinition() throws Exception
   {
-    final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
+    final var source = new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true);
 
     final var methodDef = source.getMethodDefinition(Service.class.getMethod("logged", String.class), Bean.class);
 
@@ -126,8 +121,7 @@ class MethodDefinitionCacheTest
             analyses.incrementAndGet();
             return false;
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var interfaceMethod = Service.class.getMethod("failing", String.class);
     final var method = Bean.class.getMethod("failing", String.class);
 
@@ -146,9 +140,7 @@ class MethodDefinitionCacheTest
   @DisplayName("Class file is read once per declaring class")
   void classLocationCached() throws Exception
   {
-    final var source = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader(), true);
+    final var source = new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true);
 
     final var logged = source.getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class);
     final var other = source.getMethodDefinition(Bean.class.getMethod("otherLogged"), Bean.class);
@@ -198,8 +190,7 @@ class MethodDefinitionCacheTest
             analyses.incrementAndGet();
             return false;
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var method = Bean.class.getMethod("failing", String.class);
 
     final var ex = assertThrowsExactly(IllegalStateException.class,
@@ -230,7 +221,7 @@ class MethodDefinitionCacheTest
             throw new NoClassDefFoundError("com/example/Missing");
           }
         },
-        new DefaultResourceLoader(), resolveSpecificMethod);
+        resolveSpecificMethod);
     final var method = Bean.class.getMethod("logged", String.class);
 
     final var ex = assertThrowsExactly(IllegalStateException.class,
@@ -259,8 +250,7 @@ class MethodDefinitionCacheTest
             analyses.incrementAndGet();
             throw new OutOfMemoryError("simulated");
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     assertThrowsExactly(OutOfMemoryError.class, () -> source.getMethodDefinition(method, Bean.class));
@@ -282,8 +272,7 @@ class MethodDefinitionCacheTest
             invocations.incrementAndGet();
             throw new NoClassDefFoundError("com/example/Missing");
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     final var ex = assertThrowsExactly(IllegalStateException.class,
@@ -307,8 +296,7 @@ class MethodDefinitionCacheTest
             invocations.incrementAndGet();
             return Level.DEFAULT;
           }
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var logged = Bean.class.getMethod("logged", String.class);
     final var failing = Bean.class.getMethod("failing", String.class);
 
@@ -331,8 +319,7 @@ class MethodDefinitionCacheTest
             throw new IllegalStateException("configurer bean currently in creation");
 
           return new MethodLoggingConfigurer() {};
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(method, Bean.class));
@@ -353,8 +340,7 @@ class MethodDefinitionCacheTest
         () -> {
           invocations.incrementAndGet();
           throw new IllegalStateException("no unique configurer bean");
-        },
-        new DefaultResourceLoader(), true);
+        }, true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     final var ex = assertThrowsExactly(IllegalStateException.class, source::singletonsInstantiated);

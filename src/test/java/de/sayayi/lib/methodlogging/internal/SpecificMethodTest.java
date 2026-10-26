@@ -23,7 +23,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import static de.sayayi.lib.methodlogging.Level.DEBUG;
 import static de.sayayi.lib.methodlogging.Level.INFO;
@@ -49,7 +48,7 @@ class SpecificMethodTest
                         String parameterName) throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), resolveSpecificMethod)
+        () -> new MethodLoggingConfigurer() {}, resolveSpecificMethod)
         .getMethodDefinition(Base.class.getMethod("work", String.class, String.class), Sub.class);
 
     assertNotNull(methodDef);
@@ -68,7 +67,7 @@ class SpecificMethodTest
   void packagePrivateMethodOfOtherPackage() throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
+        () -> new MethodLoggingConfigurer() {}, true)
         .getMethodDefinition(OtherPackageSub.class.getMethod("work", String.class), OtherPackageSub.class);
 
     assertNotNull(methodDef);
@@ -83,7 +82,7 @@ class SpecificMethodTest
   void packagePrivateMethodOfSamePackage() throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
+        () -> new MethodLoggingConfigurer() {}, true)
         .getMethodDefinition(SamePackageSub.class.getDeclaredMethod("work", String.class), SamePackageSub.class);
 
     assertNotNull(methodDef);
