@@ -14,8 +14,8 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
   results this excludes the time until the result is completed)
 - **Line numbers** - optionally includes the source line number in log messages
 - **Exception logging** - logs exception type and message when a method exits with an error
-- **Multiple logging frameworks** - supports SLF4J, Log4j2, Logback, JUL, JBoss Logging, Tinylog
-  and JCL (Apache Commons Logging) out of the box
+- **Multiple logging frameworks** - supports SLF4J, Log4j2, Logback, JUL, the JDK platform logger
+  (`System.Logger`), JBoss Logging, Tinylog and JCL (Apache Commons Logging) out of the box
 - **Customizable** - log levels, message formats, parameter visibility and more can be configured
   globally, per class or per method
 
@@ -32,7 +32,7 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 ### Requirements
 
 - Java 21 or later
-- Spring Framework 5.3, 6 or 7
+- Spring Framework 5.3 (from 5.3.26), 6 (from 6.0.5) or 7
 
 Parameter names are logged as they are discovered by Spring. Compile your classes with `-parameters`, as Spring
 Framework 6.1 and later no longer read parameter names from the debug information. Otherwise, synthesized names
