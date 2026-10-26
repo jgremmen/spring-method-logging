@@ -17,11 +17,11 @@ package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
+import de.sayayi.lib.message.formatter.FormattableType;
 import de.sayayi.lib.message.formatter.GenericFormatterService;
 import de.sayayi.lib.message.formatter.parameter.named.BoolFormatter;
 import de.sayayi.lib.message.formatter.parameter.named.ChoiceFormatter;
 import de.sayayi.lib.message.formatter.parameter.named.SizeFormatter;
-import de.sayayi.lib.message.formatter.parameter.named.StringFormatter;
 import de.sayayi.lib.message.formatter.parameter.runtime.*;
 import de.sayayi.lib.message.formatter.post.runtime.CasePostFormatter;
 import de.sayayi.lib.message.formatter.post.runtime.ClipPostFormatter;
@@ -34,6 +34,7 @@ import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
 import de.sayayi.lib.methodlogging.internal.format.WrapIterableOrArrayFormatter;
+import de.sayayi.lib.methodlogging.internal.format.WrapMapFormatter;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
@@ -1146,7 +1147,6 @@ final class AnnotationMethodLoggingSource
     final var formatterService = new GenericFormatterService(256);
 
     // Add default formatters
-    formatterService.addFormatter(new ArrayFormatter());
     formatterService.addFormatter(new AtomicBooleanFormatter());
     formatterService.addFormatter(new BooleanSupplierFormatter());
     formatterService.addFormatter(new DoubleSupplierFormatter());
@@ -1154,7 +1154,6 @@ final class AnnotationMethodLoggingSource
     formatterService.addFormatter(new IntSupplierFormatter());
     formatterService.addFormatter(new IterableFormatter());
     formatterService.addFormatter(new LongSupplierFormatter());
-    formatterService.addFormatter(new MapFormatter());
     formatterService.addFormatter(new OptionalFormatter());
     formatterService.addFormatter(new OptionalDoubleFormatter());
     formatterService.addFormatter(new OptionalIntFormatter());
@@ -1163,14 +1162,20 @@ final class AnnotationMethodLoggingSource
     formatterService.addFormatter(new SupplierFormatter());
     formatterService.addFormatter(new ToTemporalDelegate());
 
-    // Reconfigure list formatting
+    // Configure list formatting
+    final var arrayFormatter = new ArrayFormatter();
+    formatterService.addFormatter(arrayFormatter);
+    formatterService.addFormatterForType(new FormattableType(char[].class), arrayFormatter);
     formatterService.addFormatter(new WrapIterableOrArrayFormatter());
+
+    // Configure map formatting
+    formatterService.addFormatter(new MapFormatter());
+    formatterService.addFormatter(new WrapMapFormatter());
 
     // Add named formatters, only used by formats selecting them
     formatterService.addFormatter(new BoolFormatter());
     formatterService.addFormatter(new ChoiceFormatter());
     formatterService.addFormatter(new SizeFormatter());
-    formatterService.addFormatter(new StringFormatter());
 
     // Add post formatters
     formatterService.addPostFormatter(new CasePostFormatter());
