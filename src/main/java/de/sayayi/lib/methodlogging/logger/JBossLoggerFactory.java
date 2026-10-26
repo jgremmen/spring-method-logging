@@ -15,12 +15,9 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jboss.logging.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Field;
 
 
 /**
@@ -32,7 +29,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
+public final class JBossLoggerFactory extends FrameworkMethodLoggerFactory
 {
   /**
    * Creates a new JBoss logger factory.
@@ -40,8 +37,10 @@ public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
    * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the target
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
-  public JBossLoggerFactory(boolean createLoggerOnNoField) {
-    super(createLoggerOnNoField);
+  public JBossLoggerFactory(boolean createLoggerOnNoField)
+  {
+    super(createLoggerOnNoField, Logger.class,
+        clazz -> new JBossLogger(Logger.getLogger(clazz)), JBossLogger::of);
   }
 
 
@@ -69,35 +68,5 @@ public final class JBossLoggerFactory extends AbstractMethodLoggerFactory
   @Contract(value = "-> new", pure = true)
   public static @NotNull JBossLoggerFactory strict() {
     return new JBossLoggerFactory(false);
-  }
-
-
-  /**
-   * Returns the JBoss logger type, so logger fields which can never hold a JBoss logger are rejected.
-   *
-   * @since 0.6.0
-   */
-  @Override
-  protected @NotNull Class<?> getLoggerType() {
-    return Logger.class;
-  }
-
-
-  /**
-   * Creates a method logger for a JBoss logger of {@code clazz}.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new JBossLogger(Logger.getLogger(clazz));
-  }
-
-
-  /**
-   * Creates a method logger for the JBoss logger held by {@code loggerField}. If the field contains {@code null} or
-   * another kind of object, the method is not logged.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return JBossLogger.from(loggerField, obj);
   }
 }

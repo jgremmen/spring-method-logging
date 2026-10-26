@@ -15,13 +15,10 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Field;
 
 
 /**
@@ -33,7 +30,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
-public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
+public final class Slf4jLoggerFactory extends FrameworkMethodLoggerFactory
 {
   /**
    * Creates a new SLF4J logger factory.
@@ -41,8 +38,10 @@ public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
    * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the target
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
-  public Slf4jLoggerFactory(boolean createLoggerOnNoField) {
-    super(createLoggerOnNoField);
+  public Slf4jLoggerFactory(boolean createLoggerOnNoField)
+  {
+    super(createLoggerOnNoField, Logger.class,
+        clazz -> new Slf4jLogger(LoggerFactory.getLogger(clazz)), Slf4jLogger::of);
   }
 
 
@@ -70,35 +69,5 @@ public final class Slf4jLoggerFactory extends AbstractMethodLoggerFactory
   @Contract(value = "-> new", pure = true)
   public static @NotNull Slf4jLoggerFactory strict() {
     return new Slf4jLoggerFactory(false);
-  }
-
-
-  /**
-   * Returns the SLF4J logger type, so logger fields which can never hold an SLF4J logger are rejected.
-   *
-   * @since 0.6.0
-   */
-  @Override
-  protected @NotNull Class<?> getLoggerType() {
-    return Logger.class;
-  }
-
-
-  /**
-   * Creates a method logger for an SLF4J logger of {@code clazz}.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new Slf4jLogger(LoggerFactory.getLogger(clazz));
-  }
-
-
-  /**
-   * Creates a method logger for the SLF4J logger held by {@code loggerField}. If the field contains {@code null} or
-   * another kind of object, the method is not logged.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return Slf4jLogger.from(loggerField, obj);
   }
 }

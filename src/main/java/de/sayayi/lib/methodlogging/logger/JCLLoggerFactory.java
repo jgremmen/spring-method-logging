@@ -15,13 +15,10 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Field;
 
 
 /**
@@ -34,7 +31,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
-public final class JCLLoggerFactory extends AbstractMethodLoggerFactory
+public final class JCLLoggerFactory extends FrameworkMethodLoggerFactory
 {
   /**
    * Creates a new JCL logger factory.
@@ -43,7 +40,7 @@ public final class JCLLoggerFactory extends AbstractMethodLoggerFactory
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
   public JCLLoggerFactory(boolean createLoggerOnNoField) {
-    super(createLoggerOnNoField);
+    super(createLoggerOnNoField, Log.class, clazz -> new JCLLogger(LogFactory.getLog(clazz)), JCLLogger::of);
   }
 
 
@@ -71,35 +68,5 @@ public final class JCLLoggerFactory extends AbstractMethodLoggerFactory
   @Contract(value = "-> new", pure = true)
   public static @NotNull JCLLoggerFactory strict() {
     return new JCLLoggerFactory(false);
-  }
-
-
-  /**
-   * Returns the JCL logger type, so logger fields which can never hold a JCL logger are rejected.
-   *
-   * @since 0.6.0
-   */
-  @Override
-  protected @NotNull Class<?> getLoggerType() {
-    return Log.class;
-  }
-
-
-  /**
-   * Creates a method logger for a JCL logger of {@code clazz}.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new JCLLogger(LogFactory.getLog(clazz));
-  }
-
-
-  /**
-   * Creates a method logger for the JCL logger held by {@code loggerField}. If the field contains {@code null} or
-   * another kind of object, the method is not logged.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return JCLLogger.from(loggerField, obj);
   }
 }

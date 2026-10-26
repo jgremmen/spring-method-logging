@@ -15,11 +15,9 @@
  */
 package de.sayayi.lib.methodlogging.logger;
 
-import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
 
@@ -33,7 +31,7 @@ import java.util.logging.Logger;
  * @author Jeroen Gremmen
  * @since 0.3.0
  */
-public final class JULLoggerFactory extends AbstractMethodLoggerFactory
+public final class JULLoggerFactory extends FrameworkMethodLoggerFactory
 {
   /**
    * Creates a new JUL logger factory.
@@ -41,8 +39,10 @@ public final class JULLoggerFactory extends AbstractMethodLoggerFactory
    * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the target
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
-  public JULLoggerFactory(boolean createLoggerOnNoField) {
-    super(createLoggerOnNoField);
+  public JULLoggerFactory(boolean createLoggerOnNoField)
+  {
+    super(createLoggerOnNoField, Logger.class,
+        clazz -> new JULLogger(Logger.getLogger(clazz.getName())), JULLogger::of);
   }
 
 
@@ -70,35 +70,5 @@ public final class JULLoggerFactory extends AbstractMethodLoggerFactory
   @Contract(value = "-> new", pure = true)
   public static @NotNull JULLoggerFactory strict() {
     return new JULLoggerFactory(false);
-  }
-
-
-  /**
-   * Returns the JUL logger type, so logger fields which can never hold a JUL logger are rejected.
-   *
-   * @since 0.6.0
-   */
-  @Override
-  protected @NotNull Class<?> getLoggerType() {
-    return Logger.class;
-  }
-
-
-  /**
-   * Creates a method logger for a JUL logger of {@code clazz}.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return new JULLogger(Logger.getLogger(clazz.getName()));
-  }
-
-
-  /**
-   * Creates a method logger for the JUL logger held by {@code loggerField}. If the field contains {@code null} or
-   * another kind of object, the method is not logged.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return JULLogger.from(loggerField, obj);
   }
 }

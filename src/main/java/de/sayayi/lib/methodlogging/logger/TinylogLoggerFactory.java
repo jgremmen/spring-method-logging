@@ -19,8 +19,6 @@ import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
-
 
 /**
  * Method logger factory implementation for Tinylog. Logger fields may hold a Tinylog
@@ -32,7 +30,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-public final class TinylogLoggerFactory extends AbstractMethodLoggerFactory
+public final class TinylogLoggerFactory extends FrameworkMethodLoggerFactory
 {
   /**
    * Creates a new Tinylog logger factory.
@@ -40,8 +38,10 @@ public final class TinylogLoggerFactory extends AbstractMethodLoggerFactory
    * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the target
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
-  public TinylogLoggerFactory(boolean createLoggerOnNoField) {
-    super(createLoggerOnNoField);
+  public TinylogLoggerFactory(boolean createLoggerOnNoField)
+  {
+    super(createLoggerOnNoField, null,
+        clazz -> TinylogLogger.INSTANCE, TinylogLoggerFactory::createFieldMethodLogger);
   }
 
 
@@ -73,22 +73,16 @@ public final class TinylogLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Returns the method logger for the static Tinylog logger, as Tinylog has no class specific loggers.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz) {
-    return TinylogLogger.INSTANCE;
-  }
-
-
-  /**
-   * Creates a method logger for the tagged logger held by {@code loggerField}. If the field does not contain a tagged
+   * Creates a method logger for the tagged logger held by a logger field. If the field does not contain a tagged
    * logger, the static Tinylog logger is used.
+   *
+   * @param logger  logger instance held by the logger field, may be {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
    */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
+  private static @NotNull MethodLogger createFieldMethodLogger(Object logger)
   {
-    final var methodLogger = TinylogTaggedLogger.from(loggerField, obj);
+    final var methodLogger = TinylogTaggedLogger.of(logger);
     return methodLogger == MethodLogger.NO_OP ? TinylogLogger.INSTANCE : methodLogger;
   }
 }

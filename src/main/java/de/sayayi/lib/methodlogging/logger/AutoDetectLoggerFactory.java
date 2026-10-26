@@ -94,14 +94,9 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
   @Override
   protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
   {
-    final Object logger;
-
-    try {
-      if ((logger = loggerField.get(obj)) == null)
-        return NO_OP;
-    } catch(IllegalAccessException ex) {
+    final var logger = FrameworkMethodLoggerFactory.readLoggerField(loggerField, obj);
+    if (logger == null)
       return NO_OP;
-    }
 
     MethodLogger methodLogger;
     LinkageError linkageError = null;

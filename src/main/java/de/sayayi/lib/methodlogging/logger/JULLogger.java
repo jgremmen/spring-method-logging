@@ -20,7 +20,6 @@ import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
@@ -82,26 +81,6 @@ final class JULLogger implements MethodLogger
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isLoggable(LEVELS[level.ordinal()]);
-  }
-
-
-  /**
-   * Creates a {@code JULLogger} by reading a JUL {@link Logger} from the given field on the target instance. Returns
-   * {@link #NO_OP} if the field is not accessible, its value is {@code null} or not a JUL logger.
-   *
-   * @param loggerField  the field containing the JUL logger, not {@code null}
-   * @param instance     the object owning the field, not {@code null}
-   *
-   * @return  a method logger instance, never {@code null}
-   */
-  @Contract(pure = true)
-  static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
-  {
-    try {
-      return of(loggerField.get(instance));
-    } catch(IllegalAccessException ex) {
-      return NO_OP;
-    }
   }
 
 

@@ -21,8 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
-
 import static java.util.Objects.requireNonNull;
 
 
@@ -84,26 +82,6 @@ final class Log4j2Logger implements MethodLogger
   @Override
   public boolean isLogEnabled(@NotNull Level level) {
     return logger.isEnabled(LEVELS[level.ordinal()]);
-  }
-
-
-  /**
-   * Creates a {@code Log4j2Logger} by reading a Log4j2 {@link Logger} from the given field on the target instance.
-   * Returns {@link #NO_OP} if the field is not accessible, its value is {@code null} or not a Log4j2 logger.
-   *
-   * @param loggerField  the field containing the Log4j2 logger, not {@code null}
-   * @param instance     the object owning the field, not {@code null}
-   *
-   * @return  a method logger instance, never {@code null}
-   */
-  @Contract(pure = true)
-  static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
-  {
-    try {
-      return of(loggerField.get(instance));
-    } catch(IllegalAccessException ex) {
-      return NO_OP;
-    }
   }
 
 

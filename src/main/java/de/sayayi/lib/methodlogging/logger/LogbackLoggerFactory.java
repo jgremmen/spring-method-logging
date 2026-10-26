@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
-
 
 /**
  * Method logger factory implementation for Logback. Logger fields must hold a Logback logger ({@link Logger}).
@@ -33,7 +31,7 @@ import java.lang.reflect.Field;
  * @author Jeroen Gremmen
  * @since 0.4.3
  */
-public final class LogbackLoggerFactory extends AbstractMethodLoggerFactory
+public final class LogbackLoggerFactory extends FrameworkMethodLoggerFactory
 {
   /**
    * Creates a new Logback logger factory.
@@ -42,7 +40,7 @@ public final class LogbackLoggerFactory extends AbstractMethodLoggerFactory
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
    */
   public LogbackLoggerFactory(boolean createLoggerOnNoField) {
-    super(createLoggerOnNoField);
+    super(createLoggerOnNoField, Logger.class, LogbackLoggerFactory::createClassMethodLogger, LogbackLogger::of);
   }
 
 
@@ -74,36 +72,17 @@ public final class LogbackLoggerFactory extends AbstractMethodLoggerFactory
 
 
   /**
-   * Returns the Logback logger type, so logger fields which can never hold a Logback logger are rejected.
-   *
-   * @since 0.6.0
-   */
-  @Override
-  protected @NotNull Class<?> getLoggerType() {
-    return Logger.class;
-  }
-
-
-  /**
    * Creates a Logback method logger for {@code clazz}. If SLF4J is not bound to Logback, or not initialized yet, the
    * SLF4J logger is used instead.
-   * {@inheritDoc}
+   *
+   * @param clazz  the target class, not {@code null}
+   *
+   * @return  a method logger instance, never {@code null}
    */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz)
+  private static @NotNull MethodLogger createClassMethodLogger(@NotNull Class<?> clazz)
   {
     final var logger = LoggerFactory.getLogger(clazz);
 
     return logger instanceof Logger logbackLogger ? new LogbackLogger(logbackLogger) : new Slf4jLogger(logger);
-  }
-
-
-  /**
-   * Creates a method logger for the Logback logger held by {@code loggerField}. If the field contains {@code null} or
-   * another kind of object, the method is not logged.
-   */
-  @Override
-  protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj) {
-    return LogbackLogger.from(loggerField, obj);
   }
 }

@@ -22,8 +22,6 @@ import de.sayayi.lib.methodlogging.MethodLogger;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
-
 import static ch.qos.logback.core.spi.FilterReply.ACCEPT;
 import static ch.qos.logback.core.spi.FilterReply.NEUTRAL;
 import static java.util.Objects.requireNonNull;
@@ -118,26 +116,6 @@ final class LogbackLogger implements MethodLogger
       case INFO -> logger.isInfoEnabled();
       default -> false;
     };
-  }
-
-
-  /**
-   * Creates a {@code LogbackLogger} by reading a Logback {@link Logger} from the given field on the target instance.
-   * Returns {@link #NO_OP} if the field is not accessible, its value is {@code null} or not a Logback logger.
-   *
-   * @param loggerField  the field containing the Logback logger, not {@code null}
-   * @param instance     the object owning the field, not {@code null}
-   *
-   * @return  a method logger instance, never {@code null}
-   */
-  @Contract(pure = true)
-  static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
-  {
-    try {
-      return of(loggerField.get(instance));
-    } catch(IllegalAccessException ex) {
-      return NO_OP;
-    }
   }
 
 

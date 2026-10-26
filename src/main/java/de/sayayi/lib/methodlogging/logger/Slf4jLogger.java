@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import java.lang.reflect.Field;
-
 import static java.util.Objects.requireNonNull;
 
 
@@ -77,26 +75,6 @@ final class Slf4jLogger implements MethodLogger
       case INFO -> logger.isInfoEnabled();
       default -> false;
     };
-  }
-
-
-  /**
-   * Creates a {@code Slf4jLogger} by reading an SLF4J {@link Logger} from the given field on the target instance.
-   * Returns {@link #NO_OP} if the field is not accessible, its value is {@code null} or not an SLF4J logger.
-   *
-   * @param loggerField  the field containing the SLF4J logger, not {@code null}
-   * @param instance     the object owning the field, not {@code null}
-   *
-   * @return  a method logger instance, never {@code null}
-   */
-  @Contract(pure = true)
-  static @NotNull MethodLogger from(@NotNull Field loggerField, @NotNull Object instance)
-  {
-    try {
-      return of(loggerField.get(instance));
-    } catch(IllegalAccessException ex) {
-      return NO_OP;
-    }
   }
 
 
