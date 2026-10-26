@@ -78,8 +78,12 @@ public @interface MethodLoggingConfig
    * The handling of a field containing {@code null} or an object not supported by the method logger factory depends
    * on the factory. The default factory does not log the method if the field contains {@code null} and falls back to a
    * JCL logger for an unsupported object. The logging framework specific factories do not log the method in either
-   * case, except for {@code TinylogLoggerFactory}, which falls back to the static Tinylog logger. An empty name
-   * disables the logger field lookup.
+   * case, except for {@code TinylogLoggerFactory}, which falls back to the static Tinylog logger. A logger field whose
+   * declared type can never hold a logger of a logging framework specific factory, e.g. a
+   * {@code java.util.logging.Logger} field with {@code Slf4jLoggerFactory}, fails the method analysis with an
+   * {@link IllegalStateException} (see
+   * {@link de.sayayi.lib.methodlogging.MethodLoggerFactory#validate(java.lang.reflect.Field, Class)
+   * MethodLoggerFactory.validate}). An empty name disables the logger field lookup.
    *
    * @return  logger field name
    *

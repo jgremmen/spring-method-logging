@@ -60,6 +60,15 @@
  * method logging of singleton beans, the application context fails to start; for beans created later and for AspectJ
  * based method logging, a warning is logged and the method is invoked without logging.
  *
+ * <h2>Spring Framework 7</h2>
+ * Spring Framework 5.3 and 6 provide Apache Commons Logging through the automatic module {@code spring.jcl}, which the
+ * Spring modules read. Spring Framework 7 uses the named module {@code org.apache.commons.logging} instead, which is
+ * not required by the automatic Spring modules. As method logging needs it for its fallback logger and its failure
+ * reports, it must be added to the module graph, either by the application module
+ * ({@code requires org.apache.commons.logging;}) or on the command line
+ * ({@code --add-modules org.apache.commons.logging}). Otherwise, method logging fails, as the Commons Logging classes
+ * cannot be loaded.
+ *
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
