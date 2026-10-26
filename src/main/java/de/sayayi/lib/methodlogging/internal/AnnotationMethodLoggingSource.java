@@ -55,12 +55,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
 import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
@@ -1145,6 +1147,8 @@ final class AnnotationMethodLoggingSource
   private @NotNull MessageSupport buildInternalMessageSupport()
   {
     final var formatterService = new GenericFormatterService(256);
+    final var stringFormatter = formatterService
+        .getFormatters("string", String.class, null)[0];
 
     // Add default formatters
     formatterService.addFormatter(new AtomicBooleanFormatter());
@@ -1161,6 +1165,12 @@ final class AnnotationMethodLoggingSource
     formatterService.addFormatter(new ReferenceFormatter());
     formatterService.addFormatter(new SupplierFormatter());
     formatterService.addFormatter(new ToTemporalDelegate());
+
+    // Fix conflicting types
+    formatterService.addFormatterForType(
+        new FormattableType(Path.class, DEFAULT_ORDER - 2), stringFormatter);
+    formatterService.addFormatterForType(
+        new FormattableType(Throwable.class, DEFAULT_ORDER - 2), stringFormatter);
 
     // Configure list formatting
     final var arrayFormatter = new ArrayFormatter();
