@@ -85,10 +85,9 @@ visibility of line number, elapsed time, parameters and result, message formats 
 The `@ParamLog` annotation can be placed on individual method parameters to control how they appear in the log output.
 It allows you to set a custom format, change the display name or log the parameter on a separate line instead of inline.
 
-Formats use the message syntax of the [message-format](https://central.sonatype.com/artifact/de.sayayi.lib/message-format)
-library, which is also used to format the log messages. The parameter value is available as `%{value}`, which is the
-default format. An invalid format fails the method analysis, like an excluded parameter name matching no
-parameter.
+Formats use the message syntax of the [message-format](https://lib.sayayi.de/message-format/) library, which is also 
+used to format the log messages. The parameter value is available as `%{value}`, which is the default format. An invalid 
+format fails the method analysis, like an excluded parameter name matching no parameter.
 
 Parameters can be excluded from logging, e.g. if their value has no meaningful string representation, produces far
 too much output (like large collections or binary data) or contains sensitive information such as passwords or tokens.

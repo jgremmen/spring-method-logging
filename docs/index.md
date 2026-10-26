@@ -92,8 +92,8 @@ each part has its own log level.
 
 Parameters are logged inline as part of the entry message or on separate lines. Individual parameters can be renamed,
 formatted or excluded from logging, which is essential for passwords, tokens and other sensitive values. All messages
-are formatted with the [message-format](https://central.sonatype.com/artifact/de.sayayi.lib/message-format) library, so
-formats can be customized per method, per class or globally.
+are formatted with the [message-format](https://lib.sayayi.de/message-format/) library, so formats can be customized per
+method, per class or globally.
 
 Messages are written through the logger field of the logged class, if it has one, so method logging and the regular log
 statements of the class share the same logger. SLF4J, Logback, Log4j2, Java Util Logging, the JDK platform logger, JBoss

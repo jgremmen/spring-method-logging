@@ -6,12 +6,11 @@ in each format and shows how values of different types are formatted.
 
 ## The message-format Library
 
-Method logging formats its messages with the
-[message-format](https://central.sonatype.com/artifact/de.sayayi.lib/message-format) library. A message format is a text
-with embedded parameters. A parameter is written as `%{name}` and is replaced by the formatted value of the variable
-`name`. Leading and trailing spaces of a message format are not part of the formatted message. The formatter used
-depends on the type of the value: numbers, dates, collections, optionals and many other types have formatters of their
-own.
+Method logging formats its messages with the [message-format](https://lib.sayayi.de/message-format/) library. A message 
+format is a text with embedded parameters. A parameter is written as `%{name}` and is replaced by the formatted value of 
+the variable `name`. Leading and trailing spaces of a message format are not part of the formatted message. The 
+formatter used depends on the type of the value: numbers, dates, collections, optionals and many other types have 
+formatters of their own.
 
 A parameter can carry additional entries, separated by commas, which select a named formatter, configure a formatter or
 map specific values to a text:

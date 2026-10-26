@@ -54,15 +54,15 @@ public @interface MethodLoggingConfig
 {
   /** Default message format for inline parameters: {@code %{parameter}=%{value}} */
   @Language("MessageFormat")
-  String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value}";
+  String DEFAULT_INLINE_PARAMETER_FORMAT = "%{parameter}=%{value,null:'(null)'}";
 
   /** Default message format for separately logged parameters: {@code parameter '%{parameter}' = %{value}} */
   @Language("MessageFormat")
-  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value}";
+  String DEFAULT_PARAMETER_FORMAT = "parameter '%{parameter}' = %{value,null:'(null)'}";
 
   /** Default message format for the method result: {@code result = %{result}} */
   @Language("MessageFormat")
-  String DEFAULT_RESULT_FORMAT = "result = %{result}";
+  String DEFAULT_RESULT_FORMAT = "result = %{result,null:'(null)'}";
 
 
   /**
