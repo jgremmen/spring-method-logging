@@ -42,6 +42,8 @@ publishing {
       pom {
         inceptionYear = '2022'
 
+        url = "https://lib.sayayi.de/spring-method-logging/"
+
         withXml {
           // compile only dependencies, including the optional logging frameworks, are not required at runtime
           def optionalModules = configurations
