@@ -20,20 +20,22 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 
 /**
  * Holds the method interceptor used by the {@link MethodLoggingAspect} for AspectJ based method logging. The
- * interceptor is set and removed by the {@link AspectJMethodLoggingConfiguration} of the application context which
- * configures the aspect; the context created last configures the aspect.
+ * interceptor is set and removed by the {@link AspectJMethodLoggingConfiguration} of each application context which
+ * configures the aspect. The interceptor of the most recently created context which is still open is used; when that
+ * context is closed, the interceptor of the context created before it is used again.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
  */
 public final class AspectJMethodInterceptor
 {
-  private static final AtomicReference<MethodInterceptor> METHOD_INTERCEPTOR = new AtomicReference<>();
+  private static final Deque<MethodInterceptor> METHOD_INTERCEPTORS = new ConcurrentLinkedDeque<>();
 
 
   private AspectJMethodInterceptor() {
@@ -47,27 +49,28 @@ public final class AspectJMethodInterceptor
    */
   @Contract(pure = true)
   public static MethodInterceptor get() {
-    return METHOD_INTERCEPTOR.get();
+    return METHOD_INTERCEPTORS.peekFirst();
   }
 
 
   /**
-   * Sets the method interceptor performing the method logging, replacing any interceptor set before.
+   * Sets the method interceptor performing the method logging. The interceptor set before is kept and used again once
+   * {@code methodInterceptor} is removed.
    *
    * @param methodInterceptor  method logging interceptor, not {@code null}
    */
   static void set(@NotNull MethodInterceptor methodInterceptor) {
-    METHOD_INTERCEPTOR.set(methodInterceptor);
+    METHOD_INTERCEPTORS.addFirst(methodInterceptor);
   }
 
 
   /**
-   * Removes the method interceptor performing the method logging, if it is {@code methodInterceptor}; if another method
-   * interceptor is set, it is kept.
+   * Removes {@code methodInterceptor}. If it is the method interceptor performing the method logging, the interceptor
+   * set before it is used again; otherwise the method interceptor performing the method logging is kept.
    *
    * @param methodInterceptor  method logging interceptor to remove, not {@code null}
    */
   static void remove(@NotNull MethodInterceptor methodInterceptor) {
-    METHOD_INTERCEPTOR.compareAndSet(methodInterceptor, null);
+    METHOD_INTERCEPTORS.removeFirstOccurrence(methodInterceptor);
   }
 }

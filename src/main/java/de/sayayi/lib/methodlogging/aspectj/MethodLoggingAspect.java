@@ -40,8 +40,9 @@ import org.springframework.context.annotation.AdviceMode;
  * been configured by the Spring application context, annotated methods are invoked without logging.
  * <p>
  * The aspect is a singleton. If multiple application contexts enable method logging in AspectJ mode, the context
- * created last configures the aspect. When the context configuring the aspect is closed, annotated methods are invoked
- * without logging again; the aspect is not handed back to a context created earlier.
+ * created last configures the aspect. When the context configuring the aspect is closed, the aspect is handed back to
+ * the most recently created context which is still open. Once all of these contexts are closed, annotated methods are
+ * invoked without logging again.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0

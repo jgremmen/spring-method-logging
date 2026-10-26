@@ -119,8 +119,8 @@ public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguratio
 
 
     /**
-     * Removes the method interceptor from the aspect, unless another application context has configured the aspect in
-     * the meantime.
+     * Removes the method interceptor from the aspect. If it is used by the aspect, the method interceptor of the
+     * application context created before is used again.
      */
     @Override
     public void destroy() {

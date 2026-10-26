@@ -193,9 +193,10 @@ The aspect is a singleton per class loader. It starts logging when an applicatio
 executed without logging. When the application context is closed, the aspect stops logging again.
 
 If several application contexts in the same class loader enable the AspectJ mode, the context created last configures
-the aspect, and its configuration applies to all woven classes. When that context is closed, logging stops; the aspect
-is not handed back to a context created earlier. Applications with several contexts, such as test suites that create a
-context per test class, therefore see the configuration of the most recently created context.
+the aspect, and its configuration applies to all woven classes. When that context is closed, the aspect is handed back
+to the most recently created context that is still open, and logging stops once all of these contexts are closed.
+Applications with several contexts, such as test suites that cache a context per configuration, therefore see the
+configuration of the most recently created context that is still open.
 
 ### Analysis on First Invocation
 

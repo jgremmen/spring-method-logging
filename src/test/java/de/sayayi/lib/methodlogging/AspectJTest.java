@@ -67,6 +67,12 @@ class AspectJTest
       "INFO|< inner",
       "INFO|< outer");
 
+  private static final List<String> EXPECTED_DEBUG_LOG = List.of(
+      "DEBUG|> outer(who=bob)",
+      "DEBUG|> inner",
+      "DEBUG|< inner",
+      "DEBUG|< outer");
+
   private static final String SERVICE_SOURCE = """
       package ctw;
 
@@ -127,8 +133,8 @@ class AspectJTest
 
 
   @Test
-  @DisplayName("Closing the context configuring the aspect disables method logging")
-  void closeContext() throws Exception
+  @DisplayName("Closing the context configuring the aspect hands it back to the context created before")
+  void closeNewerContext() throws Exception
   {
     try(val classLoader = compileWovenService()) {
       val serviceClass = classLoader.loadClass("ctw.Service");
@@ -137,9 +143,38 @@ class AspectJTest
 
       // the aspect is a singleton; both contexts are closed even if an assertion fails, so they do not configure the
       // aspect for other tests
-      try(val olderContext = new AnnotationConfigApplicationContext(AspectJConfig.class);
+      try(val olderContext = new AnnotationConfigApplicationContext(DebugAspectJConfig.class);
           val newerContext = new AnnotationConfigApplicationContext(AspectJConfig.class)) {
-        // closing a context which no longer configures the aspect keeps the newer context's configuration
+        outer.invoke(service, "bob");
+        assertEquals(EXPECTED_LOG, FACTORY.log);
+
+        FACTORY.log.clear();
+        newerContext.close();
+        outer.invoke(service, "bob");
+        assertEquals(EXPECTED_DEBUG_LOG, FACTORY.log);
+
+        FACTORY.log.clear();
+        olderContext.close();
+        outer.invoke(service, "bob");
+        assertTrue(FACTORY.log.isEmpty(), FACTORY.log::toString);
+      }
+    }
+  }
+
+
+  @Test
+  @DisplayName("Closing a context which does not configure the aspect keeps the configuration")
+  void closeOlderContext() throws Exception
+  {
+    try(val classLoader = compileWovenService()) {
+      val serviceClass = classLoader.loadClass("ctw.Service");
+      val outer = serviceClass.getMethod("outer", String.class);
+      val service = serviceClass.getConstructor().newInstance();
+
+      // the aspect is a singleton; both contexts are closed even if an assertion fails, so they do not configure the
+      // aspect for other tests
+      try(val olderContext = new AnnotationConfigApplicationContext(DebugAspectJConfig.class);
+          val newerContext = new AnnotationConfigApplicationContext(AspectJConfig.class)) {
         olderContext.close();
         outer.invoke(service, "bob");
         assertEquals(EXPECTED_LOG, FACTORY.log);
@@ -322,6 +357,19 @@ class AspectJTest
     @Override
     public MethodLoggerFactory methodLoggerFactory() {
       return FACTORY;
+    }
+  }
+
+
+
+
+  @Configuration
+  @EnableMethodLogging(mode = ASPECTJ)
+  static class DebugAspectJConfig extends AspectJConfig
+  {
+    @Override
+    public @NotNull Level defaultEntryExitLevel() {
+      return Level.DEBUG;
     }
   }
 
