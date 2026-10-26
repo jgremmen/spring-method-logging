@@ -375,6 +375,22 @@ the five default methods are invoked once. The configurer may therefore depend o
 based method logging, these beans are logged as well. Methods invoked while the configurer is being created are not
 logged.
 
+### Formatters `WrapIterableOrArrayFormatter` and `WrapMapFormatter`
+
+The new exported package `de.sayayi.lib.methodlogging.format` contains the parameter formatters the default message
+support uses to enclose iterables and arrays in square brackets (`[1, 2, 3]`) and maps in braces (`{Dune=2}`). They
+can be added to the formatter service of a custom message support:
+
+```java title="Custom message support with enclosed collections"
+final var formatterService = new DefaultFormatterService();
+
+formatterService.addFormatter(new WrapIterableOrArrayFormatter());
+formatterService.addFormatter(new WrapMapFormatter());
+
+return MessageSupportFactory.create(formatterService);
+// List.of(1, 2) is logged as [1, 2]
+```
+
 
 ## Bug Fixes
 

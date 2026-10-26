@@ -33,8 +33,8 @@ import de.sayayi.lib.methodlogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
-import de.sayayi.lib.methodlogging.internal.format.WrapIterableOrArrayFormatter;
-import de.sayayi.lib.methodlogging.internal.format.WrapMapFormatter;
+import de.sayayi.lib.methodlogging.format.WrapIterableOrArrayFormatter;
+import de.sayayi.lib.methodlogging.format.WrapMapFormatter;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
@@ -1135,9 +1135,19 @@ final class AnnotationMethodLoggingSource
 
 
   /**
-   * Creates the default message support, used if the configurer provides none. Iterables and arrays are enclosed in
-   * square brackets, maps in braces; both are limited to 20 elements. Paths and exceptions are formatted by their
-   * {@code toString()} representation.
+   * Creates the default message support, used if the configurer provides none.
+   * <p>
+   * The set of formatters is deliberately minimal. It covers what custom formats need to adjust the output, in
+   * {@link ParamLog#format()} or the format attributes of {@link MethodLogging} and {@link MethodLoggingConfig}: the
+   * runtime formatters for optionals, suppliers, references, enums and collections, the named formatters {@code bool},
+   * {@code choice} and {@code size}, and the post formatters {@code case} and {@code clip}. All other values, including
+   * numbers, dates, paths and exceptions, are formatted by their {@code toString()} representation, independent of the
+   * locale. An application requiring more formatters provides its own message support with
+   * {@link MethodLoggingConfigurer#messageSupport()}.
+   * <p>
+   * Iterables and arrays are enclosed in square brackets, maps in braces. Without them, the elements of a collection
+   * parameter could not be told apart from the other parameters in the parameter list of the method entry message,
+   * as both are separated by commas. Collections and maps are limited to 20 elements.
    *
    * @return  sealed default message support, never {@code null}
    *

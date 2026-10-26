@@ -47,6 +47,12 @@
  *     logging ({@code @EnableMethodLogging(mode = AdviceMode.ASPECTJ)}).
  *   </li>
  *   <li>
+ *     {@code de.sayayi.lib.methodlogging.format} contains the parameter formatters of the default message support,
+ *     {@link de.sayayi.lib.methodlogging.format.WrapIterableOrArrayFormatter WrapIterableOrArrayFormatter} and
+ *     {@link de.sayayi.lib.methodlogging.format.WrapMapFormatter WrapMapFormatter}, which can be added to a custom
+ *     message support.
+ *   </li>
+ *   <li>
  *     {@code de.sayayi.lib.methodlogging.logger} contains the built-in
  *     {@link de.sayayi.lib.methodlogging.MethodLoggerFactory MethodLoggerFactory} implementations for the supported
  *     logging frameworks.
@@ -99,6 +105,7 @@ module de.sayayi.lib.methodlogging
   exports de.sayayi.lib.methodlogging;
   exports de.sayayi.lib.methodlogging.annotation;
   exports de.sayayi.lib.methodlogging.aspectj;
+  exports de.sayayi.lib.methodlogging.format;
   exports de.sayayi.lib.methodlogging.logger;
 
   // spring instantiates the internal configuration and invokes its bean methods by reflection

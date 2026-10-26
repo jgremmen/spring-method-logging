@@ -68,6 +68,7 @@ javadoc {
         'de.sayayi.lib.methodlogging',
         'de.sayayi.lib.methodlogging.annotation',
         'de.sayayi.lib.methodlogging.aspectj',
+        'de.sayayi.lib.methodlogging.format',
         'de.sayayi.lib.methodlogging.internal',
         'de.sayayi.lib.methodlogging.logger'
     ])

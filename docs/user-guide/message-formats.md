@@ -204,9 +204,53 @@ public class ShopConfiguration implements MethodLoggingConfigurer
 // BigDecimal 1234.5 is logged as 1,234.5 on every server
 ```
 
+The default message support encloses collections and arrays in brackets and maps in braces with the formatters
+[`WrapIterableOrArrayFormatter`][jd-wrap-iterable] and [`WrapMapFormatter`][jd-wrap-map] of the package
+`de.sayayi.lib.methodlogging.format`. Added to a custom formatter service, they produce the same enclosing there:
+
+```java title="ShopConfiguration.java"
+package com.example.bookstore;
+
+import de.sayayi.lib.message.MessageSupport;
+import de.sayayi.lib.message.MessageSupportFactory;
+import de.sayayi.lib.message.formatter.DefaultFormatterService;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
+import de.sayayi.lib.methodlogging.format.WrapIterableOrArrayFormatter;
+import de.sayayi.lib.methodlogging.format.WrapMapFormatter;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.Locale;
+
+@Configuration
+@ComponentScan
+@EnableMethodLogging
+public class ShopConfiguration implements MethodLoggingConfigurer
+{
+  @Override
+  public MessageSupport messageSupport()
+  {
+    final var formatterService = new DefaultFormatterService();
+
+    formatterService.addFormatter(new WrapIterableOrArrayFormatter());
+    formatterService.addFormatter(new WrapMapFormatter());
+
+    return MessageSupportFactory
+        .create(formatterService)
+        .setLocale(Locale.US);
+  }
+}
+// List.of(1, 2) is logged as [1, 2], Map.of("Dune", 2) as {Dune=2}
+```
+
+Both formatters only add the enclosing characters; the elements are formatted by the formatters of the formatter
+service, here with US number formatting. Unlike the default message support, the `DefaultFormatterService` does not
+limit the number of elements.
+
 Like the default message support, the `DefaultFormatterService` evaluates suppliers and iterates iterables, with the
-side effects described on the [Parameters](parameters.md#side-effects-of-formatting) page. The `GenericFormatterService` of message-format formats
-every value with its `toString()` method instead. A message support based on it never evaluates or iterates a value
+side effects described on the [Parameters](parameters.md#side-effects-of-formatting) page. The
+`GenericFormatterService` of message-format formats every value with its `toString()` method instead. A message support based on it never evaluates or iterates a value
 beyond what `toString()` does:
 
 ```java title="ShopConfiguration.java"
@@ -245,3 +289,5 @@ The message support is used concurrently by all threads invoking logged methods.
 is returned from `messageSupport()` and not changed afterwards.
 
 [jd-config]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/annotation/MethodLoggingConfig.html
+[jd-wrap-iterable]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/format/WrapIterableOrArrayFormatter.html
+[jd-wrap-map]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/format/WrapMapFormatter.html

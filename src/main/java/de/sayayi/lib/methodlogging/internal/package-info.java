@@ -27,8 +27,8 @@
  * {@link MethodLoggingInterceptor} uses these definitions to log the invocations of the methods. For AspectJ based
  * method logging, the {@link AspectJMethodInterceptor} holds the interceptor used by the aspect.
  * <p>
- * The subpackage {@code de.sayayi.lib.methodlogging.internal.format} contains the parameter formatters of the default
- * message support.
+ * The {@link AnnotationMethodLoggingSource} also creates the default message support, using the parameter formatters
+ * of the package {@code de.sayayi.lib.methodlogging.format}.
  *
  * @see AnnotationMethodLoggingSource
  * @see MethodLoggingInterceptor

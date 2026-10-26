@@ -66,7 +66,8 @@ public interface MethodLoggingConfigurer
    * <ul>
    *   <li>
    *     iterables and arrays are enclosed in square brackets (e.g. {@code [1, 2, 3]}) and maps in braces (e.g.
-   *     {@code {Dune=2}}). At most 20 elements are logged; if there are more, an ellipsis (&hellip;) follows them;
+   *     {@code {Dune=2}}) by the formatters of package {@link de.sayayi.lib.methodlogging.format}. At most 20
+   *     elements are logged; if there are more, an ellipsis (&hellip;) follows them;
    *   </li>
    *   <li>
    *     a {@link java.util.function.Supplier Supplier} (and its primitive variants), an {@link java.util.Optional

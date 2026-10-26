@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.methodlogging.internal.format;
+package de.sayayi.lib.methodlogging.format;
 
 import de.sayayi.lib.message.formatter.FormattableType;
 import de.sayayi.lib.message.formatter.parameter.AbstractParameterFormatter;
@@ -37,8 +37,12 @@ import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_PRIMITIVE_
  * entry message.
  * <p>
  * The formatter does not format the elements itself. It is registered with a lower order than the list formatters of
- * the formatter service, so it is selected first and delegates to the next formatter, which formats the elements.
- * Maps are not wrapped.
+ * the formatter service, so it is selected first and delegates to the next formatter, which formats the elements. The
+ * result of that formatter is enclosed as is: a {@code char[]} formatted as text by the string formatter of a
+ * {@link de.sayayi.lib.message.formatter.DefaultFormatterService DefaultFormatterService}, for example, is logged as
+ * {@code [ab]}. Maps are enclosed in braces by {@link WrapMapFormatter}.
+ * <p>
+ * Instances are stateless and may be shared by multiple formatter services.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0

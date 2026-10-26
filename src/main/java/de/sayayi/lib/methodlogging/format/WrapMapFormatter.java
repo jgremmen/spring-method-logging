@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.methodlogging.internal.format;
+package de.sayayi.lib.methodlogging.format;
 
 import de.sayayi.lib.message.formatter.FormattableType;
 import de.sayayi.lib.message.formatter.parameter.AbstractParameterFormatter;
@@ -29,11 +29,30 @@ import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
 
 
 /**
+ * Parameter formatter enclosing the formatted entries of maps in braces, e.g. {@code {Dune=2}}, so the entries of a
+ * logged parameter can be told apart from the other parameters of the method entry message.
+ * <p>
+ * The formatter does not format the entries itself. It is registered with an order one below the order of the
+ * message-format map formatter ({@code DEFAULT_ORDER - 5}), so it is selected first and delegates to the next
+ * formatter, which formats the entries. Iterables and arrays are enclosed in square brackets by
+ * {@link WrapIterableOrArrayFormatter}.
+ * <p>
+ * Instances are stateless and may be shared by multiple formatter services.
+ *
  * @author Jeroen Gremmen
  * @since 0.6.0
  */
 public final class WrapMapFormatter extends AbstractParameterFormatter<Map<?,?>>
 {
+  /**
+   * Formats {@code value} with the next formatter and encloses the result in braces. A result with {@code null} text is
+   * returned unchanged; an empty result is enclosed as well, e.g. {@code {}} for an empty map.
+   *
+   * @param context  formatter context, not {@code null}
+   * @param value    map to format, not {@code null}
+   *
+   * @return  formatted value, never {@code null}
+   */
   @Override
   protected @NotNull Text formatValue(@NotNull ParameterFormatterContext context, @NotNull Map<?,?> value)
   {
@@ -42,6 +61,12 @@ public final class WrapMapFormatter extends AbstractParameterFormatter<Map<?,?>>
   }
 
 
+  /**
+   * Returns the wrapped type {@link Map}, registered with an order one below the order of the map formatter, so this
+   * formatter precedes it.
+   *
+   * @return  formattable types, never {@code null}
+   */
   @Override
   public @NotNull Set<FormattableType> getFormattableTypes() {
     return Set.of(new FormattableType(Map.class, DEFAULT_ORDER - 6));

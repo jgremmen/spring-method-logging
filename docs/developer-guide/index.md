@@ -8,7 +8,8 @@ for such requirements and how they fit together.
 ## Integration Points
 
 All integration points belong to the exported packages `de.sayayi.lib.methodlogging`,
-`de.sayayi.lib.methodlogging.annotation` and `de.sayayi.lib.methodlogging.logger`, or to the message-format library:
+`de.sayayi.lib.methodlogging.annotation`, `de.sayayi.lib.methodlogging.format` and `de.sayayi.lib.methodlogging.logger`,
+or to the message-format library:
 
 | Integration point                     | Kind                       | Purpose                                                  |
 |---------------------------------------|----------------------------|----------------------------------------------------------|
@@ -18,6 +19,7 @@ All integration points belong to the exported packages `de.sayayi.lib.methodlogg
 | [`AbstractMethodLoggerFactory`][jd-abstract] | abstract class      | base class for factories, with caching and validation    |
 | composed annotation                   | annotation                 | presets of `@MethodLogging` or `@ParamLog` under a name  |
 | `MessageSupport`                      | message-format type        | parsing and formatting of all messages                   |
+| [`WrapIterableOrArrayFormatter`][jd-wrap-iterable], [`WrapMapFormatter`][jd-wrap-map] | parameter formatters | brackets and braces of the default message support for a custom one |
 
 The configurer is the hub. A single bean implementing `MethodLoggingConfigurer` installs the method logger factory and
 the message support, sets the global defaults and excludes parameter types from logging. Composed annotations need no
@@ -96,3 +98,5 @@ public only because Spring or the `MethodLoggingAspect` access them, and are not
 [jd-factory]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/MethodLoggerFactory.html
 [jd-logger]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/MethodLogger.html
 [jd-abstract]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/logger/AbstractMethodLoggerFactory.html
+[jd-wrap-iterable]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/format/WrapIterableOrArrayFormatter.html
+[jd-wrap-map]: https://javadoc.io/doc/de.sayayi.lib/spring-method-logging/0.6.0/de.sayayi.lib.methodlogging/de/sayayi/lib/methodlogging/format/WrapMapFormatter.html

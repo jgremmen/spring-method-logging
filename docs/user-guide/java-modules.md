@@ -20,8 +20,8 @@ Their types appear in the public API, such as `ResolvableType` in `MethodLogging
 the message-format library, so the application module reads them without declaring them.
 
 The module exports the packages `de.sayayi.lib.methodlogging`, `de.sayayi.lib.methodlogging.annotation`,
-`de.sayayi.lib.methodlogging.aspectj` and `de.sayayi.lib.methodlogging.logger`. The package
-`de.sayayi.lib.methodlogging.internal` is not exported and is not part of the API.
+`de.sayayi.lib.methodlogging.aspectj`, `de.sayayi.lib.methodlogging.format` and `de.sayayi.lib.methodlogging.logger`.
+The package `de.sayayi.lib.methodlogging.internal` is not exported and is not part of the API.
 
 The logging frameworks and the AspectJ runtime are optional dependencies, declared with `requires static`. An
 application using one of them requires its module itself, for example `requires org.slf4j;` for SLF4J logger fields.
