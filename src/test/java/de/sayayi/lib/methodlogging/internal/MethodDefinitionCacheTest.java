@@ -163,6 +163,29 @@ class MethodDefinitionCacheTest
 
 
   @Test
+  @DisplayName("Class file of a bootstrap class is read")
+  void classLocationBootstrapClass()
+  {
+    final var classLocation = AnnotationMethodLoggingSource.ClassLocation.read(String.class);
+
+    assertEquals("String.java", classLocation.sourceFile());
+    assertTrue(classLocation.lineNumbers().get("length()I") > 0);
+  }
+
+
+  @Test
+  @DisplayName("Class without class file has no location")
+  void classLocationNoClassFile()
+  {
+    final Runnable lambda = () -> {};
+    final var classLocation = AnnotationMethodLoggingSource.ClassLocation.read(lambda.getClass());
+
+    assertNull(classLocation.sourceFile());
+    assertTrue(classLocation.lineNumbers().isEmpty());
+  }
+
+
+  @Test
   @DisplayName("Failed analysis is cached and its failure passed on")
   void failedAnalysis() throws Exception
   {

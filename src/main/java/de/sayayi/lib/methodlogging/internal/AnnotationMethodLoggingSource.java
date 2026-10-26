@@ -58,7 +58,6 @@ import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
 import static java.lang.reflect.Modifier.*;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
-import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.springframework.aop.support.AopUtils.getMostSpecificMethod;
 import static org.springframework.asm.ClassReader.SKIP_FRAMES;
@@ -1151,13 +1150,17 @@ public final class AnnotationMethodLoggingSource
      * @return  class location, never {@code null}
      */
     @Contract(pure = true)
-    private static @NotNull ClassLocation read(@NotNull Class<?> type)
+    static @NotNull ClassLocation read(@NotNull Class<?> type)
     {
-      final var classResourceName = type.getName().replace('.', '/') + ".class";
+      final var classInputStream = type
+          .getResourceAsStream('/' + type.getName().replace('.', '/') + ".class");
+      if (classInputStream == null)
+        return new ClassLocation(null, Map.of());
+
       final var sourceFile = new AtomicReference<String>();
       final var lineNumbers = new HashMap<String,Integer>();
 
-      try(var classInputStream = requireNonNull(type.getClassLoader().getResourceAsStream(classResourceName))) {
+      try(classInputStream) {
         new ClassReader(classInputStream).accept(
             new ClassVisitor(ASM_VERSION) {
               @Override
@@ -1181,7 +1184,7 @@ public final class AnnotationMethodLoggingSource
             },
             SKIP_FRAMES);
       } catch(IOException | RuntimeException ignored) {
-        // class file not available or not readable by ASM (e.g. unsupported class file version)
+        // class file not readable by ASM (e.g. unsupported class file version)
       }
 
       return new ClassLocation(sourceFile.get(), Map.copyOf(lineNumbers));
