@@ -125,21 +125,28 @@ final class MethodLoggingInterceptor implements MethodInterceptor
     if (methodLogger == null)
       return invocation.proceed();
 
+    logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
+
+    // the elapsed time excludes logging the entry and the result
     final var startTime = nanoTime();
+    var elapsedTime = -1L;
     Throwable throwable = null;
 
-    logMethodEntry(methodDef, invocation.getArguments(), methodLogger);
     try {
       final var result = invocation.proceed();
+      elapsedTime = nanoTime() - startTime;
 
       if (methodDef.showResult)
         logResult(methodDef, methodLogger, result);
 
       return result;
     } catch(Throwable ex) {
+      if (elapsedTime < 0)
+        elapsedTime = nanoTime() - startTime;
+
       throw throwable = ex;
     } finally {
-      logMethodExit(methodDef, methodLogger, startTime, throwable);
+      logMethodExit(methodDef, methodLogger, elapsedTime, throwable);
     }
   }
 
@@ -277,10 +284,10 @@ final class MethodLoggingInterceptor implements MethodInterceptor
    *
    * @param methodDef     method logging definition, not {@code null}
    * @param methodLogger  method logger, not {@code null}
-   * @param startTime     start time of the method invocation in nanoseconds
+   * @param elapsedTime   elapsed time of the method invocation in nanoseconds, not negative
    * @param throwable     exception thrown by the method or {@code null} if the method returned normally
    */
-  private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, long startTime,
+  private void logMethodExit(@NotNull MethodDef methodDef, @NotNull MethodLogger methodLogger, long elapsedTime,
                              Throwable throwable)
   {
     try {
@@ -292,7 +299,7 @@ final class MethodLoggingInterceptor implements MethodInterceptor
       if (methodDef.showElapsedTime)
       {
         exit.append(" (elapsed ")
-            .append(formatElapsedTime((nanoTime() - startTime) / 1000000L))
+            .append(formatElapsedTime(elapsedTime / 1000000L))
             .append(')');
       }
 

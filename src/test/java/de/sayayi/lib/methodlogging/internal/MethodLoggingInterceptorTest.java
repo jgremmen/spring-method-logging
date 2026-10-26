@@ -31,8 +31,10 @@ import org.springframework.aop.framework.ProxyFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static de.sayayi.lib.methodlogging.Visibility.HIDE;
+import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -163,6 +165,24 @@ class MethodLoggingInterceptorTest
 
 
   @Test
+  @DisplayName("Elapsed time excludes parameter and result formatting")
+  void elapsedTimeExcludesFormatting()
+  {
+    final var log = new ArrayList<String>();
+    final var bean = proxy(new Bean(), (loggerField, obj, type) -> listLogger(log));
+    final var value = new SlowPrintable();
+
+    assertSame(value, bean.slow(value));
+    assertEquals(3, log.size());
+
+    // formatting the parameter and the result takes 2 * 200ms, the method itself returns immediately
+    final var exit = Pattern.compile("INFO\\|< slow \\(elapsed (\\d+)ms\\)").matcher(log.get(2));
+    assertTrue(exit.matches(), log.get(2));
+    assertTrue(Integer.parseInt(exit.group(1)) < 200, log.get(2));
+  }
+
+
+  @Test
   @DisplayName("Method logger raising an error does not affect method invocation")
   void loggerError()
   {
@@ -281,6 +301,33 @@ class MethodLoggingInterceptorTest
     @MethodLogging
     public Cyclic cyclic(Cyclic value) {
       return value;
+    }
+
+
+    @MethodLogging(elapsedTime = SHOW)
+    public SlowPrintable slow(SlowPrintable value) {
+      return value;
+    }
+  }
+
+
+
+
+  /**
+   * Object with a {@code toString()} taking 200ms.
+   */
+  public static final class SlowPrintable
+  {
+    @Override
+    public String toString()
+    {
+      try {
+        Thread.sleep(200);
+      } catch(InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+
+      return "slow";
     }
   }
 
