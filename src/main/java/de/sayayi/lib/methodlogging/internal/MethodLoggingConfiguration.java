@@ -46,7 +46,7 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 public abstract class MethodLoggingConfiguration implements ImportAware
 {
   /** Attributes of the {@code @EnableMethodLogging} annotation of the importing configuration class. */
-  protected AnnotationAttributes enableMethodLogging;
+  AnnotationAttributes enableMethodLogging;
 
 
   /**

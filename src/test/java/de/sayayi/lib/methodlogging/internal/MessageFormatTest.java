@@ -132,7 +132,7 @@ class MessageFormatTest
       throws NoSuchMethodException
   {
     return requireNonNull(
-        new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader())
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
             .getMethodDefinition(type.getMethod(methodName, String.class), type));
   }
 

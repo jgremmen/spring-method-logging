@@ -46,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AnnotationAttributesTest
 {
   private final AnnotationMethodLoggingSource source = new AnnotationMethodLoggingSource(
-      new MethodLoggingConfigurer() {},
-      new DefaultResourceLoader());
+      () -> new MethodLoggingConfigurer() {},
+      new DefaultResourceLoader(), true);
 
 
   @Test

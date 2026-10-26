@@ -46,8 +46,8 @@ class MethodDefinitionCacheTest
   void notAnnotated() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader());
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("notLogged");
 
     assertNull(source.getMethodDefinition(method, Bean.class));
@@ -64,8 +64,8 @@ class MethodDefinitionCacheTest
   void annotated() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader());
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("logged", String.class);
     final var methodDef = source.getMethodDefinition(method, Bean.class);
 
@@ -83,14 +83,14 @@ class MethodDefinitionCacheTest
     final var source = new AnnotationMethodLoggingSource[1];
 
     source[0] = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType) {
             // e.g. a configurer delegating to a bean with method logging
             return source[0].getMethodDefinition(otherMethod, Bean.class) != null;
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
 
     assertNotNull(source[0].getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class));
     assertEquals(2, source[0].methodLoggingDefinitionCache.size());
@@ -147,8 +147,8 @@ class MethodDefinitionCacheTest
   void classLocationCached() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader());
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true);
 
     final var logged = source.getMethodDefinition(Bean.class.getMethod("logged", String.class), Bean.class);
     final var other = source.getMethodDefinition(Bean.class.getMethod("otherLogged"), Bean.class);
@@ -191,7 +191,7 @@ class MethodDefinitionCacheTest
   {
     final var analyses = new AtomicInteger();
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
           {
@@ -199,7 +199,7 @@ class MethodDefinitionCacheTest
             return false;
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("failing", String.class);
 
     final var ex = assertThrowsExactly(IllegalStateException.class,
@@ -252,7 +252,7 @@ class MethodDefinitionCacheTest
   {
     final var analyses = new AtomicInteger();
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
           {
@@ -260,7 +260,7 @@ class MethodDefinitionCacheTest
             throw new OutOfMemoryError("simulated");
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     assertThrowsExactly(OutOfMemoryError.class, () -> source.getMethodDefinition(method, Bean.class));
@@ -275,7 +275,7 @@ class MethodDefinitionCacheTest
   {
     final var invocations = new AtomicInteger();
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public @NotNull Level defaultEntryExitLevel()
           {
@@ -283,7 +283,7 @@ class MethodDefinitionCacheTest
             throw new NoClassDefFoundError("com/example/Missing");
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("logged", String.class);
 
     final var ex = assertThrowsExactly(IllegalStateException.class,
@@ -300,7 +300,7 @@ class MethodDefinitionCacheTest
   {
     final var invocations = new AtomicInteger();
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public @NotNull Level defaultEntryExitLevel()
           {
@@ -308,7 +308,7 @@ class MethodDefinitionCacheTest
             return Level.DEFAULT;
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
     final var logged = Bean.class.getMethod("logged", String.class);
     final var failing = Bean.class.getMethod("failing", String.class);
 

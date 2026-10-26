@@ -15,8 +15,8 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
-import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Level;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.NotNull;
@@ -119,7 +119,7 @@ class ConfigurerValidationTest
   private static void assertInvalid(@NotNull String message, @NotNull MethodLoggingConfigurer configurer)
       throws NoSuchMethodException
   {
-    final var source = new AnnotationMethodLoggingSource(configurer, new DefaultResourceLoader());
+    final var source = new AnnotationMethodLoggingSource(() -> configurer, new DefaultResourceLoader(), true);
     final var method = Bean.class.getMethod("logged");
 
     // the configurer is validated when the first method with method logging is analyzed

@@ -100,7 +100,7 @@ import static org.springframework.util.StringUtils.hasLength;
  *
  * @see MethodDef
  */
-public final class AnnotationMethodLoggingSource
+final class AnnotationMethodLoggingSource
 {
   /** Default format of a parameter value. */
   @Language("MessageFormat")
@@ -117,21 +117,6 @@ public final class AnnotationMethodLoggingSource
   private volatile RuntimeException configurationFailure;
   private volatile boolean singletonsInstantiated;
   private final @NotNull ParameterNameDiscoverer nameDiscoverer;
-
-
-  /**
-   * Creates a method logging source for the given configurer.
-   *
-   * @param methodLoggingConfigurer  method logging configurer, not {@code null}
-   * @param resourceLoader           resource loader providing the class loader for the default message support,
-   *                                 not {@code null}
-   *
-   * @since 0.6.0
-   */
-  AnnotationMethodLoggingSource(@NotNull MethodLoggingConfigurer methodLoggingConfigurer,
-                                @NotNull ResourceLoader resourceLoader) {
-    this(() -> methodLoggingConfigurer, resourceLoader, true);
-  }
 
 
   /**

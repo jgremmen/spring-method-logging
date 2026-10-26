@@ -52,8 +52,8 @@ class LazyMessageTest
   {
     final var methodDef = requireNonNull(
         new AnnotationMethodLoggingSource(
-            new MethodLoggingConfigurer() {},
-            new DefaultResourceLoader())
+            () -> new MethodLoggingConfigurer() {},
+            new DefaultResourceLoader(), true)
             .getMethodDefinition(Bean.class.getMethod("logged", String.class, String.class), Bean.class));
 
     assertEquals(1, methodDef.inlineParameters.size());

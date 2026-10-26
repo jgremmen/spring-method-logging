@@ -47,7 +47,7 @@ class MethodLineNumberTest
   void lineNumber() throws Exception
   {
     final var methodDef =
-        new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader())
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true)
             .getMethodDefinition(Bean.class.getMethod("logged"), Bean.class);
 
     assertTrue(requireNonNull(methodDef).line > 0);
@@ -66,8 +66,8 @@ class MethodLineNumberTest
   {
     final var beanClass = new UnreadableClassFileLoader().loadClass(Bean.class.getName());
     final var methodDef = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader())
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true)
         .getMethodDefinition(beanClass.getMethod("logged"), beanClass);
 
     assertEquals(-1, requireNonNull(methodDef).line);

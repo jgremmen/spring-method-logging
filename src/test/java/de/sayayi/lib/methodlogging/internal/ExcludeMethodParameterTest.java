@@ -31,9 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,8 +50,8 @@ class ExcludeMethodParameterTest
   void excludeByName() throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader())
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true)
         .getMethodDefinition(
             ExcludeParams.class.getMethod("excludeParams", int.class, int.class, String.class, Locale.class),
             ExcludeParams.class);
@@ -72,8 +72,8 @@ class ExcludeMethodParameterTest
   void excludeByParamLog() throws Exception
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader())
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true)
         .getMethodDefinition(
             ExcludeParams.class.getMethod("excludeAnnotated", String.class, String.class, String.class, String.class),
             ExcludeParams.class);
@@ -132,7 +132,8 @@ class ExcludeMethodParameterTest
   @DisplayName("@ParamLog on generic interface method is used for generic superclass implementation (JDK proxy)")
   void paramLogFromGenericInterfaceForGenericImplementationViaInterface() throws Exception
   {
-    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader());
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
 
     // the pointcut matches the class methods first, so the definition of the specific method is analyzed before the
     // interface method is invoked
@@ -166,9 +167,10 @@ class ExcludeMethodParameterTest
 
   @Test
   @DisplayName("Excluded names are validated for methods without parameters or with hidden parameters")
-  void excludeUnmatchedNameNotLogged() throws Exception
+  void excludeUnmatchedNameNotLogged()
   {
-    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader());
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, new DefaultResourceLoader(), true);
 
     final var ex1 = assertThrowsExactly(IllegalStateException.class, () -> source.getMethodDefinition(
         ExcludeParams.class.getMethod("excludeWithoutParameters"), ExcludeParams.class));
@@ -186,7 +188,7 @@ class ExcludeMethodParameterTest
   {
     final var parameterTypes = new ArrayList<Class<?>>();
     final var methodDef = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
           {
@@ -194,7 +196,7 @@ class ExcludeMethodParameterTest
             return false;
           }
         },
-        new DefaultResourceLoader())
+        new DefaultResourceLoader(), true)
         .getMethodDefinition(ExcludeParams.class.getMethod("hidden", String.class, String.class), ExcludeParams.class);
 
     assertTrue(requireNonNull(methodDef).inlineParameters.isEmpty());
@@ -205,8 +207,8 @@ class ExcludeMethodParameterTest
   private static List<String> inlineParameterNames(Method method, Class<?> targetClass)
   {
     final var methodDef = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {},
-        new DefaultResourceLoader())
+        () -> new MethodLoggingConfigurer() {},
+        new DefaultResourceLoader(), true)
         .getMethodDefinition(method, targetClass);
 
     return requireNonNull(methodDef).inlineParameters.stream().map(ParameterDef::name).toList();
@@ -219,7 +221,7 @@ class ExcludeMethodParameterTest
   {
     final var parameterTypes = new ArrayList<Class<?>>();
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
           {
@@ -227,7 +229,7 @@ class ExcludeMethodParameterTest
             return methodParameterType.toClass() == String.class;
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
 
     final var methodDef = source.getMethodDefinition(
         AbstractRepository.class.getMethod("save", Object.class, Long.class),

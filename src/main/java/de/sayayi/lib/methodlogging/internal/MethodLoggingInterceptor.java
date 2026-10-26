@@ -59,7 +59,7 @@ import static org.springframework.util.StringUtils.hasLength;
  * @author Jeroen Gremmen
  * @since 0.1.0
  */
-public final class MethodLoggingInterceptor implements MethodInterceptor
+final class MethodLoggingInterceptor implements MethodInterceptor
 {
   private static final Log LOG = LogFactory.getLog(MethodLoggingInterceptor.class);
 

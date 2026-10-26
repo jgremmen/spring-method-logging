@@ -50,8 +50,8 @@ class MethodLoggingInterceptorTest
   {
     final var interceptor = new MethodLoggingInterceptor(
         new AnnotationMethodLoggingSource(
-            new MethodLoggingConfigurer() {},
-            new DefaultResourceLoader()));
+            () -> new MethodLoggingConfigurer() {},
+            new DefaultResourceLoader(), true));
 
     // interceptor applied without pointcut, as in a manually built proxy
     final var proxyFactory = new ProxyFactory((Supplier<String>)() -> "result");
@@ -70,8 +70,8 @@ class MethodLoggingInterceptorTest
   {
     final var interceptor = new MethodLoggingInterceptor(
         new AnnotationMethodLoggingSource(
-            new MethodLoggingConfigurer() {},
-            new DefaultResourceLoader()));
+            () -> new MethodLoggingConfigurer() {},
+            new DefaultResourceLoader(), true));
 
     // proxy without target, as with an EmptyTargetSource; the last advice provides the result
     final var proxyFactory = new ProxyFactory();
@@ -91,13 +91,13 @@ class MethodLoggingInterceptorTest
   void failingAnalysis() throws Exception
   {
     final var source = new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public MethodLoggerFactory methodLoggerFactory() {
             return JULLoggerFactory.strict();
           }
         },
-        new DefaultResourceLoader());
+        new DefaultResourceLoader(), true);
 
     final var method = NoLoggerField.class.getMethod("get");
 
@@ -232,13 +232,13 @@ class MethodLoggingInterceptorTest
 
     proxyFactory.setProxyTargetClass(true);
     proxyFactory.addAdvice(new MethodLoggingInterceptor(new AnnotationMethodLoggingSource(
-        new MethodLoggingConfigurer() {
+        () -> new MethodLoggingConfigurer() {
           @Override
           public MethodLoggerFactory methodLoggerFactory() {
             return methodLoggerFactory;
           }
         },
-        new DefaultResourceLoader())));
+        new DefaultResourceLoader(), true)));
 
     return (T)proxyFactory.getProxy();
   }
