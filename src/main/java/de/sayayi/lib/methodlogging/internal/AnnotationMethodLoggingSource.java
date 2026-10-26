@@ -807,8 +807,8 @@ public final class AnnotationMethodLoggingSource
 
 
   /**
-   * Tells whether {@code candidate} is overridden by {@code specificMethod}. Generic parameter types of
-   * {@code candidate} are resolved against {@code targetClass}. A package-private {@code candidate} is only overridden
+   * Tells whether {@code candidate} is overridden by {@code specificMethod}. Generic parameter types of both methods
+   * are resolved against {@code targetClass}. A package-private {@code candidate} is only overridden
    * by a method declared in the same runtime package, i.e. the same package of the same class loader.
    *
    * @param candidate       method declared by a superclass or interface of {@code targetClass}, not {@code null}
@@ -834,12 +834,13 @@ public final class AnnotationMethodLoggingSource
         !isSameRuntimePackage(candidate.getDeclaringClass(), specificMethod.getDeclaringClass()))
       return false;
 
-    final var parameterTypes = specificMethod.getParameterTypes();
-    if (candidate.getParameterCount() != parameterTypes.length)
+    final var parameterCount = specificMethod.getParameterCount();
+    if (candidate.getParameterCount() != parameterCount)
       return false;
 
-    for(var p = 0; p < parameterTypes.length; p++)
-      if (forMethodParameter(candidate, p, targetClass).resolve() != parameterTypes[p])
+    for(var p = 0; p < parameterCount; p++)
+      if (forMethodParameter(candidate, p, targetClass).toClass() !=
+          forMethodParameter(specificMethod, p, targetClass).toClass())
         return false;
 
     return true;

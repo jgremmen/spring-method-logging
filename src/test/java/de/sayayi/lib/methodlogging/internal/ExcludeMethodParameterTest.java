@@ -120,6 +120,51 @@ class ExcludeMethodParameterTest
 
 
   @Test
+  @DisplayName("@ParamLog on generic interface method is used for generic superclass implementation (CGLIB proxy)")
+  void paramLogFromGenericInterfaceForGenericImplementation() throws Exception
+  {
+    assertEquals(List.of("value"), inlineParameterNames(
+        AbstractGenericStore.class.getMethod("store", Object.class, String.class), StringStore.class));
+  }
+
+
+  @Test
+  @DisplayName("@ParamLog on generic interface method is used for generic superclass implementation (JDK proxy)")
+  void paramLogFromGenericInterfaceForGenericImplementationViaInterface() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(new MethodLoggingConfigurer() {}, new DefaultResourceLoader());
+
+    // the pointcut matches the class methods first, so the definition of the specific method is analyzed before the
+    // interface method is invoked
+    source.getMethodDefinition(
+        AbstractGenericStore.class.getMethod("store", Object.class, String.class), StringStore.class);
+
+    final var methodDef = source.getMethodDefinition(
+        GenericStore.class.getMethod("store", Object.class, String.class), StringStore.class);
+
+    assertEquals(List.of("value"), requireNonNull(methodDef).inlineParameters.stream().map(ParameterDef::name).toList());
+  }
+
+
+  @Test
+  @DisplayName("@ParamLog on generic interface method is not used for overload of generic superclass")
+  void paramLogFromGenericInterfaceNotUsedForOverload() throws Exception
+  {
+    assertEquals(List.of("value", "secret"), inlineParameterNames(
+        AbstractGenericStore.class.getMethod("store", Integer.class, String.class), StringStore.class));
+  }
+
+
+  @Test
+  @DisplayName("@ParamLog on generic superclass method is used for generic subclass implementation")
+  void paramLogFromGenericSuperclassForGenericImplementation() throws Exception
+  {
+    assertEquals(List.of("value"), inlineParameterNames(
+        GenericStoreImpl.class.getMethod("store", Object.class, String.class), LongStore.class));
+  }
+
+
+  @Test
   @DisplayName("Excluded names are validated for methods without parameters or with hidden parameters")
   void excludeUnmatchedNameNotLogged() throws Exception
   {
@@ -266,6 +311,64 @@ class ExcludeMethodParameterTest
     @Override
     public void handle(String secret, String id) {
     }
+  }
+
+
+
+
+  public interface GenericStore<T>
+  {
+    @MethodLogging
+    @SuppressWarnings("unused")
+    void store(T value, @ParamLog(exclude = true) String secret);
+  }
+
+
+
+
+  public abstract static class AbstractGenericStore<T> implements GenericStore<T>
+  {
+    @Override
+    public void store(T value, String secret) {
+    }
+
+
+    @MethodLogging
+    @SuppressWarnings("unused")
+    public void store(Integer value, String secret) {
+    }
+  }
+
+
+
+
+  public static class StringStore extends AbstractGenericStore<String> {
+  }
+
+
+
+
+  public abstract static class AbstractStore<T>
+  {
+    @MethodLogging
+    @SuppressWarnings("unused")
+    public abstract void store(T value, @ParamLog(exclude = true) String secret);
+  }
+
+
+
+
+  public static class GenericStoreImpl<T> extends AbstractStore<T>
+  {
+    @Override
+    public void store(T value, String secret) {
+    }
+  }
+
+
+
+
+  public static class LongStore extends GenericStoreImpl<Long> {
   }
 
 
