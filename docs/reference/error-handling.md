@@ -66,8 +66,9 @@ a logging backend can fail, or a parameter value cannot be formatted. Such failu
 result and the exceptions of the logged method are passed on unchanged in all cases.
 
 A value that cannot be formatted, typically because its `toString()` method throws an exception, is logged as `<format
-failed: ExceptionName>`, where the exception name is that of the most specific cause, without package. The remaining
-messages are logged normally:
+failed: ExceptionName>`, where the exception name is that of the most specific cause, without package. The same applies
+to the message of an exception thrown by the logged method, if its `getMessage()` method throws an exception. The
+remaining messages are logged normally:
 
 ```java title="BrokenToString.java"
 package com.example.bookstore;

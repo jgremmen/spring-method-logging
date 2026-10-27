@@ -37,11 +37,11 @@ import static org.springframework.util.StringUtils.hasLength;
  * used for both proxy and AspectJ based method logging.
  * <p>
  * The result and exceptions of the invoked method are passed on unchanged. If a parameter value or the result cannot be
- * formatted, it is logged as {@code <format failed: exception>}. Other failures are reported at WARN level through the
- * JCL logger of this class: if the method cannot be analyzed (for AspectJ based method logging on first invocation;
- * reported once per method and target class, as the failed analysis is not repeated) or the method logger cannot be
- * obtained, the method is invoked without logging; if logging the entry, result or exit fails, the remaining messages
- * are still logged. This includes errors like a {@link StackOverflowError} raised by a cyclic {@code toString()}; only
+ * formatted or the message of an exception cannot be obtained, it is logged as {@code <format failed: exception>}.
+ * Other failures are reported at WARN level through the JCL logger of this class: if the method cannot be analyzed (for
+ * AspectJ based method logging on first invocation; reported once per method and target class, as the failed analysis
+ * is not repeated) or the method logger cannot be obtained, the method is invoked without logging; if logging the
+ * entry, result or exit fails, the remaining messages are still logged. This includes errors like a {@link StackOverflowError} raised by a cyclic {@code toString()}; only
  * virtual machine errors the application cannot recover from, like an {@link OutOfMemoryError}, are passed on.
  * Failures obtaining the method logger or logging the entry, result or exit are reported at WARN level for the first
  * failure of each phase per method definition; subsequent failures of that phase are reported at DEBUG level.
@@ -314,7 +314,7 @@ final class MethodLoggingInterceptor implements MethodInterceptor
 
         if (methodDef.showExceptionMessage)
         {
-          final var msg = throwable.getLocalizedMessage();
+          final var msg = exceptionMessage(throwable);
 
           if (hasLength(msg))
             exit.append('(').append(msg).append(')');
@@ -325,6 +325,27 @@ final class MethodLoggingInterceptor implements MethodInterceptor
     } catch(Throwable ex) {
       rethrowIfFatal(ex);
       logFailure(methodDef, "exit", ex);
+    }
+  }
+
+
+  /**
+   * Returns the localized message of {@code throwable}. If the message cannot be obtained, a format failure text is
+   * returned instead.
+   *
+   * @param throwable  exception thrown by the method, not {@code null}
+   *
+   * @return  exception message, format failure text or {@code null} if the exception has no message
+   *
+   * @since 0.6.0
+   */
+  private static String exceptionMessage(@NotNull Throwable throwable)
+  {
+    try {
+      return throwable.getLocalizedMessage();
+    } catch(Throwable ex) {
+      rethrowIfFatal(ex);
+      return formatFailed(ex);
     }
   }
 

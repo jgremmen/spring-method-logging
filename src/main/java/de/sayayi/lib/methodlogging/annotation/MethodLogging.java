@@ -73,9 +73,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * <h2>Effect on the logged method</h2>
  * The result and exceptions of the logged method are passed on unchanged. A parameter value or result which cannot be
- * formatted is logged as {@code <format failed: exception>}. Other logging failures, for example of the method logger,
- * are reported by the method logging interceptor through JCL: the first failure of each kind per method at WARN level,
- * subsequent ones at DEBUG level.
+ * formatted and an exception message which cannot be obtained are logged as {@code <format failed: exception>}. Other
+ * logging failures, for example of the method logger, are reported by the method logging interceptor through JCL: the
+ * first failure of each kind per method at WARN level, subsequent ones at DEBUG level.
  * <p>
  * An invalid message format ({@link #inlineParameterFormat()}, {@link #parameterFormat()}, {@link #resultFormat()},
  * the corresponding {@link MethodLoggingConfig} attributes or {@link ParamLog#format()}) fails the method analysis with

@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 /**
@@ -84,6 +84,17 @@ class ExceptionMessageTest
   }
 
 
+  @Test
+  @DisplayName("Exception message which cannot be obtained is logged as format failure")
+  void brokenMessage()
+  {
+    assertEquals(
+        "INFO|< failBrokenMessage -> ExceptionMessageTest.BrokenMessageException" +
+            "(<format failed: UnsupportedOperationException>)",
+        exitMessage(new Bean(), Visibility.SHOW, Bean::failBrokenMessage));
+  }
+
+
   /**
    * Invokes {@code invocation} on a proxy for {@code target} and returns the logged exit message.
    */
@@ -111,7 +122,7 @@ class ExceptionMessageTest
 
     final var proxy = (T)proxyFactory.getProxy();
 
-    assertThrowsExactly(IllegalStateException.class, () -> invocation.accept(proxy));
+    assertThrows(IllegalStateException.class, () -> invocation.accept(proxy));
 
     return log.getLast();
   }
@@ -153,6 +164,23 @@ class ExceptionMessageTest
     @MethodLogging(exceptionMessage = SHOW)
     public void failShown() {
       throw new IllegalStateException("order 42 shipped");
+    }
+
+
+    @MethodLogging
+    public void failBrokenMessage() {
+      throw new BrokenMessageException();
+    }
+  }
+
+
+
+
+  static final class BrokenMessageException extends IllegalStateException
+  {
+    @Override
+    public String getMessage() {
+      throw new UnsupportedOperationException();
     }
   }
 
