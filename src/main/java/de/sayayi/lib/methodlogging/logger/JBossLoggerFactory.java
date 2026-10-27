@@ -36,7 +36,11 @@ public final class JBossLoggerFactory extends FrameworkMethodLoggerFactory
    *
    * @param createLoggerOnNoField  if {@code true}, a logger is created even when no logger field is found on the target
    *                               class; if {@code false}, an {@link IllegalStateException} is thrown in that case
+   *
+   * @deprecated  use {@link #withFallback()} instead of {@code true} or {@link #strict()} instead of {@code false}
    */
+  @Deprecated(since = "0.6.0")
+  @SuppressWarnings("DeprecatedIsStillUsed")
   public JBossLoggerFactory(boolean createLoggerOnNoField)
   {
     super(createLoggerOnNoField, Logger.class,

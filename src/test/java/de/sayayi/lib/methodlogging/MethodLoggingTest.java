@@ -204,7 +204,7 @@ public class MethodLoggingTest
     JULMultiLoggerBean.log.addHandler(logHandler);
     JULMultiLoggerBean.auditLog.addHandler(auditHandler);
     try {
-      methodLoggerFactoryDelegate.setFactory(new JULLoggerFactory(false));
+      methodLoggerFactoryDelegate.setFactory(JULLoggerFactory.strict());
 
       // the logger used first must not be used for the other method
       julMultiLoggerBean.audit();

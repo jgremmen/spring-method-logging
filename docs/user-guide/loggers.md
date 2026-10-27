@@ -137,7 +137,8 @@ wants configuration errors to be detected at startup.
 
 Each factory is created with one of two static methods. `withFallback()` creates a factory that logs with a logger for
 the bean class if no logger field is available. `strict()` creates a factory that requires a logger field. The public
-constructors taking a boolean are equivalent: `true` corresponds to `withFallback()` and `false` to `strict()`.
+constructors taking a boolean are equivalent, `true` corresponding to `withFallback()` and `false` to `strict()`, but
+they are deprecated since 0.6.0.
 
 ```java title="ShopConfiguration.java"
 package com.example.bookstore;

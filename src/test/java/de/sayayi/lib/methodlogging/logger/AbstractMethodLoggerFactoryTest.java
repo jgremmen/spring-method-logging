@@ -233,8 +233,8 @@ class AbstractMethodLoggerFactoryTest
   void classLoggerCachedPerFactory()
   {
     assertNotSame(
-        new JCLLoggerFactory(true).from(null, new A(), A.class),
-        new JCLLoggerFactory(true).from(null, new A(), A.class));
+        JCLLoggerFactory.withFallback().from(null, new A(), A.class),
+        JCLLoggerFactory.withFallback().from(null, new A(), A.class));
   }
 
 
@@ -268,7 +268,7 @@ class AbstractMethodLoggerFactoryTest
     protected @NotNull MethodLogger createMethodLogger(@NotNull Class<?> clazz)
     {
       classes.add(clazz);
-      return new JCLLoggerFactory(true).createMethodLogger(clazz);
+      return JCLLoggerFactory.withFallback().createMethodLogger(clazz);
     }
 
 
@@ -276,7 +276,7 @@ class AbstractMethodLoggerFactoryTest
     protected @NotNull MethodLogger createMethodLogger(@NotNull Field loggerField, @NotNull Object obj)
     {
       fields.add(loggerField.getName());
-      return new JCLLoggerFactory(true).createMethodLogger(loggerField.getDeclaringClass());
+      return JCLLoggerFactory.withFallback().createMethodLogger(loggerField.getDeclaringClass());
     }
   }
 

@@ -318,7 +318,8 @@ All framework-specific logger factories (`JBossLoggerFactory`, `JCLLoggerFactory
 `Log4j2LoggerFactory`, `LogbackLoggerFactory`, `Slf4jLoggerFactory` and `TinylogLoggerFactory`) provide the static
 factory methods `withFallback()` and `strict()`. `withFallback()` creates a factory using a logger for the target class
 if no logger field is available, which is equivalent to `new ...LoggerFactory(true)`. `strict()` creates a factory
-requiring a logger field, which is equivalent to `new ...LoggerFactory(false)`.
+requiring a logger field, which is equivalent to `new ...LoggerFactory(false)`. The constructors taking a boolean are
+deprecated in favor of these factory methods.
 
 ```java title="ShopConfiguration.java"
 package com.example.bookstore;
