@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,6 +116,53 @@ class AbstractMethodLoggerFactoryTest
     assertNotSame(logger1, logger2);
     assertSame(logger2, logger3);
     assertEquals(List.of("log", "log"), factory.fields);
+  }
+
+
+  @Test
+  @DisplayName("Loggers from instance fields holding different loggers are cached per target object")
+  void instanceFieldLoggerPerTargetObject() throws Exception
+  {
+    final var factory = new RecordingLoggerFactory();
+    final var logField = WithInstanceLogger.class.getDeclaredField("log");
+    final var bean1 = new WithInstanceLogger();
+    final var bean2 = new WithInstanceLogger();
+
+    bean2.log = java.util.logging.Logger.getLogger("other");
+
+    final var logger1 = factory.from(logField, bean1, WithInstanceLogger.class);
+    final var logger2 = factory.from(logField, bean2, WithInstanceLogger.class);
+    final var logger3 = factory.from(logField, bean1, WithInstanceLogger.class);
+    final var logger4 = factory.from(logField, bean2, WithInstanceLogger.class);
+
+    assertNotSame(logger1, logger2);
+    assertSame(logger1, logger3);
+    assertSame(logger2, logger4);
+    assertEquals(List.of("log", "log"), factory.fields);
+  }
+
+
+  @Test
+  @DisplayName("Cached loggers from instance fields do not keep the target object reachable")
+  void instanceFieldLoggerReleasesTarget() throws Exception
+  {
+    final var factory = new RecordingLoggerFactory();
+    final var logField = WithInstanceLogger.class.getDeclaredField("log");
+    var bean = new WithInstanceLogger();
+    final var beanReference = new WeakReference<>(bean);
+
+    factory.from(logField, bean, WithInstanceLogger.class);
+    //noinspection UnusedAssignment
+    bean = null;
+
+    for(var n = 0; n < 50 && beanReference.get() != null; n++)
+    {
+      System.gc();
+      //noinspection BusyWait
+      Thread.sleep(20);
+    }
+
+    assertNull(beanReference.get(), "target object has not been garbage collected");
   }
 
 

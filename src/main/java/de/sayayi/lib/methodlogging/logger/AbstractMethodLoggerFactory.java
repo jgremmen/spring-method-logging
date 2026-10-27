@@ -21,6 +21,9 @@ import de.sayayi.lib.methodlogging.MethodLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,6 +66,12 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   /** Last method logger with the logger instance it was created for, by other logger field and target class. */
   private final Map<Field,Map<Class<?>,FieldMethodLogger>> instanceFieldLoggerCache = new ConcurrentHashMap<>();
 
+  /** Method logger with the logger instance it was created for, by other logger field and target object. */
+  private final Map<TargetKey,FieldMethodLogger> targetFieldLoggerCache = new ConcurrentHashMap<>();
+
+  /** Keys of {@link #targetFieldLoggerCache} whose target object has been garbage collected. */
+  private final ReferenceQueue<Object> collectedTargets = new ReferenceQueue<>();
+
   /** Method loggers for classes without logger field, by class. */
   private final Map<Class<?>,MethodLogger> classLoggerCache = new ConcurrentHashMap<>();
 
@@ -88,8 +97,9 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * Method loggers for static final logger fields are cached per field and method loggers for classes without logger
    * field are cached per class. {@link MethodLogger#NO_OP} is not cached for a static final logger field, as the field
    * is {@code null} until its class has been initialized. For all other logger fields, the field is read on each
-   * invocation, as its content may change. The method logger last created for the field and {@code type} is reused as
-   * long as the field holds the same logger instance. If {@link #createMethodLogger(Field, Object)} returns
+   * invocation, as its content may change. The method logger created for the field and {@code obj}, or else the method
+   * logger last created for the field and {@code type}, is reused as long as the field holds the same logger instance.
+   * Target objects are referenced weakly. If {@link #createMethodLogger(Field, Object)} returns
    * {@link #CLASS_METHOD_LOGGER}, the cached method logger for {@code type} is returned.
    *
    * @throws IllegalStateException  if no logger field is available and this factory requires one
@@ -134,8 +144,10 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 
 
   /**
-   * Returns the method logger for a logger field which is not static final. The method logger last created for
-   * {@code loggerField} and {@code type} is returned if the field still holds the logger instance it was created for.
+   * Returns the method logger for a logger field which is not static final. The method logger created for
+   * {@code loggerField} and {@code obj}, or else the method logger last created for {@code loggerField} and
+   * {@code type}, is returned if the field still holds the logger instance it was created for. Otherwise, a new method
+   * logger is created and cached for both.
    *
    * @param loggerField  logger field which is not static final, not {@code null}
    * @param obj          the target object owning the field, not {@code null}
@@ -156,10 +168,14 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
       return createMethodLogger(loggerField, obj);
     }
 
+    var cachedFieldMethodLogger = targetFieldLoggerCache.get(new TargetKey(loggerField, obj, null));
+    if (cachedFieldMethodLogger != null && cachedFieldMethodLogger.logger == logger)
+      return cachedFieldMethodLogger.methodLogger;
+
     final var typeLoggerCache = instanceFieldLoggerCache
         .computeIfAbsent(loggerField, f -> new ConcurrentHashMap<>());
-    final var cachedFieldMethodLogger = typeLoggerCache.get(type);
 
+    cachedFieldMethodLogger = typeLoggerCache.get(type);
     if (cachedFieldMethodLogger != null && cachedFieldMethodLogger.logger == logger)
       return cachedFieldMethodLogger.methodLogger;
 
@@ -168,11 +184,30 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
     // the field may have been reassigned while the method logger was created
     try {
       if (loggerField.get(obj) == logger)
-        typeLoggerCache.put(type, new FieldMethodLogger(logger, methodLogger));
+      {
+        final var fieldMethodLogger = new FieldMethodLogger(logger, methodLogger);
+
+        typeLoggerCache.put(type, fieldMethodLogger);
+
+        removeCollectedTargets();
+        targetFieldLoggerCache.put(new TargetKey(loggerField, obj, collectedTargets), fieldMethodLogger);
+      }
     } catch(IllegalAccessException ignored) {
     }
 
     return methodLogger;
+  }
+
+
+  /**
+   * Removes the method loggers of garbage collected target objects from the cache.
+   *
+   * @since 0.6.0
+   */
+  private void removeCollectedTargets()
+  {
+    for(Reference<?> collectedTarget; (collectedTarget = collectedTargets.poll()) != null;)
+      targetFieldLoggerCache.remove((TargetKey)collectedTarget);
   }
 
 
@@ -280,5 +315,66 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * @since 0.6.0
    */
   private record FieldMethodLogger(Object logger, @NotNull MethodLogger methodLogger) {
+  }
+
+
+
+
+  /**
+   * Cache key of a logger field and a weakly referenced target object, compared by identity.
+   *
+   * @since 0.6.0
+   */
+  private static final class TargetKey extends WeakReference<Object>
+  {
+    /** Logger field read from the target object. */
+    private final @NotNull Field loggerField;
+
+    /** Hash code of the logger field and the identity of the target object. */
+    private final int hashCode;
+
+
+    /**
+     * Creates a key for {@code loggerField} and {@code obj}.
+     *
+     * @param loggerField  logger field, not {@code null}
+     * @param obj          target object, not {@code null}
+     * @param queue        queue the key is enqueued in once {@code obj} has been garbage collected, or {@code null}
+     *                     for a key used for lookups only
+     */
+    private TargetKey(@NotNull Field loggerField, @NotNull Object obj, ReferenceQueue<Object> queue)
+    {
+      super(obj, queue);
+
+      this.loggerField = loggerField;
+      hashCode = 31 * loggerField.hashCode() + System.identityHashCode(obj);
+    }
+
+
+    /**
+     * Tells whether {@code o} is a key for the same logger field and target object. A key whose target object has been
+     * garbage collected is equal to itself only.
+     *
+     * @param o  object to compare
+     *
+     * @return  {@code true} if {@code o} is equal to this key, {@code false} otherwise
+     */
+    @Override
+    public boolean equals(Object o)
+    {
+      if (o == this)
+        return true;
+
+      final Object obj;
+
+      return o instanceof TargetKey that && (obj = get()) != null && obj == that.get() &&
+             loggerField.equals(that.loggerField);
+    }
+
+
+    @Override
+    public int hashCode() {
+      return hashCode;
+    }
   }
 }
