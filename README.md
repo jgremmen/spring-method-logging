@@ -13,7 +13,8 @@ to Spring-managed beans. All it takes is a couple of annotations — no boilerpl
 - **Elapsed time** - optionally logs how long a method took to execute (until it returns; for async or reactive
   results this excludes the time until the result is completed)
 - **Line numbers** - optionally includes the source line number in log messages
-- **Exception logging** - logs exception type and message when a method exits with an error
+- **Exception logging** - logs the exception type and, unless hidden, the exception message when a method exits
+  with an error
 - **Multiple logging frameworks** - supports SLF4J, Log4j2, Logback, JUL, the JDK platform logger
   (`System.Logger`), JBoss Logging, Tinylog and JCL (Apache Commons Logging) out of the box
 - **Customizable** - log levels, message formats, parameter visibility and more can be configured
@@ -77,17 +78,18 @@ result = Hello World
 
 Use `@MethodLoggingConfig` on a class to define defaults for all `@MethodLogging`-annotated methods in that class.
 Individual methods can still override any of these settings. Besides the settings of `@MethodLogging` (log levels,
-visibility of line number, elapsed time, parameters and result, message formats and logger field name),
-`@MethodLoggingConfig` defines the prefixes of the method entry and exit messages.
+visibility of line number, elapsed time, exception message, parameters and result, message formats and logger field
+name), `@MethodLoggingConfig` defines the prefixes of the method entry and exit messages.
 
 ### Parameter control
 
 The `@ParamLog` annotation can be placed on individual method parameters to control how they appear in the log output.
 It allows you to set a custom format, change the display name or log the parameter on a separate line instead of inline.
 
-Formats use the message syntax of the [message-format](https://lib.sayayi.de/message-format/) library, which is also 
-used to format the log messages. The parameter value is available as `%{value}`, which is the default format. An invalid 
-format fails the method analysis, like an excluded parameter name matching no parameter.
+Formats use the message syntax of the [message-format](https://lib.sayayi.de/message-format/) library, which is also
+used to format the log messages. The parameter value is available as `%{value}`. The default format is
+`%{value,null:'(null)'}`, which logs a `null` value as `(null)`. An invalid format fails the method analysis, like an
+excluded parameter name matching no parameter.
 
 Parameters can be excluded from logging, e.g. if their value has no meaningful string representation, produces far
 too much output (like large collections or binary data) or contains sensitive information such as passwords or tokens.
