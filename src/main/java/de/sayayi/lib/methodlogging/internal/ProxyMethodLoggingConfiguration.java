@@ -178,6 +178,9 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
      * analyzed later. Spring stops matching the methods of a class at the first matching method when deciding whether
      * to create a proxy, so the other methods are matched on their first invocation only (e.g. for JDK proxies).
      * <p>
+     * A class matched while {@link #analyseDeferredMethods()} completes may miss the deferred analysis. Its methods are
+     * then analyzed when matched, like the methods of classes matched afterwards.
+     * <p>
      * Spring matches methods when creating a proxy and on the first invocation of each proxied method. A failed
      * analysis is therefore not passed on: the method matches if it is annotated with {@code @MethodLogging}, so the
      * interceptor reports the failure and invokes the method without logging.
@@ -190,21 +193,26 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     @Override
     public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass)
     {
-      if (!deferAnalysis)
+      if (deferAnalysis)
       {
-        try {
-          return annotationMethodLoggingSource.hasMethodLogging(method, targetClass);
-        } catch(RuntimeException ex) {
-          // matching is also part of the invocation: the interceptor reports the failure and invokes the method
-          return annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass);
-        }
+        if (!annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass))
+          return false;
+
+        deferredClasses.add(targetClass);
+
+        // the deferred classes may have been analyzed before the class was added
+        if (deferAnalysis)
+          return true;
+
+        deferredClasses.remove(targetClass);
       }
 
-      if (!annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass))
-        return false;
-
-      deferredClasses.add(targetClass);
-      return true;
+      try {
+        return annotationMethodLoggingSource.hasMethodLogging(method, targetClass);
+      } catch(RuntimeException ex) {
+        // matching is also part of the invocation: the interceptor reports the failure and invokes the method
+        return annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, targetClass);
+      }
     }
 
 
@@ -223,13 +231,18 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
       annotationMethodLoggingSource.singletonsInstantiated();
       deferAnalysis = false;
 
-      for(var deferredClass: deferredClasses)
-      {
-        for(var method: getProxiedMethods(deferredClass))
-          if (annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, deferredClass))
-            annotationMethodLoggingSource.getMethodDefinition(method, deferredClass);
+      try {
+        for(var deferredClass: deferredClasses)
+        {
+          for(var method: getProxiedMethods(deferredClass))
+            if (annotationMethodLoggingSource.hasMethodLoggingAnnotation(method, deferredClass))
+              annotationMethodLoggingSource.getMethodDefinition(method, deferredClass);
 
-        deferredClasses.remove(deferredClass);
+          deferredClasses.remove(deferredClass);
+        }
+      } finally {
+        // classes not analyzed due to a failure
+        deferredClasses.clear();
       }
     }
 
