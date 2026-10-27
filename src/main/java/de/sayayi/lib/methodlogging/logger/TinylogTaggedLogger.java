@@ -55,7 +55,7 @@ final class TinylogTaggedLogger implements MethodLogger
    * The message is logged with the Tinylog tagged logger at the corresponding Tinylog level.
    */
   @Override
-  public void log(@NotNull Level level, String message)
+  public void log(@NotNull Level level, @NotNull String message)
   {
     switch(level)
     {

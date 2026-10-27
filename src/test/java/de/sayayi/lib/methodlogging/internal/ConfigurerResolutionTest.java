@@ -306,6 +306,20 @@ class ConfigurerResolutionTest
   }
 
 
+  @Test
+  @DisplayName("Class filter skips classes which cannot carry @MethodLogging")
+  void classFilter()
+  {
+    final var classFilter = new ProxyMethodLoggingConfiguration.MethodLoggingPointcut(
+        new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true)).getClassFilter();
+
+    assertTrue(classFilter.matches(Bean.class));
+    assertTrue(classFilter.matches(PartiallyInvalidApi.class));
+    assertFalse(classFilter.matches(String.class));
+    assertFalse(classFilter.matches(ArrayList.class));
+  }
+
+
 
 
   @SuppressWarnings("unused")
@@ -340,7 +354,7 @@ class ConfigurerResolutionTest
     {
       return (loggerField, obj, type) -> new MethodLogger() {
         @Override
-        public void log(@NotNull Level level, String message) {
+        public void log(@NotNull Level level, @NotNull String message) {
           log.add(level.name() + '|' + message);
         }
 

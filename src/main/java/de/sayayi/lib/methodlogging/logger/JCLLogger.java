@@ -55,7 +55,7 @@ final class JCLLogger implements MethodLogger
    * The message is logged with the JCL logger at the corresponding JCL level.
    */
   @Override
-  public void log(@NotNull Level level, String message)
+  public void log(@NotNull Level level, @NotNull String message)
   {
     switch(level)
     {

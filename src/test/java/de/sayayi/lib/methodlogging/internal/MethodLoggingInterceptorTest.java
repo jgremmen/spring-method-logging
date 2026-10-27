@@ -188,7 +188,7 @@ class MethodLoggingInterceptorTest
   {
     final var bean = proxy(new Bean(), (loggerField, obj, type) -> new MethodLogger() {
       @Override
-      public void log(@NotNull Level level, String message) {
+      public void log(@NotNull Level level, @NotNull String message) {
         throw new NoClassDefFoundError("ch/qos/logback/classic/Logger");
       }
 
@@ -209,7 +209,7 @@ class MethodLoggingInterceptorTest
   {
     final var bean = proxy(new Bean(), (loggerField, obj, type) -> new MethodLogger() {
       @Override
-      public void log(@NotNull Level level, String message) {
+      public void log(@NotNull Level level, @NotNull String message) {
         throw new IllegalStateException("log failed");
       }
 
@@ -263,7 +263,7 @@ class MethodLoggingInterceptorTest
   {
     return new MethodLogger() {
       @Override
-      public void log(@NotNull Level level, String message) {
+      public void log(@NotNull Level level, @NotNull String message) {
         log.add(level.name() + '|' + message);
       }
 

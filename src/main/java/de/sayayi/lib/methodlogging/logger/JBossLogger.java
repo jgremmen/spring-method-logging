@@ -55,7 +55,7 @@ final class JBossLogger implements MethodLogger
    * The message is logged with the JBoss logger at the corresponding JBoss level.
    */
   @Override
-  public void log(@NotNull Level level, String message)
+  public void log(@NotNull Level level, @NotNull String message)
   {
     switch(level)
     {

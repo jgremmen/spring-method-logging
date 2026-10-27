@@ -437,7 +437,7 @@ public class MethodLoggingTest
 
       return new MethodLogger() {
         @Override
-        public void log(@NotNull Level level, String message) {
+        public void log(@NotNull Level level, @NotNull String message) {
           log.add(level.name() + '|' + message);
         }
 

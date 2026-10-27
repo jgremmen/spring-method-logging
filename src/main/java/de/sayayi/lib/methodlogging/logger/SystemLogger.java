@@ -63,7 +63,7 @@ final class SystemLogger implements MethodLogger
    * The message is logged with the platform logger at the corresponding platform logger level.
    */
   @Override
-  public void log(@NotNull Level level, String message) {
+  public void log(@NotNull Level level, @NotNull String message) {
     logger.log(LEVELS[level.ordinal()], message);
   }
 

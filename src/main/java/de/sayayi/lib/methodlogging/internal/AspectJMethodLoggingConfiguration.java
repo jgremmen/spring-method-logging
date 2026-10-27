@@ -42,7 +42,7 @@ import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRA
 @Configuration(proxyBeanMethods = false)
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")
-public class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguration
+class AspectJMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
   /**
    * {@inheritDoc}

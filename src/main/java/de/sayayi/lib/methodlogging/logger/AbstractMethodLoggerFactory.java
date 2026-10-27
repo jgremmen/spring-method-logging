@@ -53,7 +53,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
    * @since 0.6.0
    */
   protected static final @NotNull MethodLogger CLASS_METHOD_LOGGER = new MethodLogger() {
-    @Override public void log(@NotNull Level level, String message) {}
+    @Override public void log(@NotNull Level level, @NotNull String message) {}
     @Override public boolean isLogEnabled(@NotNull Level level) { return false; }
   };
 

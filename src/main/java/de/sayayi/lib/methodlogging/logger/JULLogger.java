@@ -61,7 +61,7 @@ final class JULLogger implements MethodLogger
    * The message is logged with the JUL logger at the corresponding JUL level.
    */
   @Override
-  public void log(@NotNull Level level, String message) {
+  public void log(@NotNull Level level, @NotNull String message) {
     logger.log(LEVELS[level.ordinal()], message);
   }
 
@@ -74,7 +74,7 @@ final class JULLogger implements MethodLogger
    * @since 0.6.0
    */
   @Override
-  public void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
+  public void log(@NotNull Level level, @NotNull String message, @NotNull StackTraceElement location) {
     logger.logp(LEVELS[level.ordinal()], location.getClassName(), location.getMethodName(), message);
   }
 

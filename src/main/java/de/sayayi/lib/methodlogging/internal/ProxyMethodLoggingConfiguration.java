@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
+import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Pointcut;
@@ -34,6 +35,7 @@ import static java.lang.reflect.Modifier.PRIVATE;
 import static java.lang.reflect.Modifier.STATIC;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 import static org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE;
+import static org.springframework.core.annotation.AnnotationUtils.isCandidateClass;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClassAsSet;
 import static org.springframework.util.ReflectionUtils.getAllDeclaredMethods;
 
@@ -52,7 +54,7 @@ import static org.springframework.util.ReflectionUtils.getAllDeclaredMethods;
 @Configuration(proxyBeanMethods = false)
 @Role(ROLE_INFRASTRUCTURE)
 @SuppressWarnings("SpringFacetCodeInspection")
-public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
+class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
 {
   /**
    * {@inheritDoc}
@@ -145,6 +147,9 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
    * Until {@link #analyseDeferredMethods()} is invoked, methods are matched by their {@code @MethodLogging} annotation
    * only and the methods of their target classes are analyzed later. Analyzing a method requires the configurer, which
    * must not be created while a bean is being post-processed: the configurer may depend on that bean.
+   * <p>
+   * Classes which cannot carry a {@code @MethodLogging} annotation, like {@code java.*} classes, are skipped by the class
+   * filter, so their methods are not matched at all.
    */
   static final class MethodLoggingPointcut extends StaticMethodMatcherPointcut
   {
@@ -166,6 +171,8 @@ public class ProxyMethodLoggingConfiguration extends MethodLoggingConfiguration
     MethodLoggingPointcut(@NotNull AnnotationMethodLoggingSource annotationMethodLoggingSource)
     {
       this.annotationMethodLoggingSource = annotationMethodLoggingSource;
+
+      setClassFilter(targetClass -> isCandidateClass(targetClass, MethodLogging.class));
 
       deferredClasses = newKeySet();
       deferAnalysis = true;

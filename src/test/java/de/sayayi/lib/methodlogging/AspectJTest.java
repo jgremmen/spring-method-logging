@@ -408,7 +408,7 @@ class AspectJTest
       {
         return (loggerField, obj, type) -> new MethodLogger() {
           @Override
-          public void log(@NotNull Level level, String message) {
+          public void log(@NotNull Level level, @NotNull String message) {
             System.out.println(level + "|" + message);
           }
 

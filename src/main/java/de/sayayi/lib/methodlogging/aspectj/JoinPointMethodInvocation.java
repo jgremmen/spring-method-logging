@@ -66,10 +66,10 @@ final class JoinPointMethodInvocation implements MethodInvocation
   /**
    * Returns the arguments passed to the executed method.
    *
-   * @return  method arguments, never {@code null}
+   * @return  method arguments, never {@code null}. Elements are {@code null} for {@code null} arguments
    */
   @Override
-  public @NotNull Object @NotNull [] getArguments() {
+  public Object @NotNull [] getArguments() {
     return joinPoint.getArgs();
   }
 

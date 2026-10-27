@@ -45,7 +45,7 @@ public interface MethodLogger
    * @see MethodLoggerFactory#from(Field, Object, Class)
    */
   @NotNull MethodLogger NO_OP = new MethodLogger() {
-    @Override public void log(@NotNull Level level, String message) {}
+    @Override public void log(@NotNull Level level, @NotNull String message) {}
     @Override public boolean isLogEnabled(@NotNull Level level) { return false; }
   };
 
@@ -56,7 +56,7 @@ public interface MethodLogger
    * @param level    logging level, never {@code null} or {@link Level#DEFAULT}
    * @param message  message to log, never {@code null}
    */
-  void log(@NotNull Level level, String message);
+  void log(@NotNull Level level, @NotNull String message);
 
 
   /**
@@ -74,7 +74,7 @@ public interface MethodLogger
    *
    * @since 0.6.0
    */
-  default void log(@NotNull Level level, String message, @NotNull StackTraceElement location) {
+  default void log(@NotNull Level level, @NotNull String message, @NotNull StackTraceElement location) {
     log(level, message);
   }
 

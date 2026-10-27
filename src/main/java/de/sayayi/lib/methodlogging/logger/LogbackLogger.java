@@ -58,7 +58,7 @@ final class LogbackLogger implements MethodLogger
    * The message is logged with the Logback logger at the corresponding Logback level.
    */
   @Override
-  public void log(@NotNull Level level, String message)
+  public void log(@NotNull Level level, @NotNull String message)
   {
     switch(level)
     {
@@ -79,7 +79,7 @@ final class LogbackLogger implements MethodLogger
    * @since 0.6.0
    */
   @Override
-  public void log(@NotNull Level level, String message, @NotNull StackTraceElement location)
+  public void log(@NotNull Level level, @NotNull String message, @NotNull StackTraceElement location)
   {
     final var logbackLevel = switch(level) {
       case TRACE -> ch.qos.logback.classic.Level.TRACE;

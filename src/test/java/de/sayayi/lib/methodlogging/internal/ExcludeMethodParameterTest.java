@@ -198,6 +198,35 @@ class ExcludeMethodParameterTest
   }
 
 
+  @Test
+  @DisplayName("Primitive parameters are not passed to the configurer, primitive arrays are")
+  void primitiveParametersNotQueried() throws Exception
+  {
+    final var parameterTypes = new ArrayList<Class<?>>();
+    final var methodDef = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {
+          @Override
+          public boolean excludeMethodParameter(@NotNull ResolvableType methodParameterType)
+          {
+            parameterTypes.add(methodParameterType.resolve());
+            return true;
+          }
+        }, true)
+        .getMethodDefinition(
+            ExcludeParams.class.getMethod("primitives", int.class, int[].class, Integer.class),
+            ExcludeParams.class);
+
+    assertEquals(List.of(int[].class, Integer.class), parameterTypes);
+    assertEquals(
+        List.of("count"),
+        requireNonNull(methodDef)
+            .inlineParameters
+            .stream()
+            .map(ParameterDef::name)
+            .toList());
+  }
+
+
   private static List<String> inlineParameterNames(Method method, Class<?> targetClass)
   {
     final var methodDef = new AnnotationMethodLoggingSource(
@@ -424,6 +453,12 @@ class ExcludeMethodParameterTest
     @MethodLogging(parameters = HIDE, exclude = "password")
     @SuppressWarnings("unused")
     public void hidden(String user, String password) {
+    }
+
+
+    @MethodLogging
+    @SuppressWarnings("unused")
+    public void primitives(int count, int[] values, Integer boxed) {
     }
   }
 }

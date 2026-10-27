@@ -465,7 +465,7 @@ final class AnnotationMethodLoggingSource
    *
    * @since 0.3.0
    */
-  MethodDef getMethodDefinition(@NotNull Method method, Class<?> targetClass)
+  MethodDef getMethodDefinition(@NotNull Method method, @NotNull Class<?> targetClass)
   {
     final var methodClassKey = new MethodClassKey(method, targetClass);
 
@@ -570,7 +570,7 @@ final class AnnotationMethodLoggingSource
    *
    * @since 0.6.0
    */
-  boolean isFirstFailureReport(@NotNull Method method, Class<?> targetClass)
+  boolean isFirstFailureReport(@NotNull Method method, @NotNull Class<?> targetClass)
   {
     final var failure = methodLoggingFailureCache.get(new MethodClassKey(method, targetClass));
     return failure == null || failure.reported.compareAndSet(false, true);
@@ -985,7 +985,7 @@ final class AnnotationMethodLoggingSource
                                              @NotNull ResolvableType methodParameterType)
   {
     return
-        (methodParameterType.toClass().isPrimitive() && !methodParameterType.isArray()) ||
+        methodParameterType.toClass().isPrimitive() ||
         !config.methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
   }
 
