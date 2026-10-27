@@ -388,7 +388,7 @@ annotation or configurer). It can be used in composed annotations and custom cod
 
 The `MethodLoggingConfigurer` bean is now obtained when the first method with method logging is analyzed or once all
 singleton beans have been created, whichever comes first. Its methods `messageSupport()`, `methodLoggerFactory()` and
-the five default methods are invoked once. The configurer may therefore depend on beans with method logging; for proxy
+the six default methods are invoked once. The configurer may therefore depend on beans with method logging; for proxy
 based method logging, these beans are logged as well. Methods invoked while the configurer is being created are not
 logged.
 

@@ -36,7 +36,7 @@ The following interfaces are called concurrently and require thread-safe impleme
 | `MessageSupport` from the configurer | for every formatted message, by any thread             | thread-safe; not modified after it is returned   |
 | `MethodLoggingConfigurer`          | `excludeMethodParameter` during analysis, possibly concurrently | thread-safe and free of side effects       |
 
-The remaining methods of `MethodLoggingConfigurer`, `messageSupport()`, `methodLoggerFactory()` and the five default
+The remaining methods of `MethodLoggingConfigurer`, `messageSupport()`, `methodLoggerFactory()` and the six default
 methods, are called once by a single thread when the configuration is created.
 
 `AbstractMethodLoggerFactory` may call the `createMethodLogger` methods of a subclass concurrently for the same field or

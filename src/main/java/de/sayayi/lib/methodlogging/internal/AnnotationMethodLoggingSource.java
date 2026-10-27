@@ -993,8 +993,8 @@ final class AnnotationMethodLoggingSource
   /**
    * Returns the {@code @MethodLoggingConfig} attributes of {@code type}, or the annotation defaults if the type is not
    * annotated. Logger field name, levels, line number and exception message left at their default are replaced by the
-   * configurer defaults.
-   * Elapsed time, parameters and result set to {@link Visibility#DEFAULT} are replaced by their annotation defaults.
+   * configurer defaults. Elapsed time, parameters and result set to {@link Visibility#DEFAULT} are replaced by their
+   * annotation defaults.
    *
    * @param config  configuration with the configurer defaults, not {@code null}
    * @param type    target class, not {@code null}

@@ -261,5 +261,6 @@ method logging is used in production.
 /// danger | Sensitive values are logged by default
 All parameters and results are logged unless they are excluded. A method receiving a password, a token or personal data
 writes that value to the log as soon as it is annotated. The [Parameters](user-guide/parameters.md#excluding-parameters)
-page shows how to exclude such values.
+page shows how to exclude such values. Exception messages often repeat input values as well; the [Exit
+Message](user-guide/logging-methods.md#exit-message) section describes how to hide them.
 ///

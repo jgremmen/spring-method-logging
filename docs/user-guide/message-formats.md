@@ -6,11 +6,10 @@ in each format and shows how values of different types are formatted.
 
 ## The message-format Library
 
-Method logging formats its messages with the [message-format](https://lib.sayayi.de/message-format/) library. A message 
-format is a text with embedded parameters. A parameter is written as `%{name}` and is replaced by the formatted value of 
-the variable `name`. Leading and trailing spaces of a message format are not part of the formatted message. The 
-formatter used depends on the type of the value: numbers, dates, collections, optionals and many other types have 
-formatters of their own.
+Method logging formats its messages with the [message-format](https://lib.sayayi.de/message-format/) library. A message
+format is a text with embedded parameters. A parameter is written as `%{name}` and is replaced by the formatted value of
+the variable `name`. Leading and trailing spaces of a message format are not part of the formatted message. The
+formatter used depends on the type of the value, as described in [Formatting of Values](#formatting-of-values).
 
 A parameter can carry additional entries, separated by commas, which select a named formatter, configure a formatter or
 map specific values to a text:
@@ -56,16 +55,18 @@ Four formats are involved in logging parameters and results. Each one provides i
 | Format                  | Set with                                       | Variables                 | Default                                 |
 |-------------------------|------------------------------------------------|---------------------------|-----------------------------------------|
 | parameter value format  | `@ParamLog(format)`                            | `value`                   | `%{value,null:'(null)'}`                |
-| inline parameter format | `inlineParameterFormat`                        | `parameter`, `value`      | `%{parameter}=%{value}`                 |
-| parameter format        | `parameterFormat`                              | `parameter`, `value`      | `parameter '%{parameter}' = %{value}`   |
+| inline parameter format | `inlineParameterFormat`                        | `parameter`, `value`, `inline` | `%{parameter}=%{value}`            |
+| parameter format        | `parameterFormat`                              | `parameter`, `value`, `inline` | `parameter '%{parameter}' = %{value}` |
 | result format           | `resultFormat`                                 | `result`                  | `result = %{result,null:'(null)'}`      |
 
 The parameter value format is applied first. Its variable `value` holds the parameter value as passed to the method. The
 inline parameter format and the parameter format then build the text for one parameter. In these formats, `parameter` is
 the parameter name and `value` is the text produced by the parameter value format. The inline parameter format applies
 to parameters logged inline, the parameter format to [separately logged
-parameters](parameters.md#inline-and-separate-parameters). In the result format, `result` holds the return value of the
-method.
+parameters](parameters.md#inline-and-separate-parameters). The boolean variable `inline` is `true` in the inline
+parameter format and `false` in the parameter format. It allows one format to be used for both, for example in a
+[composed annotation](../developer-guide/composed-annotations.md), with a map entry such as
+`%{inline,true:'',false:'separately '}`. In the result format, `result` holds the return value of the method.
 
 The defaults are available as the constants `DEFAULT_INLINE_PARAMETER_FORMAT`, `DEFAULT_PARAMETER_FORMAT` and
 `DEFAULT_RESULT_FORMAT` of [`@MethodLoggingConfig`][jd-config].
@@ -138,6 +139,7 @@ With the default message support, values are formatted as follows:
 | Value                             | Example value               | Formatted as          |
 |-----------------------------------|-----------------------------|-----------------------|
 | `null`                            | `null`                      | empty text; `(null)` with the default parameter value and result formats |
+| `null` element of a collection    | `Arrays.asList(1, null, 3)` | `[1, 3]`, the element is left out |
 | string                            | `"Dune"`                    | `Dune`, without quotes |
 | record or other object            | `new Order(42, "0441013597", 2)` | `Order[id=42, isbn=0441013597, quantity=2]` |
 | collection or array               | `List.of(1, 2, 3)`          | `[1, 2, 3]`           |
@@ -145,14 +147,18 @@ With the default message support, values are formatted as follows:
 | map                               | `Map.of("Dune", 2)`         | `{Dune=2}`            |
 | number                            | `new BigDecimal("1234.5")`  | `1234.5`              |
 | date                              | `LocalDate.of(2026, 10, 25)` | `2026-10-25`         |
+| `java.util.Date`                  | `new Date(0)`               | `1970-01-01T00:00:00Z`, as an instant in UTC |
+| enum constant                     | `Genre.SCIENCE_FICTION`     | `SCIENCE_FICTION`, the name of the constant |
 | path                              | `Path.of("/var/shop")`      | `/var/shop`           |
 | `Optional`                        | `Optional.of(7)`            | `7`                   |
+| empty `Optional`                  | `Optional.empty()`          | like `null`, `(null)` with the default formats |
 | `Supplier`                        | `() -> "Dune"`              | `Dune`, by calling `get()` |
 
 Collections, arrays and maps are logged with at most 20 elements; an ellipsis (`…`) marks the elements left out.
-Numbers, dates and all other values without a formatter of their own are logged with their `toString()` method, so the
-output does not depend on the locale of the server. Locale-dependent formatting requires a [custom message
-support](#custom-message-support).
+Enum constants are logged by their name, even if the enum overrides `toString()`. A `java.util.Date` is converted to an
+instant first. Numbers, dates and all other values without a formatter of their own are logged with their `toString()`
+method, so the output does not depend on the locale of the server. Locale-dependent formatting requires a
+[custom message support](#custom-message-support).
 
 Values are written to the log verbatim. In particular, line breaks contained in a value are not escaped.
 
@@ -251,8 +257,8 @@ limit the number of elements.
 
 Like the default message support, the `DefaultFormatterService` evaluates suppliers and iterates iterables, with the
 side effects described on the [Parameters](parameters.md#side-effects-of-formatting) page. The
-`GenericFormatterService` of message-format formats every value with its `toString()` method instead. A message support based on it never evaluates or iterates a value
-beyond what `toString()` does:
+`GenericFormatterService` of message-format formats every value with its `toString()` method instead. A message support
+based on it never evaluates or iterates a value beyond what `toString()` does:
 
 ```java title="ShopConfiguration.java"
 package com.example.bookstore;
@@ -280,8 +286,8 @@ public class ShopConfiguration implements MethodLoggingConfigurer
 
 With the generic formatter service, values are formatted by `toString()` only: a list is logged as `[1, 2]` and a map
 as `{Dune=2}`, with all of their elements, an `Optional` as `Optional[7]` and an array by its type and identity hash,
-such as `[I@7ba18f1b`. The map entry `null:'<none>'` still works, and `empty:'-'`
-still applies to an empty string, but no longer to an empty collection, which is logged as `[]`. Named formatters are
+such as `[I@7ba18f1b`. The map entry `null:'<none>'` still works, and `empty:'-'` still applies to an empty string,
+but no longer to an empty collection, which is logged as `[]`. Named formatters are
 not available, so `%{value,format:size}` logs the `toString()` of the value instead of its size. Post formatters are not
 registered either: a format using `clip` fails when it is formatted, and the parameter value is logged as
 `<format failed: NullPointerException>`. Custom formats are therefore reviewed when the formatter service is replaced.

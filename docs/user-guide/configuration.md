@@ -92,7 +92,7 @@ apply to a single parameter and are not inherited from any other level:
 
 | `@ParamLog` attribute | Default                              | Effect                                        |
 |-----------------------|--------------------------------------|-----------------------------------------------|
-| `format`, `value`     | empty, which means `%{value}`        | format of the parameter value                 |
+| `format`, `value`     | empty, which means `%{value,null:'(null)'}` | format of the parameter value          |
 | `inline`              | `true`                               | logged inline or as a separate message        |
 | `name`                | empty, which means the discovered name | name logged for the parameter               |
 | `exclude`             | `false`                              | excludes the parameter, ignoring the others   |
@@ -193,9 +193,9 @@ otherwise the application context fails to start with a `NoUniqueBeanDefinitionE
 default implementations apply.
 
 The default methods `defaultLoggerFieldName()`, `defaultEntryExitLevel()`, `defaultParameterLevel()`,
-`defaultResultLevel()`, `defaultLineNumber()` and `defaultExceptionMessage()` must not return `null` or `DEFAULT`. Such a value fails the start of
-the application context with an `IllegalStateException`. An empty logger field name is allowed and disables the logger
-field lookup.
+`defaultResultLevel()`, `defaultLineNumber()` and `defaultExceptionMessage()` must not return `null` or `DEFAULT`. Such
+a value fails the start of the application context with an `IllegalStateException`. An empty logger field name is
+allowed and disables the logger field lookup.
 
 ### When the Configurer Is Created
 
@@ -203,7 +203,7 @@ The configurer bean is not created together with the method logging infrastructu
 method is analyzed or when all singleton beans have been created, whichever comes first. The configurer can therefore
 depend on other beans, including beans with logged methods, and these dependencies are fully initialized and proxied.
 
-The methods `messageSupport()`, `methodLoggerFactory()` and the five default methods are invoked once, when the
+The methods `messageSupport()`, `methodLoggerFactory()` and the six default methods are invoked once, when the
 configuration is created. The method `excludeMethodParameter(ResolvableType)` is invoked during the analysis of each
 logged method, once for each parameter it applies to, as described in
 [Excluding by Type](parameters.md#excluding-by-type).

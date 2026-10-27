@@ -171,11 +171,14 @@ The base class caches the method loggers it obtains. For a `static final` logger
 is not cached, because a logged method invoked while its class is being initialized finds the field still `null`; the
 field is read again on the next invocation. For a class without logger field, `createMethodLogger(Class)` is called once
 per class. For all other fields, the base class reads the field on every invocation, as its content may change. It
-calls `createMethodLogger(Field, Object)` only if the field holds another logger instance than at the previous call for
-the same field and target class, and reuses the method logger otherwise. The method logger created for a field must
-therefore depend on the logger instance in the field only, not on other state of the target object. When a method
-logger is requested concurrently for the first time, the creation methods may be called more than once; the first
-cached result is used.
+caches the method logger per field and target object, and additionally the method logger created last per field and
+target class. `createMethodLogger(Field, Object)` is only called if the field holds another logger instance than the
+one a cached method logger was created for. Objects of the same class sharing one logger instance therefore share the
+method logger, and objects holding different logger instances keep their own. The target objects are referenced
+weakly, so the cache does not prevent them from being garbage collected. The method logger created for a field must
+depend on the logger instance in the field only, not on other state of the target object. When a method logger is
+requested concurrently for the first time, the creation methods may be called more than once; for `static final` fields
+and classes without logger field, the first cached result is used.
 
 `createMethodLogger(Field, Object)` can return the constant `CLASS_METHOD_LOGGER` to use the method logger for the
 target class instead, as created by `createMethodLogger(Class)`. The base class then returns the method logger for the

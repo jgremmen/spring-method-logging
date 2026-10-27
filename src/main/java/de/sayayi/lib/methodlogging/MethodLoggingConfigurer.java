@@ -46,9 +46,10 @@ import org.springframework.core.ResolvableType;
  * invoked during the analysis of each method with method logging.
  * <p>
  * The configurer provides global defaults for the logger field name, the entry/exit, parameter and result log levels
- * and the line number visibility. All other settings, like the elapsed time, parameter and result visibility, the
- * message formats and the entry/exit prefixes, have no global default; they can only be configured per class with
- * {@link MethodLoggingConfig @MethodLoggingConfig} or per method with {@link MethodLogging @MethodLogging}.
+ * and the line number and exception message visibility. All other settings, like the elapsed time, parameter and
+ * result visibility, the message formats and the entry/exit prefixes, have no global default; they can only be
+ * configured per class with {@link MethodLoggingConfig @MethodLoggingConfig} or per method with
+ * {@link MethodLogging @MethodLogging}.
  *
  * @see EnableMethodLogging
  * @see MethodLoggingConfig

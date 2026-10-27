@@ -222,8 +222,9 @@ followed by the milliseconds unless these are zero. Durations from one minute sh
 seconds. Durations from one hour show hours and minutes, rounded to the nearest minute.
 
 The time is measured with a monotonic clock, so adjustments of the system clock do not affect it. The measurement starts
-before the entry message is logged and ends before the exit message is logged. It therefore includes the formatting of
-the parameters and the result, which is usually negligible compared to the method itself.
+after the entry message and the separately logged parameters have been logged, and it ends when the method returns or
+throws an exception, before the result message is logged. The elapsed time therefore covers the method itself, without
+the formatting of the parameters and the result.
 
 /// note | Asynchronous results
 The elapsed time ends when the method returns. For a method returning a `CompletableFuture`, a Reactor `Mono` or another

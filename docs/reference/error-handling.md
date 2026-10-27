@@ -99,7 +99,7 @@ with its class:
 
 | Phase           | Failure                                                     | Consequence for the invocation                 |
 |-----------------|-------------------------------------------------------------|------------------------------------------------|
-| `logger lookup` | the method logger factory throws an exception               | the method is invoked without logging          |
+| `logger lookup` | the method logger factory or the level check throws          | the method is invoked without logging          |
 | `entry`         | logging the entry message or the separate parameters fails  | the method is invoked, result and exit are still logged |
 | `result`        | logging the result message fails                            | the exit is still logged                       |
 | `exit`          | logging the exit message fails                              | none                                           |

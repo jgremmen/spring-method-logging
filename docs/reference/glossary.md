@@ -29,8 +29,12 @@ The **entry prefix** (`methodEntryPrefix`) is the text at the start of the entry
 The **entry/exit level** (`entryExitLevel`) is the log level of the entry and exit messages. If it is not enabled,
 nothing is logged for an invocation.
 
+The **exception message** (`exceptionMessage`) is the message of an exception thrown by a logged method, shown in
+parentheses after the exception class at the end of the exit message. It is shown by default and can be hidden, while
+the exception class is always shown.
+
 The **exit message** is the message logged after a method has returned or thrown an exception. It contains the exit
-prefix, the method name, the line number, the elapsed time and the exception, if any.
+prefix, the method name, the line number, the elapsed time and the exception class and message, if any.
 
 The **exit prefix** (`methodExitPrefix`) is the text at the start of the exit message, `< ` by default.
 
