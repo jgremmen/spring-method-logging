@@ -167,10 +167,29 @@ Values are written to the log verbatim. In particular, line breaks contained in 
 /// danger | Log injection
 A parameter value containing line breaks, such as a user name `"ada\nINFO  > refund(amount=1000)"`, produces additional
 lines in a plain text log that look like genuine log messages. Parameters carrying unchecked user input are either
-excluded, formatted with a format that limits them, or logged with a log format of the logging framework that escapes
-line breaks or produces structured output. Exception messages in the exit message are written verbatim as well; they are
-hidden with [`exceptionMessage = HIDE`](logging-methods.md#exit-message).
+excluded, formatted with a format that limits or [escapes](#escaping-control-characters) them, or logged with a log
+format of the logging framework that escapes line breaks or produces structured output. Exception messages in the exit
+message are written verbatim as well; they are hidden with [`exceptionMessage = HIDE`](logging-methods.md#exit-message).
 ///
+
+### Escaping Control Characters
+
+Method logging has no setting of its own for escaping values, as the message formats already provide the means: a post
+formatter replacing line breaks and other control characters is applied in the format, for example
+`%(escape,"%{value,null:'(null)'}")`. Neither message-format nor method logging provides such a post formatter. `escape`
+stands for a post formatter implemented by the application and registered with the formatter service of a [custom
+message support](#custom-message-support), together with the formatters the other formats rely on.
+
+The escaping format is set where it is needed:
+
+- for a single parameter with `@ParamLog("%(escape,\"%{value,null:'(null)'}\")")`, or with a [composed
+  annotation](../developer-guide/composed-annotations.md) presetting this format;
+- for all parameters of a class with the `inlineParameterFormat` and `parameterFormat` of `@MethodLoggingConfig`, for
+  example `%{parameter}=%(escape,"%{value}")`, as `value` holds the formatted parameter value in these formats;
+- for the result with `resultFormat`, for example `result = %(escape,"%{result,null:'(null)'}")`.
+
+Exception messages are not produced by a message format and cannot be escaped this way. They are hidden with
+[`exceptionMessage = HIDE`](logging-methods.md#exit-message).
 
 ## Custom Message Support
 

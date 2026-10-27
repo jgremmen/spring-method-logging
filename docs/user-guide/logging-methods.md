@@ -35,8 +35,7 @@ public class OrderService
 
   @MethodLogging(elapsedTime = SHOW)
   public List<String> findTitles(String customer,
-                                 @ParamLog(inline = false) int limit)
-  {
+                                 @ParamLog(inline = false) int limit) {
     return List.of("Dune", "Emma");
   }
 }

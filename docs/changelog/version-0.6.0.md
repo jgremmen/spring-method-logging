@@ -86,11 +86,12 @@ Exceptions raised by method logging itself are no longer passed on to the caller
 exceptions thrown by a `MethodLoggerFactory`, by a `MethodLogger`, by message formatting and by a failed method
 analysis. The result and exceptions of the logged method are passed on unchanged.
 
-A parameter value or result that cannot be formatted (e.g. because its `toString()` method throws) is logged as `<format
-failed: ExceptionName>`. All other failures are reported through Commons Logging by the category
-`de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor`: the first failure of each kind per method at WARN
-level, subsequent ones at DEBUG level. Virtual machine errors, such as an `OutOfMemoryError`, are still passed on.
-Custom `MethodLogger` implementations relying on exceptions to abort the logged method must be changed.
+A parameter value or result that cannot be formatted (e.g. because its `toString()` method throws), and an exception
+message that cannot be obtained, are logged as `<format failed: ExceptionName>`. All other failures are reported
+through Commons Logging by the category `de.sayayi.lib.methodlogging.internal.MethodLoggingInterceptor`: the first
+failure of each kind per method at WARN level, subsequent ones at DEBUG level. Virtual machine errors, such as an
+`OutOfMemoryError`, are still passed on. Custom `MethodLogger` implementations relying on exceptions to abort the
+logged method must be changed.
 
 ### Logger Detection by Instance Type
 
@@ -136,6 +137,74 @@ result format without a `null` entry still formats `null` as an empty value.
 // DEBUG result = (null)
 ```
 
+### Default Message Support Without Locale-Dependent Formatting
+
+If the configurer provides no message support, method logging now uses a message support of its own instead of a
+message support with the `DefaultFormatterService` of message-format. Its output no longer depends on the default
+locale of the server. Values are formatted differently in the following cases:
+
+| Value                              | Before (default locale `de_DE`) | After                                  |
+|------------------------------------|---------------------------------|----------------------------------------|
+| `new BigDecimal("1234.5")`         | `1.234,5`                       | `1234.5`                               |
+| `LocalDate.of(2026, 10, 25)`       | `25.10.2026`                    | `2026-10-25`                           |
+| `new Date(0)`                      | `01.01.1970, 01:00:00`          | `1970-01-01T00:00:00Z`                 |
+| `List.of(1, 2, 3)`                 | `1, 2, 3`                       | `[1, 2, 3]`                            |
+| `new int[] { 1, 2 }`               | `1, 2`                          | `[1, 2]`                               |
+| `new char[] { 'a', 'b' }`          | `ab`                            | `[a, b]`                               |
+| `Map.of("Dune", 2)`                | `Dune=2`                        | `{Dune=2}`                             |
+| `new IllegalStateException("boom")`| `boom`                          | `java.lang.IllegalStateException: boom` |
+
+Numbers, dates and all other values without a formatter of their own are formatted with their `toString()` method.
+Iterables and arrays are enclosed in square brackets and maps in braces, so their elements can be told apart from the
+other parameters of the entry message. Besides the formatters for these types, the default message support provides
+the named formatters `bool`, `choice` and `size` and the post formatters `case` and `clip`. Configuration keys of other
+formatters, such as `number:'0.00'`, no longer have an effect in custom formats.
+
+The previous output is restored with a configurer providing a message support with the `DefaultFormatterService`:
+
+```java title="ShopConfiguration.java"
+package com.example.bookstore;
+
+import de.sayayi.lib.message.MessageSupport;
+import de.sayayi.lib.message.MessageSupportFactory;
+import de.sayayi.lib.message.formatter.DefaultFormatterService;
+import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
+import de.sayayi.lib.methodlogging.annotation.EnableMethodLogging;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableMethodLogging
+public class ShopConfiguration implements MethodLoggingConfigurer
+{
+  @Override
+  public MessageSupport messageSupport() {
+    return MessageSupportFactory.create(new DefaultFormatterService());
+  }
+}
+// BigDecimal 1234.5 is logged as 1.234,5 with the default locale de_DE
+```
+
+A fixed locale (`setLocale(Locale.US)`) keeps the output independent of the server configuration. The formatters
+described in [Formatters `WrapIterableOrArrayFormatter` and
+`WrapMapFormatter`](#formatters-wrapiterableorarrayformatter-and-wrapmapformatter) enclose collections in a custom
+message support as well.
+
+### Deprecated Boolean Constructors of the Logger Factories
+
+The public constructors taking a boolean of the framework-specific logger factories are deprecated. They are replaced by
+the static factory methods `withFallback()` and `strict()` (see [Factory Methods `withFallback()` and
+`strict()`](#factory-methods-withfallback-and-strict)):
+
+```java title="Replacing the deprecated constructors"
+// before
+new Slf4jLoggerFactory(true)
+new Slf4jLoggerFactory(false)
+
+// after
+Slf4jLoggerFactory.withFallback()
+Slf4jLoggerFactory.strict()
+```
+
 ### Dependency Changes
 
 `spring-context` and `message-format` are now `api` dependencies, as their types are part of the public API (e.g.
@@ -155,7 +224,8 @@ minimum SLF4J version has been raised to 1.7.0. Spring Framework 5.3.26 and 6.0.
 Java 21 class files of the library; Spring Framework 6.0.0 to 6.0.4 are not supported. The Maven POM now declares a
 single tested version per dependency instead of a version range. The Gradle module metadata declares the supported range
 together with this version as preferred version. The AspectJ runtime is a new optional dependency, required only for
-`@EnableMethodLogging(mode = AdviceMode.ASPECTJ)`.
+`@EnableMethodLogging(mode = AdviceMode.ASPECTJ)`. `org.jetbrains:annotations` is now marked optional in the Maven POM
+as well, so it is no longer added to the dependencies of a Maven project.
 
 
 ## New Features
@@ -319,7 +389,7 @@ All framework-specific logger factories (`JBossLoggerFactory`, `JCLLoggerFactory
 factory methods `withFallback()` and `strict()`. `withFallback()` creates a factory using a logger for the target class
 if no logger field is available, which is equivalent to `new ...LoggerFactory(true)`. `strict()` creates a factory
 requiring a logger field, which is equivalent to `new ...LoggerFactory(false)`. The constructors taking a boolean are
-deprecated in favor of these factory methods.
+deprecated in favor of these factory methods (see Breaking Changes).
 
 ```java title="ShopConfiguration.java"
 package com.example.bookstore;
@@ -409,6 +479,56 @@ return MessageSupportFactory.create(formatterService);
 // List.of(1, 2) is logged as [1, 2]
 ```
 
+### Variable `inline` in Parameter Formats
+
+The inline parameter format and the parameter format now receive the boolean variable `inline`, which is `true` for a
+parameter logged inline with the method entry and `false` for a separately logged parameter. A single format can
+therefore be used for both, e.g. in a composed annotation:
+
+```java title="Shipped.java"
+package com.example.bookstore;
+
+import de.sayayi.lib.methodlogging.Visibility;
+import de.sayayi.lib.methodlogging.annotation.MethodLogging;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Target(METHOD)
+@Retention(RUNTIME)
+@MethodLogging(lineNumber = Visibility.HIDE,
+               inlineParameterFormat = Shipped.FORMAT,
+               parameterFormat = Shipped.FORMAT)
+public @interface Shipped
+{
+  String FORMAT =
+      "%{inline,true:'',false:'separately '}%{parameter}=%{value}";
+}
+```
+
+```java title="ShippingService.java"
+package com.example.bookstore;
+
+import de.sayayi.lib.methodlogging.annotation.ParamLog;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ShippingService
+{
+  @Shipped
+  public void ship(long orderId,
+                   @ParamLog(inline = false) String address) {
+  }
+}
+// ship(42, "Baker Street 221b") logs:
+// INFO  > ship(orderId=42)
+// DEBUG separately address=Baker Street 221b
+// INFO  < ship
+```
+
 ### Hiding Exception Messages
 
 Exception messages often contain input values. The new visibility setting `exceptionMessage` hides the message of an
@@ -437,6 +557,9 @@ public void cancelOrder(long orderId) {
   field was searched in the interface, so the fallback logger was used, `@ParamLog` annotations of the implementation
   were ignored and the line number was missing. The analysis now uses the most specific method of the target class, and
   the logger field is searched in the target class and its superclasses.
+- For a logged method inherited from a superclass, the logger field was searched in the class declaring the method and
+  its superclasses, so a logger field of the bean class itself was ignored. The logger field is now searched in the bean
+  class and its superclasses.
 - The `MethodLoggingConfigurer` bean was created together with the method logging advisor, before all bean post
   processors were registered. The configurer and its dependencies were therefore not fully post-processed (e.g. not
   proxied). The configurer is now resolved lazily.
@@ -461,6 +584,8 @@ public void cancelOrder(long orderId) {
 - Elapsed times of 60 hours or more wrapped around, durations of one hour or more were truncated instead of rounded to
   full minutes, and durations of one minute or more could show a superfluous `0s` (e.g. `1m0s`). The elapsed time is now
   also measured with a monotonic clock, so system clock adjustments no longer affect it.
+- The elapsed time included formatting and logging the entry message, the separately logged parameters and the result.
+  It now covers the invocation of the method only.
 - Exceptions declared as nested classes were logged by their simple name only, and anonymous exception classes with an
   empty name. The method exit message now shows the name including the enclosing classes (e.g. `Outer.InnerException`).
 - `elapsedTime`, `parameters` or `result` set to `DEFAULT` on `@MethodLoggingConfig` hid the elapsed time, the
