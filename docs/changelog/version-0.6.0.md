@@ -408,6 +408,21 @@ return MessageSupportFactory.create(formatterService);
 // List.of(1, 2) is logged as [1, 2]
 ```
 
+### Hiding Exception Messages
+
+Exception messages often contain input values. The new visibility setting `exceptionMessage` hides the message of an
+exception thrown by a logged method in the exit message; the exception class is still shown. It is available on
+`@MethodLogging` and `@MethodLoggingConfig`, and the new configurer method `defaultExceptionMessage()` sets it for all
+methods. Like the other configurer defaults, it must not return `null` or `DEFAULT`.
+
+```java title="Hiding the exception message"
+@MethodLogging(exceptionMessage = HIDE)
+public void cancelOrder(long orderId) {
+  throw new IllegalStateException("order " + orderId + " shipped");
+}
+// INFO  < cancelOrder:21 -> IllegalStateException
+```
+
 
 ## Bug Fixes
 

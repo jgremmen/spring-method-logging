@@ -992,7 +992,8 @@ final class AnnotationMethodLoggingSource
 
   /**
    * Returns the {@code @MethodLoggingConfig} attributes of {@code type}, or the annotation defaults if the type is not
-   * annotated. Logger field name, levels and line number left at their default are replaced by the configurer defaults.
+   * annotated. Logger field name, levels, line number and exception message left at their default are replaced by the
+   * configurer defaults.
    * Elapsed time, parameters and result set to {@link Visibility#DEFAULT} are replaced by their annotation defaults.
    *
    * @param config  configuration with the configurer defaults, not {@code null}
@@ -1026,6 +1027,9 @@ final class AnnotationMethodLoggingSource
 
     if (attributes.getEnum("lineNumber") == Visibility.DEFAULT)
       attributes.put("lineNumber", config.defaultLineNumber);
+
+    if (attributes.getEnum("exceptionMessage") == Visibility.DEFAULT)
+      attributes.put("exceptionMessage", config.defaultExceptionMessage);
 
     if (attributes.getEnum("elapsedTime") == Visibility.DEFAULT)
       attributes.put("elapsedTime", HIDE);
@@ -1356,6 +1360,9 @@ final class AnnotationMethodLoggingSource
     /** Default line number visibility provided by the configurer, never {@link Visibility#DEFAULT}. */
     private final @NotNull Visibility defaultLineNumber;
 
+    /** Default exception message visibility provided by the configurer, never {@link Visibility#DEFAULT}. */
+    private final @NotNull Visibility defaultExceptionMessage;
+
 
     /**
      * Creates the configuration from the configurer, validating its defaults and falling back to the default message
@@ -1377,6 +1384,8 @@ final class AnnotationMethodLoggingSource
       defaultParameterLevel = requireDefault(methodLoggingConfigurer.defaultParameterLevel(), "defaultParameterLevel");
       defaultResultLevel = requireDefault(methodLoggingConfigurer.defaultResultLevel(), "defaultResultLevel");
       defaultLineNumber = requireDefault(methodLoggingConfigurer.defaultLineNumber(), "defaultLineNumber");
+      defaultExceptionMessage =
+          requireDefault(methodLoggingConfigurer.defaultExceptionMessage(), "defaultExceptionMessage");
 
       final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
       messageSupport = configuredMessageSupport != null ? configuredMessageSupport : messageSupportSupplier.get();

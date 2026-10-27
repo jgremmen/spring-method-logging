@@ -146,6 +146,22 @@ public @interface MethodLoggingConfig
 
 
   /**
+   * Indicates whether the message of an exception thrown by a method is logged on method exit or not. The name of the
+   * exception class is always logged.
+   *
+   * @return  {@link Visibility#SHOW} shows the exception message, {@link Visibility#HIDE} does not show the exception
+   *          message, {@link Visibility#DEFAULT} (the default) uses the setting from
+   *          {@link MethodLoggingConfigurer#defaultExceptionMessage()}
+   *
+   * @see MethodLoggingConfigurer#defaultExceptionMessage()
+   * @see MethodLogging#exceptionMessage()
+   *
+   * @since 0.6.0
+   */
+  Visibility exceptionMessage() default Visibility.DEFAULT;
+
+
+  /**
    * Indicates whether method parameters are to be logged or not.
    *
    * @return  {@link Visibility#SHOW} (the default) logs the method parameters,

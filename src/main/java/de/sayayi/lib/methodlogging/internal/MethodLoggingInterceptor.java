@@ -284,7 +284,8 @@ final class MethodLoggingInterceptor implements MethodInterceptor
 
 
   /**
-   * Logs the method exit, including the elapsed time if configured and the exception thrown by the method, if any.
+   * Logs the method exit, including the elapsed time if configured and the exception thrown by the method, if any. The
+   * exception message is included if configured.
    *
    * @param methodDef     method logging definition, not {@code null}
    * @param methodLogger  method logger, not {@code null}
@@ -311,10 +312,13 @@ final class MethodLoggingInterceptor implements MethodInterceptor
       {
         exit.append(" -> ").append(exceptionName(throwable.getClass()));
 
-        final var msg = throwable.getLocalizedMessage();
+        if (methodDef.showExceptionMessage)
+        {
+          final var msg = throwable.getLocalizedMessage();
 
-        if (hasLength(msg))
-          exit.append('(').append(msg).append(')');
+          if (hasLength(msg))
+            exit.append('(').append(msg).append(')');
+        }
       }
 
       methodLogger.log(methodDef.entryExitLevel, exit.toString(), methodDef.location);

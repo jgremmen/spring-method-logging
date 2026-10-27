@@ -9,8 +9,9 @@ its default value.
 
 Each attribute of `@MethodLogging` has a default that means "not set": `DEFAULT` for levels and visibilities and the
 constant `MethodLogging.DEFAULT_VALUE`, which is the string `"<DEFAULT>"`, for names and formats. A setting that is not
-set on the method is taken from `@MethodLoggingConfig` of the class. For the logger field name, the levels and the line
-number, `@MethodLoggingConfig` can again leave the setting unset, and the value is then taken from the configurer. The
+set on the method is taken from `@MethodLoggingConfig` of the class. For the logger field name, the levels, the line
+number and the exception message, `@MethodLoggingConfig` can again leave the setting unset, and the value is then taken
+from the configurer. The
 elapsed time, parameters and result have no configurer default: `DEFAULT` on `@MethodLoggingConfig` means the default
 of the attribute shown in the table below.
 
@@ -75,6 +76,7 @@ setting cannot be configured on that level.
 | parameter level          | `parameterLevel`        | taken from configurer          | `defaultParameterLevel()`: `DEBUG`  |
 | result level             | `resultLevel`           | taken from configurer          | `defaultResultLevel()`: `DEBUG`     |
 | line number              | `lineNumber`            | taken from configurer          | `defaultLineNumber()`: `SHOW`       |
+| exception message        | `exceptionMessage`      | taken from configurer          | `defaultExceptionMessage()`: `SHOW` |
 | elapsed time             | `elapsedTime`           | `HIDE`                         | -                                   |
 | parameters               | `parameters`            | `SHOW`                         | -                                   |
 | result                   | `result`                | `SHOW`                         | -                                   |
@@ -191,7 +193,7 @@ otherwise the application context fails to start with a `NoUniqueBeanDefinitionE
 default implementations apply.
 
 The default methods `defaultLoggerFieldName()`, `defaultEntryExitLevel()`, `defaultParameterLevel()`,
-`defaultResultLevel()` and `defaultLineNumber()` must not return `null` or `DEFAULT`. Such a value fails the start of
+`defaultResultLevel()`, `defaultLineNumber()` and `defaultExceptionMessage()` must not return `null` or `DEFAULT`. Such a value fails the start of
 the application context with an `IllegalStateException`. An empty logger field name is allowed and disables the logger
 field lookup.
 

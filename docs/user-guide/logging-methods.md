@@ -90,6 +90,21 @@ The exception class is shown without its package. A nested exception class inclu
 `OrderService.OutOfStockException`. If the exception has no message, the parentheses are omitted. The exception itself
 is passed on to the caller unchanged; method logging only reports it.
 
+Exception messages often contain input values, such as the order number above. With `exceptionMessage = HIDE`, the
+message is omitted and only the exception class is shown:
+
+```java title="Hiding the exception message"
+@MethodLogging(exceptionMessage = HIDE)
+public void cancelOrder(long orderId, String reason) {
+  throw new IllegalStateException("order " + orderId + " shipped");
+}
+// INFO  > cancelOrder(orderId=42,reason=customer request):21
+// INFO  < cancelOrder:21 -> IllegalStateException
+```
+
+The exception message is shown by default. It can be hidden for all methods of a class with `@MethodLoggingConfig` or
+for all methods with the `defaultExceptionMessage()` method of the [configurer](configuration.md#global-configuration).
+
 ## Log Levels
 
 Each message has a log level. Method logging knows three levels, defined by the enum [`Level`][jd-level]: `TRACE`,

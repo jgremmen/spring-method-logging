@@ -224,4 +224,20 @@ public interface MethodLoggingConfigurer
   default @NotNull Visibility defaultLineNumber() {
     return Visibility.SHOW;
   }
+
+
+  /**
+   * Returns the default visibility for the message of an exception thrown by a method. This value is used when neither
+   * {@link MethodLoggingConfig#exceptionMessage()} nor {@link MethodLogging#exceptionMessage()} specifies an explicit
+   * visibility. The name of the exception class is always logged.
+   *
+   * @return  default exception message visibility, never {@code null} or {@link Visibility#DEFAULT}. The default is
+   *          {@link Visibility#SHOW}
+   *
+   * @since 0.6.0
+   */
+  @Contract(pure = true)
+  default @NotNull Visibility defaultExceptionMessage() {
+    return Visibility.SHOW;
+  }
 }

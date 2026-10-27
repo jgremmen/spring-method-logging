@@ -85,6 +85,9 @@ final class MethodDef
   /** Tells whether the elapsed time is logged with the method exit. */
   final boolean showElapsedTime;
 
+  /** Tells whether the message of an exception thrown by the method is logged with the method exit. */
+  final boolean showExceptionMessage;
+
   /** Tells whether the method result is logged. Always {@code false} for {@code void} methods. */
   final boolean showResult;
 
@@ -146,6 +149,7 @@ final class MethodDef
     resultMessage = messageSupplier(messageFactory, methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT,
         "resultFormat", method);
     showElapsedTime = methodLogging.elapsedTime() == SHOW;
+    showExceptionMessage = methodLogging.exceptionMessage() == SHOW;
     showResult = method.getReturnType() != void.class && methodLogging.result() == SHOW;
     entryExitLevel = methodLogging.entryExitLevel();
     parameterLevel = methodLogging.parameterLevel();

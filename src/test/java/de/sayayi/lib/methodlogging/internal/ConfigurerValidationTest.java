@@ -115,6 +115,23 @@ class ConfigurerValidationTest
   }
 
 
+  @Test
+  @DisplayName("Exception message visibility must not be null or DEFAULT")
+  void exceptionMessage() throws Exception
+  {
+    assertInvalid("defaultExceptionMessage() must not return null", new MethodLoggingConfigurer() {
+      @Override public @NotNull Visibility defaultExceptionMessage() {
+        return null;
+      }
+    });
+    assertInvalid("defaultExceptionMessage() must not return DEFAULT", new MethodLoggingConfigurer() {
+      @Override public @NotNull Visibility defaultExceptionMessage() {
+        return Visibility.DEFAULT;
+      }
+    });
+  }
+
+
   private static void assertInvalid(@NotNull String message, @NotNull MethodLoggingConfigurer configurer)
       throws NoSuchMethodException
   {

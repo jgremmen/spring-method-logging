@@ -160,7 +160,8 @@ Values are written to the log verbatim. In particular, line breaks contained in 
 A parameter value containing line breaks, such as a user name `"ada\nINFO  > refund(amount=1000)"`, produces additional
 lines in a plain text log that look like genuine log messages. Parameters carrying unchecked user input are either
 excluded, formatted with a format that limits them, or logged with a log format of the logging framework that escapes
-line breaks or produces structured output.
+line breaks or produces structured output. Exception messages in the exit message are written verbatim as well; they are
+hidden with [`exceptionMessage = HIDE`](logging-methods.md#exit-message).
 ///
 
 ## Custom Message Support

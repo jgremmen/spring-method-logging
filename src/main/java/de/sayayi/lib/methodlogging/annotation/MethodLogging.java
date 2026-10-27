@@ -62,6 +62,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     <tr><td>entry/exit, parameter and result level</td><td>yes</td><td>yes</td>
  *       <td>{@code defaultEntryExitLevel()}, {@code defaultParameterLevel()}, {@code defaultResultLevel()}</td></tr>
  *     <tr><td>line number</td><td>yes</td><td>yes</td><td>{@code defaultLineNumber()}</td></tr>
+ *     <tr><td>exception message</td><td>yes</td><td>yes</td><td>{@code defaultExceptionMessage()}</td></tr>
  *     <tr><td>elapsed time, parameters, result</td><td>yes</td><td>yes</td><td>no</td></tr>
  *     <tr><td>inline parameter, parameter and result format</td><td>yes</td><td>yes</td><td>no</td></tr>
  *     <tr><td>method entry and exit prefix</td><td>no</td><td>yes</td><td>no</td></tr>
@@ -179,6 +180,22 @@ public @interface MethodLogging
    *          {@link MethodLoggingConfig#elapsedTime()}
    */
   Visibility elapsedTime() default Visibility.DEFAULT;
+
+
+  /**
+   * Indicates whether the message of an exception thrown by the method is logged on method exit or not. The name of the
+   * exception class is always logged.
+   * <p>
+   * Exception messages often contain input values. Hiding them prevents sensitive data from being logged with the
+   * exception.
+   *
+   * @return  {@link Visibility#SHOW} shows the exception message, {@link Visibility#HIDE} does not show the exception
+   *          message, {@link Visibility#DEFAULT} uses the default setting from
+   *          {@link MethodLoggingConfig#exceptionMessage()}
+   *
+   * @since 0.6.0
+   */
+  Visibility exceptionMessage() default Visibility.DEFAULT;
 
 
   /**
