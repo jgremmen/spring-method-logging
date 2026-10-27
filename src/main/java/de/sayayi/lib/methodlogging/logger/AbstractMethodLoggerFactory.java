@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.lang.System.identityHashCode;
 import static java.lang.reflect.Modifier.FINAL;
 import static java.lang.reflect.Modifier.STATIC;
 
@@ -67,7 +68,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
   private final Map<Field,Map<Class<?>,FieldMethodLogger>> instanceFieldLoggerCache = new ConcurrentHashMap<>();
 
   /** Method logger with the logger instance it was created for, by other logger field and target object. */
-  private final Map<TargetKey,FieldMethodLogger> targetFieldLoggerCache = new ConcurrentHashMap<>();
+  private final Map<FieldTarget,FieldMethodLogger> targetFieldLoggerCache = new ConcurrentHashMap<>();
 
   /** Keys of {@link #targetFieldLoggerCache} whose target object has been garbage collected. */
   private final ReferenceQueue<Object> collectedTargets = new ReferenceQueue<>();
@@ -168,7 +169,7 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
       return createMethodLogger(loggerField, obj);
     }
 
-    var cachedFieldMethodLogger = targetFieldLoggerCache.get(new TargetKey(loggerField, obj, null));
+    var cachedFieldMethodLogger = targetFieldLoggerCache.get(new TargetLookupKey(loggerField, obj));
     if (cachedFieldMethodLogger != null && cachedFieldMethodLogger.logger == logger)
       return cachedFieldMethodLogger.methodLogger;
 
@@ -321,11 +322,73 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
 
 
   /**
-   * Cache key of a logger field and a weakly referenced target object, compared by identity.
+   * Cache key of a logger field and a target object. Keys are equal if they have equal logger fields and the identical
+   * target object, so a {@link TargetLookupKey} finds the {@link TargetKey} stored for the same field and object.
    *
    * @since 0.6.0
    */
-  private static final class TargetKey extends WeakReference<Object>
+  private sealed interface FieldTarget permits TargetKey, TargetLookupKey
+  {
+    /**
+     * Returns the logger field read from the target object.
+     *
+     * @return  logger field, never {@code null}
+     */
+    @NotNull Field loggerField();
+
+
+    /**
+     * Returns the target object.
+     *
+     * @return  target object or {@code null} if it has been garbage collected
+     */
+    Object target();
+
+
+    /**
+     * Returns the hash code of a key for {@code loggerField} and {@code obj}, based on the identity of {@code obj}.
+     *
+     * @param loggerField  logger field, not {@code null}
+     * @param obj          target object, not {@code null}
+     *
+     * @return  hash code
+     */
+    @Contract(pure = true)
+    static int hashCode(@NotNull Field loggerField, @NotNull Object obj) {
+      return 31 * loggerField.hashCode() + identityHashCode(obj);
+    }
+
+
+    /**
+     * Tells whether {@code that} is a key for the same logger field and target object as {@code key}. A key whose
+     * target object has been garbage collected is equal to itself only.
+     *
+     * @param key   key to compare, not {@code null}
+     * @param that  key to compare with, not {@code null}
+     *
+     * @return  {@code true} if {@code that} is equal to {@code key}, {@code false} otherwise
+     */
+    @Contract(pure = true)
+    static boolean equals(@NotNull FieldTarget key, @NotNull FieldTarget that)
+    {
+      if (that == key)
+        return true;
+
+      final Object obj;
+
+      return (obj = key.target()) != null && obj == that.target() && key.loggerField().equals(that.loggerField());
+    }
+  }
+
+
+
+
+  /**
+   * Cache key of a logger field and a weakly referenced target object, stored in {@link #targetFieldLoggerCache}.
+   *
+   * @since 0.6.0
+   */
+  private static final class TargetKey extends WeakReference<Object> implements FieldTarget
   {
     /** Logger field read from the target object. */
     private final @NotNull Field loggerField;
@@ -339,42 +402,64 @@ public abstract class AbstractMethodLoggerFactory implements MethodLoggerFactory
      *
      * @param loggerField  logger field, not {@code null}
      * @param obj          target object, not {@code null}
-     * @param queue        queue the key is enqueued in once {@code obj} has been garbage collected, or {@code null}
-     *                     for a key used for lookups only
+     * @param queue        queue the key is enqueued in once {@code obj} has been garbage collected, not {@code null}
      */
-    private TargetKey(@NotNull Field loggerField, @NotNull Object obj, ReferenceQueue<Object> queue)
+    private TargetKey(@NotNull Field loggerField, @NotNull Object obj, @NotNull ReferenceQueue<Object> queue)
     {
       super(obj, queue);
 
       this.loggerField = loggerField;
-      hashCode = 31 * loggerField.hashCode() + System.identityHashCode(obj);
+      hashCode = FieldTarget.hashCode(loggerField, obj);
     }
 
 
-    /**
-     * Tells whether {@code o} is a key for the same logger field and target object. A key whose target object has been
-     * garbage collected is equal to itself only.
-     *
-     * @param o  object to compare
-     *
-     * @return  {@code true} if {@code o} is equal to this key, {@code false} otherwise
-     */
     @Override
-    public boolean equals(Object o)
-    {
-      if (o == this)
-        return true;
+    public @NotNull Field loggerField() {
+      return loggerField;
+    }
 
-      final Object obj;
 
-      return o instanceof TargetKey that && (obj = get()) != null && obj == that.get() &&
-             loggerField.equals(that.loggerField);
+    @Override
+    public Object target() {
+      return get();
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof FieldTarget that && FieldTarget.equals(this, that);
     }
 
 
     @Override
     public int hashCode() {
       return hashCode;
+    }
+  }
+
+
+
+
+  /**
+   * Cache key of a logger field and a strongly referenced target object, used for lookups in
+   * {@link #targetFieldLoggerCache} only.
+   *
+   * @param loggerField  logger field, not {@code null}
+   * @param target       target object, not {@code null}
+   *
+   * @since 0.6.0
+   */
+  private record TargetLookupKey(@NotNull Field loggerField, @NotNull Object target) implements FieldTarget
+  {
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof FieldTarget that && FieldTarget.equals(this, that);
+    }
+
+
+    @Override
+    public int hashCode() {
+      return FieldTarget.hashCode(loggerField, target);
     }
   }
 }
