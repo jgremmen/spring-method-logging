@@ -230,7 +230,7 @@ public class AutoDetectLoggerFactory extends AbstractMethodLoggerFactory
       collectTypeNames(type, typeNames);
 
       for(var kind: values())
-        if (kind.typeName == null || typeNames.contains(kind.typeName))
+        if (kind.typeName != null && typeNames.contains(kind.typeName))
           return kind;
 
       return UNSUPPORTED;
