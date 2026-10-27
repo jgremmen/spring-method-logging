@@ -158,7 +158,7 @@ class MethodDefinitionCacheTest
   @DisplayName("Class file of a bootstrap class is read")
   void classLocationBootstrapClass()
   {
-    final var classLocation = AnnotationMethodLoggingSource.ClassLocation.read(String.class);
+    final var classLocation = ClassLocation.read(String.class);
 
     assertEquals("String.java", classLocation.sourceFile());
     assertTrue(classLocation.lineNumbers().get("length()I") > 0);
@@ -170,7 +170,7 @@ class MethodDefinitionCacheTest
   void classLocationNoClassFile()
   {
     final Runnable lambda = () -> {};
-    final var classLocation = AnnotationMethodLoggingSource.ClassLocation.read(lambda.getClass());
+    final var classLocation = ClassLocation.read(lambda.getClass());
 
     assertNull(classLocation.sourceFile());
     assertTrue(classLocation.lineNumbers().isEmpty());

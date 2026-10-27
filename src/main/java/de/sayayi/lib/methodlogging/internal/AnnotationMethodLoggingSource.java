@@ -16,15 +16,6 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.MessageSupport;
-import de.sayayi.lib.message.MessageSupportFactory;
-import de.sayayi.lib.message.formatter.FormattableType;
-import de.sayayi.lib.message.formatter.GenericFormatterService;
-import de.sayayi.lib.message.formatter.parameter.named.BoolFormatter;
-import de.sayayi.lib.message.formatter.parameter.named.ChoiceFormatter;
-import de.sayayi.lib.message.formatter.parameter.named.SizeFormatter;
-import de.sayayi.lib.message.formatter.parameter.runtime.*;
-import de.sayayi.lib.message.formatter.post.runtime.CasePostFormatter;
-import de.sayayi.lib.message.formatter.post.runtime.ClipPostFormatter;
 import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.MethodLoggerFactory;
@@ -32,55 +23,29 @@ import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.Visibility;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
-import de.sayayi.lib.methodlogging.annotation.ParamLog;
-import de.sayayi.lib.methodlogging.format.WrapIterableOrArrayFormatter;
-import de.sayayi.lib.methodlogging.format.WrapMapFormatter;
 import de.sayayi.lib.methodlogging.logger.AutoDetectLoggerFactory;
-import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
-import org.springframework.asm.*;
-import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.asm.Type;
 import org.springframework.core.MethodClassKey;
-import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAttributes;
-import org.springframework.core.annotation.MergedAnnotationSelectors;
-import org.springframework.core.annotation.MergedAnnotations;
-import org.springframework.core.annotation.RepeatableContainers;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.nio.file.Path;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
 import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
-import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
-import static java.lang.reflect.Modifier.*;
-import static java.util.Arrays.asList;
-import static java.util.List.copyOf;
 import static java.util.Objects.requireNonNullElse;
 import static org.springframework.aop.support.AopUtils.getMostSpecificMethod;
-import static org.springframework.asm.ClassReader.SKIP_FRAMES;
-import static org.springframework.asm.SpringAsmInfo.ASM_VERSION;
-import static org.springframework.core.ResolvableType.forMethodParameter;
 import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotationAttributes;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotationUtils.synthesizeAnnotation;
-import static org.springframework.core.annotation.MergedAnnotations.SearchStrategy.TYPE_HIERARCHY;
-import static org.springframework.util.ClassUtils.getAllInterfacesForClassAsSet;
-import static org.springframework.util.StringUtils.hasLength;
 
 
 /**
@@ -104,8 +69,10 @@ import static org.springframework.util.StringUtils.hasLength;
  * while it is being created, methods with method logging are not analyzed (and not logged) until the configuration is
  * available. This avoids deadlocks with threads holding the singleton lock while invoking a method with method logging.
  * <p>
- * This class also creates the message support used by the definitions and the interceptor: the one provided by
- * {@link MethodLoggingConfigurer#messageSupport()} or, if none is provided, a default message support.
+ * This class also provides the message support used by the definitions and the interceptor: the one provided by
+ * {@link MethodLoggingConfigurer#messageSupport()} or, if none is provided, the default message support created by
+ * {@link DefaultMessageSupport}. The parameters are analyzed by {@link ParameterAnalyzer}, the source locations are
+ * read by {@link ClassLocation}.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -114,10 +81,6 @@ import static org.springframework.util.StringUtils.hasLength;
  */
 final class AnnotationMethodLoggingSource
 {
-  /** Default format of a parameter value. */
-  @Language("MessageFormat")
-  private static final String DEFAULT_PARAMETER_VALUE_FORMAT = "%{value,null:'(null)'}";
-
   /** Method logging definitions by method and target class, empty if the method has no method logging. */
   final @NotNull Map<MethodClassKey,Optional<MethodDef>> methodLoggingDefinitionCache;
 
@@ -145,8 +108,8 @@ final class AnnotationMethodLoggingSource
   /** Tells whether all singleton beans have been created. */
   private volatile boolean singletonsInstantiated;
 
-  /** Discoverer of the method parameter names. */
-  private final @NotNull ParameterNameDiscoverer nameDiscoverer;
+  /** Analyzer of the method parameters. */
+  private final @NotNull ParameterAnalyzer parameterAnalyzer;
 
   /** Supplier of the default message support, created on first use. */
   private final Supplier<MessageSupport> messageSupportSupplier;
@@ -173,8 +136,8 @@ final class AnnotationMethodLoggingSource
     methodLoggingDefinitionCache = new ConcurrentHashMap<>();
     methodLoggingFailureCache = new ConcurrentHashMap<>();
     classLocationCache = new ConcurrentHashMap<>();
-    nameDiscoverer = new DefaultParameterNameDiscoverer();
-    messageSupportSupplier = SupplierDelegate.of(this::buildInternalMessageSupport);
+    parameterAnalyzer = new ParameterAnalyzer();
+    messageSupportSupplier = SupplierDelegate.of(DefaultMessageSupport::create);
   }
 
 
@@ -607,10 +570,14 @@ final class AnnotationMethodLoggingSource
 
     config.methodLoggerFactory.validate(loggerField, targetClass);
 
-    return new MethodDef(config.messageSupport.getMessageAccessor().getMessageFactory(),
-        synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass),
-        getParameterDefs(specificMethod, method, targetClass, methodLogging, config), methodLogging, method, location,
-        methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1, loggerField);
+    final var messageFactory = config.messageSupport.getMessageAccessor().getMessageFactory();
+    final var parameterDefs = parameterAnalyzer.getParameterDefs(specificMethod, method, targetClass, methodLogging,
+        messageFactory, config.methodLoggingConfigurer);
+
+    return new MethodDef(messageFactory,
+        synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass), parameterDefs,
+        methodLogging, method, location, methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1,
+        loggerField);
   }
 
 
@@ -627,366 +594,6 @@ final class AnnotationMethodLoggingSource
   @Contract(pure = true)
   private static AnnotationAttributes findMethodLoggingAttributes(@NotNull Method specificMethod) {
     return findMergedAnnotationAttributes(specificMethod, MethodLogging.class, false, true);
-  }
-
-
-  /**
-   * Analyzes the method parameters. {@link ParamLog} annotations are taken from the most specific declaration of the
-   * method annotating the parameter, including overridden interface and superclass methods; a parameter excluded by any
-   * declaration stays excluded.
-   * <p>
-   * The logged parameter name is resolved from {@link ParamLog#name()}, the parameter name discoverer (from the most
-   * specific declaration providing names) or, if no name can be discovered, the synthesized reflection name
-   * ({@code arg0}, {@code arg1}, ...) in that order.
-   * <p>
-   * A name excluded by {@link MethodLogging#exclude()} matches a parameter if it equals the {@code @ParamLog} name or
-   * the discovered name of any declaration. Each excluded name must match a parameter, unless parameter names are
-   * available and the names are excluded by a composed annotation. Otherwise, a misspelled or outdated name would leave
-   * the parameter meant to be excluded in the log output. Excluded names and {@code @ParamLog} formats are validated
-   * even if the method has no parameters or parameter logging is disabled.
-   * <p>
-   * Parameter types passed to {@link MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)} are resolved
-   * against {@code targetClass}, so generic parameter types declared in a superclass are resolved as well.
-   *
-   * @param specificMethod  method implementation, not {@code null}
-   * @param method          invoked method, possibly an interface method, not {@code null}
-   * @param targetClass     class of the target instance, not {@code null}
-   * @param methodLogging   merged method logging settings, not {@code null}
-   * @param config          configuration, not {@code null}
-   *
-   * @return  definitions of the parameters to be logged, never {@code null}
-   *
-   * @throws IllegalStateException  if an excluded parameter name to be validated matches no parameter or a custom
-   *                                parameter format is invalid
-   *
-   * @since 0.6.0
-   */
-  private @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod,
-                                                                     @NotNull Method method,
-                                                                     @NotNull Class<?> targetClass,
-                                                                     @NotNull MethodLogging methodLogging,
-                                                                     @NotNull Configuration config)
-  {
-    final var parameterCount = specificMethod.getParameterCount();
-    if (parameterCount == 0 && methodLogging.exclude().length == 0)
-      return List.of();
-
-    // excluded names and @ParamLog formats are validated even if parameters are not logged
-    final var showParameters = methodLogging.parameters() == SHOW;
-    final var parameterDefs = new ArrayList<ParameterDef>(8);
-    final var specificParameters = specificMethod.getParameters();
-    final var declarations = findMethodDeclarations(specificMethod, method, targetClass);
-    final var declarationParameterNames = discoverParameterNames(declarations);
-    final var excludeParameters = Set.copyOf(asList(methodLogging.exclude()));
-    final var matchedExcludeParameters = new HashSet<String>();
-    final var messageFactory = config.messageSupport.getMessageAccessor().getMessageFactory();
-
-    for(var p = 0; p < parameterCount; p++)
-    {
-      final var paramLog = findParamLog(declarations, p);
-      final var names = getParameterNames(paramLog, declarationParameterNames, specificParameters[p], p);
-      final var name = names.iterator().next();
-
-      // all names match, so a parameter named differently in an interface and its implementation is excluded either way
-      var excludedByName = false;
-      for(var n: names)
-        if (excludeParameters.contains(n))
-        {
-          matchedExcludeParameters.add(n);
-          excludedByName = true;
-        }
-
-      if (paramLog != null && paramLog.exclude())
-        continue;
-
-      final var parameterMessage = messageSupplier(
-          messageFactory, paramLog != null ? paramLog.format() : "",
-          DEFAULT_PARAMETER_VALUE_FORMAT,
-          "@ParamLog format of parameter '" + name + '\'',
-          specificMethod);
-
-      if (showParameters && !excludedByName &&
-          (paramLog != null || isParameterIncluded(config, forMethodParameter(specificMethod, p, targetClass))))
-        parameterDefs.add(new ParameterDef(p, name, paramLog == null || paramLog.inline(), parameterMessage));
-    }
-
-    validateExcludedParameterNames(specificMethod, methodLogging.exclude(), matchedExcludeParameters,
-        !declarationParameterNames.isEmpty());
-
-    return copyOf(parameterDefs);
-  }
-
-
-  /**
-   * Discovers the parameter names of each declaration providing them.
-   *
-   * @param declarations  method declarations, ordered from most to least specific, not {@code null}
-   *
-   * @return  parameter names of the declarations providing them, in declaration order, never {@code null}
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private @NotNull List<String[]> discoverParameterNames(@NotNull List<Method> declarations)
-  {
-    final var declarationParameterNames = new ArrayList<String[]>();
-
-    for(var declaration: declarations)
-    {
-      final var parameterNames = nameDiscoverer.getParameterNames(declaration);
-      if (parameterNames != null)
-        declarationParameterNames.add(parameterNames);
-    }
-
-    return declarationParameterNames;
-  }
-
-
-  /**
-   * Returns all names of parameter {@code p}, starting with the name to log: the name given by {@link ParamLog#name()},
-   * followed by the discovered names of all declarations. If no declaration provides parameter names, the synthesized
-   * reflection name ({@code arg0}, {@code arg1}, ...) is used instead of the discovered names.
-   *
-   * @param paramLog                   {@code @ParamLog} annotation of the parameter or {@code null}
-   * @param declarationParameterNames  discovered parameter names of the declarations, not {@code null}
-   * @param specificParameter          parameter of the method implementation, not {@code null}
-   * @param p                          parameter index
-   *
-   * @return  parameter names, never empty
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private static @NotNull Set<String> getParameterNames(ParamLog paramLog,
-                                                        @NotNull List<String[]> declarationParameterNames,
-                                                        @NotNull Parameter specificParameter, int p)
-  {
-    final var names = new LinkedHashSet<String>();
-
-    if (paramLog != null && hasLength(paramLog.name()))
-      names.add(paramLog.name());
-
-    for(var parameterNames: declarationParameterNames)
-      names.add(parameterNames[p]);
-
-    if (declarationParameterNames.isEmpty())
-      names.add(specificParameter.getName());
-
-    return names;
-  }
-
-
-  /**
-   * Returns all declarations of {@code specificMethod}: the method itself, the invoked method and the methods it
-   * overrides in its superclasses and the interfaces of {@code targetClass}, ordered from most to least specific.
-   * Subclasses of the declaring class are not searched, as their methods override {@code specificMethod} (e.g. if a
-   * superclass method is executed by a {@code super} call with AspectJ).
-   * <p>
-   * Parameter annotations are not inherited. Without collecting the declarations, a {@code @ParamLog} annotation on an
-   * interface or superclass method would only be visible if the invoked method is that very method (e.g. for JDK
-   * proxies), but not for CGLIB proxies or AspectJ.
-   *
-   * @param specificMethod  method implementation, not {@code null}
-   * @param method          invoked method, possibly an interface method, not {@code null}
-   * @param targetClass     class of the target instance, not {@code null}
-   *
-   * @return  method declarations, starting with {@code specificMethod}, never {@code null}
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private static @NotNull @Unmodifiable List<Method> findMethodDeclarations(@NotNull Method specificMethod,
-                                                                            @NotNull Method method,
-                                                                            @NotNull Class<?> targetClass)
-  {
-    final var types = new ArrayList<Class<?>>();
-    final var declaringClass = specificMethod.getDeclaringClass();
-
-    for(var type = declaringClass; type != null && type != Object.class; type = type.getSuperclass())
-      types.add(type);
-
-    types.addAll(getAllInterfacesForClassAsSet(targetClass));
-
-    final var declarations = new LinkedHashSet<Method>();
-
-    declarations.add(specificMethod);
-    declarations.add(method);
-
-    for(var type: types)
-      for(var candidate: type.getDeclaredMethods())
-        if (isOverriddenBy(candidate, specificMethod, targetClass))
-          declarations.add(candidate);
-
-    return copyOf(declarations);
-  }
-
-
-  /**
-   * Tells whether {@code candidate} is overridden by {@code specificMethod}. Generic parameter types of both methods
-   * are resolved against {@code targetClass}. A package-private {@code candidate} is only overridden
-   * by a method declared in the same runtime package, i.e. the same package of the same class loader.
-   *
-   * @param candidate       method declared by a superclass or interface of {@code targetClass}, not {@code null}
-   * @param specificMethod  method implementation, not {@code null}
-   * @param targetClass     class of the target instance, not {@code null}
-   *
-   * @return  {@code true} if {@code specificMethod} overrides {@code candidate}, {@code false} otherwise
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private static boolean isOverriddenBy(@NotNull Method candidate, @NotNull Method specificMethod,
-                                        @NotNull Class<?> targetClass)
-  {
-    final var modifiers = candidate.getModifiers();
-    if ((modifiers & (PRIVATE | STATIC)) != 0 || candidate.isBridge() || candidate.isSynthetic())
-      return false;
-
-    if (!candidate.getName().equals(specificMethod.getName()))
-      return false;
-
-    if ((modifiers & (PUBLIC | PROTECTED)) == 0 &&
-        !isSameRuntimePackage(candidate.getDeclaringClass(), specificMethod.getDeclaringClass()))
-      return false;
-
-    final var parameterCount = specificMethod.getParameterCount();
-    if (candidate.getParameterCount() != parameterCount)
-      return false;
-
-    for(var p = 0; p < parameterCount; p++)
-      if (forMethodParameter(candidate, p, targetClass).toClass() !=
-          forMethodParameter(specificMethod, p, targetClass).toClass())
-        return false;
-
-    return true;
-  }
-
-
-  /**
-   * Tells whether both classes belong to the same runtime package: the same package defined by the same class loader.
-   *
-   * @param type1  first class, not {@code null}
-   * @param type2  second class, not {@code null}
-   *
-   * @return  {@code true} if both classes belong to the same runtime package, {@code false} otherwise
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private static boolean isSameRuntimePackage(@NotNull Class<?> type1, @NotNull Class<?> type2) {
-    return type1.getClassLoader() == type2.getClassLoader() && type1.getPackageName().equals(type2.getPackageName());
-  }
-
-
-  /**
-   * Returns the {@code @ParamLog} annotation of parameter {@code p} from the most specific declaration providing one.
-   * An exclusion is never overridden: if any declaration excludes the parameter, its annotation is returned instead.
-   *
-   * @param declarations  method declarations, ordered from most to least specific, not {@code null}
-   * @param p             parameter index
-   *
-   * @return  {@code @ParamLog} annotation or {@code null} if no declaration annotates the parameter
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private static ParamLog findParamLog(@NotNull List<Method> declarations, int p)
-  {
-    ParamLog paramLog = null;
-
-    for(var declaration: declarations)
-    {
-      final var declarationParamLog = getMergedAnnotation(declaration.getParameters()[p], ParamLog.class);
-
-      if (declarationParamLog != null)
-      {
-        if (declarationParamLog.exclude())
-          return declarationParamLog;
-
-        if (paramLog == null)
-          paramLog = declarationParamLog;
-      }
-    }
-
-    return paramLog;
-  }
-
-
-  /**
-   * Validates that each excluded parameter name matches a parameter. Names excluded by a composed annotation are not
-   * validated if parameter names are available, as a composed annotation may be used on methods with different
-   * parameters.
-   *
-   * @param method                    method implementation, not {@code null}
-   * @param excludeParameters         excluded parameter names, not {@code null}
-   * @param matchedExcludeParameters  excluded parameter names matching a parameter, not {@code null}
-   * @param parameterNamesAvailable   {@code true} if parameter names were discovered for at least one declaration
-   *
-   * @throws IllegalStateException  if an excluded parameter name matches no parameter name
-   *
-   * @since 0.6.0
-   */
-  private static void validateExcludedParameterNames(@NotNull Method method, @NotNull String[] excludeParameters,
-                                                     @NotNull Set<String> matchedExcludeParameters,
-                                                     boolean parameterNamesAvailable)
-  {
-    // names excluded by a composed annotation may be meant for other methods than this one
-    if (parameterNamesAvailable && !isMethodLoggingDirectlyDeclared(method))
-      return;
-
-    for(var excludeParameter: excludeParameters)
-      if (!matchedExcludeParameters.contains(excludeParameter))
-      {
-        throw new IllegalStateException("Excluded parameter '" + excludeParameter + "' matches no parameter of " +
-            method + (parameterNamesAvailable
-                ? ""
-                : ", as parameter names are not available; compile with -parameters or exclude the parameter " +
-                  "with @ParamLog(exclude = true)"));
-      }
-  }
-
-
-  /**
-   * Tells whether the {@code @MethodLogging} annotation providing the method logging attributes of
-   * {@code specificMethod} is declared directly, as opposed to being a meta-annotation of a composed annotation.
-   * The annotation is selected as in {@link #findMethodLoggingAttributes(Method)}.
-   *
-   * @param specificMethod  method implementation, not {@code null}
-   *
-   * @return  {@code true} if {@code @MethodLogging} is declared directly on the method or an overridden method,
-   *          {@code false} otherwise
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  private static boolean isMethodLoggingDirectlyDeclared(@NotNull Method specificMethod)
-  {
-    return MergedAnnotations
-        .from(specificMethod, TYPE_HIERARCHY, RepeatableContainers.none())
-        .get(MethodLogging.class, null, MergedAnnotationSelectors.firstDirectlyDeclared())
-        .getDistance() == 0;
-  }
-
-
-  /**
-   * Tells whether a parameter without {@code @ParamLog} annotation is to be logged. Primitive parameters are always
-   * logged; for all other parameters, the configurer decides.
-   *
-   * @param config               configuration providing the configurer, not {@code null}
-   * @param methodParameterType  method parameter type, not {@code null}
-   *
-   * @return  {@code true} if the parameter is to be logged, {@code false} otherwise
-   *
-   * @see MethodLoggingConfigurer#excludeMethodParameter(ResolvableType)
-   *
-   * @since 0.6.0
-   */
-  private static boolean isParameterIncluded(@NotNull Configuration config,
-                                             @NotNull ResolvableType methodParameterType)
-  {
-    return
-        methodParameterType.toClass().isPrimitive() ||
-        !config.methodLoggingConfigurer.excludeMethodParameter(methodParameterType);
   }
 
 
@@ -1156,147 +763,6 @@ final class AnnotationMethodLoggingSource
       }
 
     return null;
-  }
-
-
-  /**
-   * Creates the default message support, used if the configurer provides none.
-   * <p>
-   * The set of formatters is deliberately minimal. It covers what custom formats need to adjust the output, in
-   * {@link ParamLog#format()} or the format attributes of {@link MethodLogging} and {@link MethodLoggingConfig}: the
-   * runtime formatters for optionals, suppliers, references, enums and collections, the named formatters {@code bool},
-   * {@code choice} and {@code size}, and the post formatters {@code case} and {@code clip}. All other values, including
-   * numbers, dates, paths and exceptions, are formatted by their {@code toString()} representation, independent of the
-   * locale. An application requiring more formatters provides its own message support with
-   * {@link MethodLoggingConfigurer#messageSupport()}.
-   * <p>
-   * Iterables and arrays are enclosed in square brackets, maps in braces. Without them, the elements of a collection
-   * parameter could not be told apart from the other parameters in the parameter list of the method entry message,
-   * as both are separated by commas. Collections and maps are limited to 20 elements.
-   *
-   * @return  sealed default message support, never {@code null}
-   *
-   * @since 0.6.0
-   */
-  @Contract(pure = true)
-  @SuppressWarnings("UnnecessaryUnicodeEscape")
-  private @NotNull MessageSupport buildInternalMessageSupport()
-  {
-    final var formatterService = new GenericFormatterService(256);
-    final var stringFormatter = formatterService
-        .getFormatters("string", String.class, null)[0];
-
-    // Add default formatters
-    formatterService.addFormatter(new AtomicBooleanFormatter());
-    formatterService.addFormatter(new BooleanSupplierFormatter());
-    formatterService.addFormatter(new DoubleSupplierFormatter());
-    formatterService.addFormatter(new EnumFormatter());
-    formatterService.addFormatter(new IntSupplierFormatter());
-    formatterService.addFormatter(new IterableFormatter());
-    formatterService.addFormatter(new LongSupplierFormatter());
-    formatterService.addFormatter(new OptionalFormatter());
-    formatterService.addFormatter(new OptionalDoubleFormatter());
-    formatterService.addFormatter(new OptionalIntFormatter());
-    formatterService.addFormatter(new OptionalLongFormatter());
-    formatterService.addFormatter(new ReferenceFormatter());
-    formatterService.addFormatter(new SupplierFormatter());
-    formatterService.addFormatter(new ToTemporalDelegate());
-
-    // Fix conflicting types
-    formatterService.addFormatterForType(
-        new FormattableType(Path.class, DEFAULT_ORDER - 2), stringFormatter);
-    formatterService.addFormatterForType(
-        new FormattableType(Throwable.class, DEFAULT_ORDER - 2), stringFormatter);
-
-    // Configure list formatting
-    final var arrayFormatter = new ArrayFormatter();
-    formatterService.addFormatter(arrayFormatter);
-    formatterService.addFormatterForType(new FormattableType(char[].class), arrayFormatter);
-    formatterService.addFormatter(new WrapIterableOrArrayFormatter());
-
-    // Configure map formatting
-    formatterService.addFormatter(new MapFormatter());
-    formatterService.addFormatter(new WrapMapFormatter());
-
-    // Add named formatters, only used by formats selecting them
-    formatterService.addFormatter(new BoolFormatter());
-    formatterService.addFormatter(new ChoiceFormatter());
-    formatterService.addFormatter(new SizeFormatter());
-
-    // Add post formatters
-    formatterService.addPostFormatter(new CasePostFormatter());
-    formatterService.addPostFormatter(new ClipPostFormatter());
-
-    final var messageSupport = MessageSupportFactory.create(formatterService.seal());
-
-    // Default list settings
-    messageSupport.setDefaultConfig("list-max-size", 20);
-    messageSupport.setDefaultConfig("list-value-more", "\u2026");
-
-    return messageSupport.seal();
-  }
-
-
-
-
-  /**
-   * Source file and line of the first statement of each method of a class, as read from its class file.
-   *
-   * @param sourceFile   source file name or {@code null} if not available
-   * @param lineNumbers  line of the first statement, by method name and descriptor, not {@code null}
-   *
-   * @since 0.6.0
-   */
-  record ClassLocation(String sourceFile, @NotNull @Unmodifiable Map<String,Integer> lineNumbers)
-  {
-    /**
-     * Reads the source file and the line numbers of the methods of {@code type} from its class file. If the class file
-     * is not available or cannot be read, the information read so far is returned.
-     *
-     * @param type  class to read the class file for, not {@code null}
-     *
-     * @return  class location, never {@code null}
-     */
-    @Contract(pure = true)
-    static @NotNull ClassLocation read(@NotNull Class<?> type)
-    {
-      final var classInputStream = type
-          .getResourceAsStream('/' + type.getName().replace('.', '/') + ".class");
-      if (classInputStream == null)
-        return new ClassLocation(null, Map.of());
-
-      final var sourceFile = new AtomicReference<String>();
-      final var lineNumbers = new HashMap<String,Integer>();
-
-      try(classInputStream) {
-        new ClassReader(classInputStream).accept(
-            new ClassVisitor(ASM_VERSION) {
-              @Override
-              public void visitSource(String source, String debug) {
-                sourceFile.set(source);
-              }
-
-              @Override
-              public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
-                                               String[] ex)
-              {
-                final var methodDescriptor = name.concat(descriptor);
-
-                return new MethodVisitor(ASM_VERSION) {
-                  @Override
-                  public void visitLineNumber(int line, Label start) {
-                    lineNumbers.putIfAbsent(methodDescriptor, line);
-                  }
-                };
-              }
-            },
-            SKIP_FRAMES);
-      } catch(IOException | RuntimeException ignored) {
-        // class file not readable by ASM (e.g. unsupported class file version)
-      }
-
-      return new ClassLocation(sourceFile.get(), Map.copyOf(lineNumbers));
-    }
   }
 
 
