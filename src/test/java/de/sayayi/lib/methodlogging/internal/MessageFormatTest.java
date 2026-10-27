@@ -70,6 +70,34 @@ class MessageFormatTest
 
 
   @Test
+  @DisplayName("Empty formats select the default formats instead of the class formats")
+  void emptyFormatIsDefault() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(
+        () -> new MethodLoggingConfigurer() {}, true);
+    final var inherited = requireNonNull(source.getMethodDefinition(
+        FormatConfigBean.class.getMethod("inherited", String.class), FormatConfigBean.class));
+    final var empty = requireNonNull(source.getMethodDefinition(
+        FormatConfigBean.class.getMethod("empty", String.class), FormatConfigBean.class));
+    final var messageSupport = source.getMessageSupport();
+
+    assertEquals("value: x", messageSupport.message(inherited.inlineParameterMessage.get())
+        .with("parameter", "value").with("value", "x").format());
+    assertEquals("value -> x", messageSupport.message(inherited.parameterMessage.get())
+        .with("parameter", "value").with("value", "x").format());
+    assertEquals("returns x", messageSupport.message(inherited.resultMessage.get())
+        .with("result", "x").format());
+
+    assertEquals("value=x", messageSupport.message(empty.inlineParameterMessage.get())
+        .with("parameter", "value").with("value", "x").format());
+    assertEquals("parameter 'value' = x", messageSupport.message(empty.parameterMessage.get())
+        .with("parameter", "value").with("value", "x").format());
+    assertEquals("result = x", messageSupport.message(empty.resultMessage.get())
+        .with("result", "x").format());
+  }
+
+
+  @Test
   @DisplayName("Invalid method format fails the analysis")
   void invalidMethodFormat()
   {
@@ -168,6 +196,26 @@ class MessageFormatTest
 
     @MethodLogging(parameters = HIDE)
     public String invalidHiddenParameterFormat(@UncheckedParamLog("%{value") String value) {
+      return value;
+    }
+  }
+
+
+
+
+  @MethodLoggingConfig(inlineParameterFormat = "%{parameter}: %{value}", parameterFormat = "%{parameter} -> %{value}",
+      resultFormat = "returns %{result}")
+  @SuppressWarnings({ "unused", "SameReturnValue" })
+  public static class FormatConfigBean
+  {
+    @MethodLogging
+    public String inherited(String value) {
+      return value;
+    }
+
+
+    @MethodLogging(inlineParameterFormat = "", parameterFormat = "", resultFormat = "")
+    public String empty(String value) {
       return value;
     }
   }

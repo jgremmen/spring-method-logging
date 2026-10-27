@@ -220,8 +220,9 @@ public @interface MethodLogging
    * The message format used for inline parameters that are displayed as part of the method entry log line
    * (e.g. {@code > method(param=value)}).
    *
-   * @return  a message format string, or {@link #DEFAULT_VALUE} to use the format from
-   *          {@link MethodLoggingConfig#inlineParameterFormat()}
+   * @return  a message format string, {@link #DEFAULT_VALUE} to use the format from
+   *          {@link MethodLoggingConfig#inlineParameterFormat()} or empty to use the built-in default format
+   *          {@link MethodLoggingConfig#DEFAULT_INLINE_PARAMETER_FORMAT}
    *
    * @see ParamLog#inline()
    */
@@ -232,8 +233,9 @@ public @interface MethodLogging
   /**
    * The message format used for parameters that are logged on separate lines after the method entry log line.
    *
-   * @return  a message format string, or {@link #DEFAULT_VALUE} to use the format from
-   *          {@link MethodLoggingConfig#parameterFormat()}
+   * @return  a message format string, {@link #DEFAULT_VALUE} to use the format from
+   *          {@link MethodLoggingConfig#parameterFormat()} or empty to use the built-in default format
+   *          {@link MethodLoggingConfig#DEFAULT_PARAMETER_FORMAT}
    *
    * @see ParamLog#inline()
    */
@@ -244,8 +246,9 @@ public @interface MethodLogging
   /**
    * The message format used for logging the method return value.
    *
-   * @return  a message format string, or {@link #DEFAULT_VALUE} to use the format from
-   *          {@link MethodLoggingConfig#resultFormat()}
+   * @return  a message format string, {@link #DEFAULT_VALUE} to use the format from
+   *          {@link MethodLoggingConfig#resultFormat()} or empty to use the built-in default format
+   *          {@link MethodLoggingConfig#DEFAULT_RESULT_FORMAT}
    */
   @Language("MessageFormat")
   String resultFormat() default DEFAULT_VALUE;

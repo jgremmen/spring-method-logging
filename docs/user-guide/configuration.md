@@ -11,9 +11,9 @@ Each attribute of `@MethodLogging` has a default that means "not set": `DEFAULT`
 constant `MethodLogging.DEFAULT_VALUE`, which is the string `"<DEFAULT>"`, for names and formats. A setting that is not
 set on the method is taken from `@MethodLoggingConfig` of the class. For the logger field name, the levels, the line
 number and the exception message, `@MethodLoggingConfig` can again leave the setting unset, and the value is then taken
-from the configurer. The
-elapsed time, parameters and result have no configurer default: `DEFAULT` on `@MethodLoggingConfig` means the default
-of the attribute shown in the table below.
+from the configurer. The elapsed time, parameters and result have no configurer default: `DEFAULT` on
+`@MethodLoggingConfig` means the default of the attribute shown in the table below. An empty format is not the same as
+an unset one: it selects the default format shown in the table, on both levels.
 
 ```java title="StockService.java"
 package com.example.bookstore;

@@ -188,7 +188,8 @@ public @interface MethodLoggingConfig
   /**
    * The message format used for inline parameters that are displayed as part of the method entry log line.
    *
-   * @return  a message format string, defaults to {@link #DEFAULT_INLINE_PARAMETER_FORMAT}
+   * @return  a message format string, defaults to {@link #DEFAULT_INLINE_PARAMETER_FORMAT}. An empty format means
+   *          {@link #DEFAULT_INLINE_PARAMETER_FORMAT} as well
    *
    * @see MethodLogging#inlineParameterFormat()
    */
@@ -199,7 +200,8 @@ public @interface MethodLoggingConfig
   /**
    * The message format used for parameters that are logged on separate lines after the method entry log line.
    *
-   * @return  a message format string, defaults to {@link #DEFAULT_PARAMETER_FORMAT}
+   * @return  a message format string, defaults to {@link #DEFAULT_PARAMETER_FORMAT}. An empty format means
+   *          {@link #DEFAULT_PARAMETER_FORMAT} as well
    *
    * @see MethodLogging#parameterFormat()
    */
@@ -210,7 +212,8 @@ public @interface MethodLoggingConfig
   /**
    * The message format used for logging the method return value.
    *
-   * @return  a message format string, defaults to {@link #DEFAULT_RESULT_FORMAT}
+   * @return  a message format string, defaults to {@link #DEFAULT_RESULT_FORMAT}. An empty format means
+   *          {@link #DEFAULT_RESULT_FORMAT} as well
    *
    * @see MethodLogging#resultFormat()
    */

@@ -69,7 +69,9 @@ parameter format and `false` in the parameter format. It allows one format to be
 `%{inline,true:'',false:'separately '}`. In the result format, `result` holds the return value of the method.
 
 The defaults are available as the constants `DEFAULT_INLINE_PARAMETER_FORMAT`, `DEFAULT_PARAMETER_FORMAT` and
-`DEFAULT_RESULT_FORMAT` of [`@MethodLoggingConfig`][jd-config].
+`DEFAULT_RESULT_FORMAT` of [`@MethodLoggingConfig`][jd-config]. An empty format selects the default format on both
+levels. On `@MethodLogging`, an empty format therefore does not take the format of `@MethodLoggingConfig`; only an
+attribute that is not set does.
 
 The following example changes all three method-level formats:
 
