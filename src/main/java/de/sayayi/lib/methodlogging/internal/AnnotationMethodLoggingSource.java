@@ -63,6 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
+import static de.sayayi.lib.methodlogging.Visibility.HIDE;
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
 import static de.sayayi.lib.methodlogging.annotation.MethodLogging.DEFAULT_VALUE;
 import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
@@ -992,6 +993,7 @@ final class AnnotationMethodLoggingSource
   /**
    * Returns the {@code @MethodLoggingConfig} attributes of {@code type}, or the annotation defaults if the type is not
    * annotated. Logger field name, levels and line number left at their default are replaced by the configurer defaults.
+   * Elapsed time, parameters and result set to {@link Visibility#DEFAULT} are replaced by their annotation defaults.
    *
    * @param config  configuration with the configurer defaults, not {@code null}
    * @param type    target class, not {@code null}
@@ -1024,6 +1026,15 @@ final class AnnotationMethodLoggingSource
 
     if (attributes.getEnum("lineNumber") == Visibility.DEFAULT)
       attributes.put("lineNumber", config.defaultLineNumber);
+
+    if (attributes.getEnum("elapsedTime") == Visibility.DEFAULT)
+      attributes.put("elapsedTime", HIDE);
+
+    if (attributes.getEnum("parameters") == Visibility.DEFAULT)
+      attributes.put("parameters", SHOW);
+
+    if (attributes.getEnum("result") == Visibility.DEFAULT)
+      attributes.put("result", SHOW);
 
     return attributes;
   }

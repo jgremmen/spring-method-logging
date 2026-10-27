@@ -138,7 +138,7 @@ public @interface MethodLoggingConfig
    * time until the result is completed.
    *
    * @return  {@link Visibility#SHOW} shows the elapsed time on method exit, {@link Visibility#HIDE} (the default)
-   *          does not show the elapsed time
+   *          does not show the elapsed time, {@link Visibility#DEFAULT} is the same as {@link Visibility#HIDE}
    *
    * @see MethodLogging#elapsedTime()
    */
@@ -149,7 +149,8 @@ public @interface MethodLoggingConfig
    * Indicates whether method parameters are to be logged or not.
    *
    * @return  {@link Visibility#SHOW} (the default) logs the method parameters,
-   *          {@link Visibility#HIDE} suppresses parameter logging
+   *          {@link Visibility#HIDE} suppresses parameter logging,
+   *          {@link Visibility#DEFAULT} is the same as {@link Visibility#SHOW}
    *
    * @see MethodLogging#parameters()
    */
@@ -160,7 +161,8 @@ public @interface MethodLoggingConfig
    * Indicates whether the method return value is to be logged or not.
    *
    * @return  {@link Visibility#SHOW} (the default) logs the return value,
-   *          {@link Visibility#HIDE} suppresses return value logging
+   *          {@link Visibility#HIDE} suppresses return value logging,
+   *          {@link Visibility#DEFAULT} is the same as {@link Visibility#SHOW}
    *
    * @see MethodLogging#result()
    */

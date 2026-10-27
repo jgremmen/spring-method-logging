@@ -20,7 +20,7 @@ package de.sayayi.lib.methodlogging;
  * Controls the visibility of an optional feature in method logging. Each feature can be explicitly shown or hidden, or
  * left at {@link #DEFAULT} to inherit the setting from the class-level
  * {@link de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig MethodLoggingConfig} or the global configurer
- * defaults.
+ * defaults. A feature without a configurer default takes the default of its {@code MethodLoggingConfig} attribute.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0

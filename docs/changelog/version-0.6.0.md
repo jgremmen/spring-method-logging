@@ -447,3 +447,6 @@ return MessageSupportFactory.create(formatterService);
   also measured with a monotonic clock, so system clock adjustments no longer affect it.
 - Exceptions declared as nested classes were logged by their simple name only, and anonymous exception classes with an
   empty name. The method exit message now shows the name including the enclosing classes (e.g. `Outer.InnerException`).
+- `elapsedTime`, `parameters` or `result` set to `DEFAULT` on `@MethodLoggingConfig` hid the elapsed time, the
+  parameters or the result of all methods in the class. `DEFAULT` now means the default of the attribute: the elapsed
+  time is hidden, parameters and result are shown.
