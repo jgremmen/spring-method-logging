@@ -89,9 +89,9 @@ import static org.springframework.util.StringUtils.hasLength;
  * The definition of a method is resolved from the method annotation, the {@link MethodLoggingConfig} annotation of the
  * target class and the {@link MethodLoggingConfigurer}, in that order: an attribute left at its default
  * ({@code DEFAULT} or {@link MethodLogging#DEFAULT_VALUE}) on the method annotation is taken from the class
- * annotation, and a level, line number or logger field name left at its default on the class annotation is taken from
- * the configurer. If the target class has no {@code @MethodLoggingConfig} annotation, the annotation defaults are
- * used.
+ * annotation, and a level, line number, exception message or logger field name left at its default on the class
+ * annotation is taken from the configurer. If the target class has no {@code @MethodLoggingConfig} annotation, the
+ * annotation defaults are used.
  * <p>
  * Definitions are cached per method and target class, including the information that a method has no method logging.
  * Invoked methods resolving to the same method implementation, like an interface method and the implementing method,

@@ -37,8 +37,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * be overridden on individual methods via {@code @MethodLogging} attributes.
  * <p>
  * If this annotation is not present on a class, the defaults of its attributes are used, as if the class was annotated
- * with {@code @MethodLoggingConfig} without attributes. The logger field name, the log levels and the line number are
- * then taken from {@link MethodLoggingConfigurer}.
+ * with {@code @MethodLoggingConfig} without attributes. The logger field name, the log levels and the line number and
+ * exception message visibility are then taken from {@link MethodLoggingConfigurer}.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
