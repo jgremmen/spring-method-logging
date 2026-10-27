@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.methodlogging.internal;
 
-import de.sayayi.lib.message.MessageFactory;
 import de.sayayi.lib.methodlogging.MethodLoggingConfigurer;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.ParamLog;
@@ -35,7 +34,6 @@ import java.lang.reflect.Parameter;
 import java.util.*;
 
 import static de.sayayi.lib.methodlogging.Visibility.SHOW;
-import static de.sayayi.lib.methodlogging.internal.MethodDef.messageSupplier;
 import static java.lang.reflect.Modifier.*;
 import static java.util.Arrays.asList;
 import static java.util.List.copyOf;
@@ -88,7 +86,7 @@ final class ParameterAnalyzer
    * @param method          invoked method, possibly an interface method, not {@code null}
    * @param targetClass     class of the target instance, not {@code null}
    * @param methodLogging   merged method logging settings, not {@code null}
-   * @param messageFactory  message factory for parsing the parameter formats, not {@code null}
+   * @param messageParser   message parser for the parameter formats, not {@code null}
    * @param configurer      method logging configurer deciding on the exclusion of parameters by type, not
    *                        {@code null}
    *
@@ -102,7 +100,7 @@ final class ParameterAnalyzer
   @NotNull @Unmodifiable List<ParameterDef> getParameterDefs(@NotNull Method specificMethod, @NotNull Method method,
                                                              @NotNull Class<?> targetClass,
                                                              @NotNull MethodLogging methodLogging,
-                                                             @NotNull MessageFactory messageFactory,
+                                                             @NotNull MessageParser messageParser,
                                                              @NotNull MethodLoggingConfigurer configurer)
   {
     final var parameterCount = specificMethod.getParameterCount();
@@ -136,8 +134,8 @@ final class ParameterAnalyzer
       if (paramLog != null && paramLog.exclude())
         continue;
 
-      final var parameterMessage = messageSupplier(
-          messageFactory, paramLog != null ? paramLog.format() : "",
+      final var parameterMessage = messageParser.messageSupplier(
+          paramLog != null ? paramLog.format() : "",
           DEFAULT_PARAMETER_VALUE_FORMAT,
           "@ParamLog format of parameter '" + name + '\'',
           specificMethod);

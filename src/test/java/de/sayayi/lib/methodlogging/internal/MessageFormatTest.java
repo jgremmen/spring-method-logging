@@ -56,6 +56,24 @@ class MessageFormatTest
 
 
   @Test
+  @DisplayName("Messages with a default format are shared by all methods")
+  void defaultFormatShared() throws Exception
+  {
+    final var source = new AnnotationMethodLoggingSource(() -> new MethodLoggingConfigurer() {}, true);
+    final var defaults = requireNonNull(
+        source.getMethodDefinition(Bean.class.getMethod("defaults", String.class), Bean.class));
+    final var empty = requireNonNull(source.getMethodDefinition(
+        FormatConfigBean.class.getMethod("empty", String.class), FormatConfigBean.class));
+
+    assertSame(defaults.inlineParameterMessage, empty.inlineParameterMessage);
+    assertSame(defaults.parameterMessage, empty.parameterMessage);
+    assertSame(defaults.resultMessage, empty.resultMessage);
+    assertSame(defaults.inlineParameters.getFirst().formatMessage(), empty.inlineParameters.getFirst().formatMessage());
+    assertNotSame(defaults.inlineParameterMessage, defaults.parameterMessage);
+  }
+
+
+  @Test
   @DisplayName("Messages with a custom format are created with the method definition")
   void customFormatEager() throws Exception
   {

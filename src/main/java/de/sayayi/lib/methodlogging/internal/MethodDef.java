@@ -16,12 +16,9 @@
 package de.sayayi.lib.methodlogging.internal;
 
 import de.sayayi.lib.message.Message;
-import de.sayayi.lib.message.MessageFactory;
-import de.sayayi.lib.message.util.SupplierDelegate;
 import de.sayayi.lib.methodlogging.Level;
 import de.sayayi.lib.methodlogging.annotation.MethodLogging;
 import de.sayayi.lib.methodlogging.annotation.MethodLoggingConfig;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -43,9 +40,9 @@ import static java.util.stream.Collectors.partitioningBy;
  * Instances are shared by all threads invoking the method. Apart from the failures reported (see
  * {@link #isFirstFailureReport(String)}), they are immutable.
  * <p>
- * Messages with a built-in default format are created on first use, as many of them are never needed when the
- * corresponding log level is disabled. Messages with a custom format are created with the definition, so an invalid
- * format fails the method analysis.
+ * The messages are provided by the {@link MessageParser} of the configuration: messages with a built-in default
+ * format are created on first use and shared by all definitions, messages with a custom format are created with the
+ * definition, so an invalid format fails the method analysis.
  *
  * @author Jeroen Gremmen
  * @since 0.1.0
@@ -110,7 +107,7 @@ final class MethodDef
   /**
    * Creates the method logging definition from the resolved settings.
    *
-   * @param messageFactory       message factory for parsing the message formats, not {@code null}
+   * @param messageParser        message parser for the message formats, not {@code null}
    * @param methodLoggingConfig  class level settings with the configurer defaults applied, not {@code null}
    * @param parameters           definitions of the parameters to be logged, not {@code null}
    * @param methodLogging        merged method level settings, not {@code null}
@@ -123,7 +120,7 @@ final class MethodDef
    *
    * @since 0.6.0
    */
-  MethodDef(final @NotNull MessageFactory messageFactory, @NotNull MethodLoggingConfig methodLoggingConfig,
+  MethodDef(@NotNull MessageParser messageParser, @NotNull MethodLoggingConfig methodLoggingConfig,
             @NotNull List<ParameterDef> parameters, @NotNull MethodLogging methodLogging, @NotNull Method method,
             @NotNull StackTraceElement location, int line, Field loggerField)
   {
@@ -142,11 +139,11 @@ final class MethodDef
     this.line = line;
 
     methodName = method.getName();
-    inlineParameterMessage = messageSupplier(messageFactory, methodLogging.inlineParameterFormat(),
+    inlineParameterMessage = messageParser.messageSupplier(methodLogging.inlineParameterFormat(),
         DEFAULT_INLINE_PARAMETER_FORMAT, "inlineParameterFormat", method);
-    parameterMessage = messageSupplier(messageFactory, methodLogging.parameterFormat(), DEFAULT_PARAMETER_FORMAT,
+    parameterMessage = messageParser.messageSupplier(methodLogging.parameterFormat(), DEFAULT_PARAMETER_FORMAT,
         "parameterFormat", method);
-    resultMessage = messageSupplier(messageFactory, methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT,
+    resultMessage = messageParser.messageSupplier(methodLogging.resultFormat(), DEFAULT_RESULT_FORMAT,
         "resultFormat", method);
     showElapsedTime = methodLogging.elapsedTime() == SHOW;
     showExceptionMessage = methodLogging.exceptionMessage() == SHOW;
@@ -169,41 +166,5 @@ final class MethodDef
    */
   boolean isFirstFailureReport(@NotNull String phase) {
     return reportedFailurePhases.add(phase);
-  }
-
-
-  /**
-   * Returns a supplier of the message for {@code format}. A message for the built-in default format, also used if
-   * {@code format} is empty, is created on first use. A message for a custom format is created immediately.
-   *
-   * @param messageFactory  message factory for parsing the message format, not {@code null}
-   * @param format          message format or empty for the default format, not {@code null}
-   * @param defaultFormat   built-in default format, not {@code null}
-   * @param attributeName   name of the annotation attribute providing {@code format}, not {@code null}
-   * @param method          method providing {@code format}, not {@code null}
-   *
-   * @return  message supplier, never {@code null}
-   *
-   * @throws IllegalStateException  if {@code format} is a custom format which cannot be parsed
-   *
-   * @since 0.6.0
-   */
-  @Contract(value = "_, _, _, _, _ -> new", pure = true)
-  static @NotNull Supplier<Message> messageSupplier(@NotNull MessageFactory messageFactory, @NotNull String format,
-                                                    @NotNull String defaultFormat, @NotNull String attributeName,
-                                                    @NotNull Method method)
-  {
-    if (format.isEmpty() || format.equals(defaultFormat))
-      return SupplierDelegate.of(() -> messageFactory.parseMessage(defaultFormat));
-
-    final Message message;
-
-    try {
-      message = messageFactory.parseMessage(format);
-    } catch(RuntimeException ex) {
-      throw new IllegalStateException("Invalid " + attributeName + " '" + format + "' for " + method, ex);
-    }
-
-    return () -> message;
   }
 }

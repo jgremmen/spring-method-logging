@@ -570,11 +570,10 @@ final class AnnotationMethodLoggingSource
 
     config.methodLoggerFactory.validate(loggerField, targetClass);
 
-    final var messageFactory = config.messageSupport.getMessageAccessor().getMessageFactory();
-    final var parameterDefs = parameterAnalyzer.getParameterDefs(specificMethod, method, targetClass, methodLogging,
-        messageFactory, config.methodLoggingConfigurer);
+    final var parameterDefs = parameterAnalyzer.getParameterDefs(specificMethod, method,
+        targetClass, methodLogging, config.messageParser, config.methodLoggingConfigurer);
 
-    return new MethodDef(messageFactory,
+    return new MethodDef(config.messageParser,
         synthesizeAnnotation(methodLoggingConfigAttributes, MethodLoggingConfig.class, targetClass), parameterDefs,
         methodLogging, method, location, methodLogging.lineNumber() == SHOW ? location.getLineNumber() : -1,
         loggerField);
@@ -808,6 +807,9 @@ final class AnnotationMethodLoggingSource
     /** Message support provided by the configurer or the default message support. */
     private final @NotNull MessageSupport messageSupport;
 
+    /** Message parser for the message formats, using the message factory of the message support. */
+    private final @NotNull MessageParser messageParser;
+
     /** Method logger factory provided by the configurer or the default method logger factory. */
     private final @NotNull MethodLoggerFactory methodLoggerFactory;
 
@@ -855,6 +857,7 @@ final class AnnotationMethodLoggingSource
 
       final var configuredMessageSupport = methodLoggingConfigurer.messageSupport();
       messageSupport = configuredMessageSupport != null ? configuredMessageSupport : messageSupportSupplier.get();
+      messageParser = new MessageParser(messageSupport.getMessageAccessor().getMessageFactory());
 
       final var configuredMethodLoggerFactory = methodLoggingConfigurer.methodLoggerFactory();
       methodLoggerFactory = configuredMethodLoggerFactory != null
