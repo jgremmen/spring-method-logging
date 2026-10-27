@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
- * Tests the formatting of array, list and set parameters and results with the default message support.
+ * Tests the formatting of array, list, set and map parameters and results with the default message support.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
@@ -94,6 +94,18 @@ class CollectionParameterTest
     assertEquals(List.of(
         "INFO|> listAndSet(titles=[Dune, Emma],ids=[3, 1, 2])",
         "INFO|< listAndSet"), FACTORY.log);
+  }
+
+
+  @Test
+  @DisplayName("Maps")
+  void maps()
+  {
+    bean.maps(new TreeMap<>(Map.of("Dune", 2, "Emma", 1)), Map.of(), Map.of("Ada", List.of("Dune")));
+
+    assertEquals(List.of(
+        "INFO|> maps(stock={Dune=2, Emma=1},empty={},orders={Ada=[Dune]})",
+        "INFO|< maps"), FACTORY.log);
   }
 
 
@@ -181,6 +193,11 @@ class CollectionParameterTest
 
     @MethodLogging(lineNumber = HIDE)
     public void listAndSet(List<String> titles, Set<Integer> ids) {
+    }
+
+
+    @MethodLogging(lineNumber = HIDE)
+    public void maps(Map<String,Integer> stock, Map<String,Integer> empty, Map<String,List<String>> orders) {
     }
 
 

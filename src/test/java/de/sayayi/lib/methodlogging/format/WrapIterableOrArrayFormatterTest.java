@@ -17,6 +17,7 @@ package de.sayayi.lib.methodlogging.format;
 
 import de.sayayi.lib.message.MessageSupport;
 import de.sayayi.lib.message.MessageSupportFactory;
+import de.sayayi.lib.message.formatter.FormattableType;
 import de.sayayi.lib.message.formatter.GenericFormatterService;
 import de.sayayi.lib.message.formatter.parameter.ParameterFormatter;
 import de.sayayi.lib.message.formatter.parameter.runtime.ArrayFormatter;
@@ -54,6 +55,7 @@ final class WrapIterableOrArrayFormatterTest
     return Stream.of(
         formattableType(boolean[].class, ArrayFormatter.class),
         formattableType(byte[].class, ArrayFormatter.class),
+        formattableType(char[].class, ArrayFormatter.class),
         formattableType(short[].class, ArrayFormatter.class),
         formattableType(int[].class, ArrayFormatter.class),
         formattableType(long[].class, ArrayFormatter.class),
@@ -99,6 +101,7 @@ final class WrapIterableOrArrayFormatterTest
 
     assertEquals("[true, false]", format(messageSupport, "%{c}", new boolean[] { true, false }));
     assertEquals("[1, -2]", format(messageSupport, "%{c}", new byte[] { 1, -2 }));
+    assertEquals("[a, b]", format(messageSupport, "%{c}", new char[] { 'a', 'b' }));
     assertEquals("[3, 4]", format(messageSupport, "%{c}", new short[] { 3, 4 }));
     assertEquals("[12, -7, 99]", format(messageSupport, "%{c}", new int[] { 12, -7, 99 }));
     assertEquals("[5, 6]", format(messageSupport, "%{c}", new long[] { 5, 6 }));
@@ -279,7 +282,9 @@ final class WrapIterableOrArrayFormatterTest
   {
     final var formatterService = new GenericFormatterService();
 
-    formatterService.addFormatter(new ArrayFormatter());
+    final var arrayFormatter = new ArrayFormatter();
+    formatterService.addFormatter(arrayFormatter);
+    formatterService.addFormatterForType(new FormattableType(char[].class), arrayFormatter);
     formatterService.addFormatter(new IterableFormatter());
     formatterService.addFormatter(new WrapIterableOrArrayFormatter());
 

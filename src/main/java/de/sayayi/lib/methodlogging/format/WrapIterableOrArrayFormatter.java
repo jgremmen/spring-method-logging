@@ -18,6 +18,8 @@ package de.sayayi.lib.methodlogging.format;
 import de.sayayi.lib.message.formatter.FormattableType;
 import de.sayayi.lib.message.formatter.parameter.AbstractParameterFormatter;
 import de.sayayi.lib.message.formatter.parameter.ParameterFormatterContext;
+import de.sayayi.lib.message.formatter.parameter.runtime.ArrayFormatter;
+import de.sayayi.lib.message.formatter.parameter.runtime.IterableFormatter;
 import de.sayayi.lib.message.part.MessagePart.Text;
 import de.sayayi.lib.message.part.TextJoiner;
 import org.jetbrains.annotations.NotNull;
@@ -26,9 +28,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.stream.Stream;
 
-import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
-import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_PRIMITIVE_OR_ARRAY_ORDER;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 
 /**
@@ -36,9 +39,10 @@ import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_PRIMITIVE_
  * {@code [1, 2, 3]}, so the elements of a logged parameter can be told apart from the other parameters of the method
  * entry message.
  * <p>
- * The formatter does not format the elements itself. It is registered with a lower order than the list formatters of
- * the formatter service, so it is selected first and delegates to the next formatter, which formats the elements. The
- * result of that formatter is enclosed as is: a {@code char[]} formatted as text by the string formatter of a
+ * The formatter does not format the elements itself. It is registered with an order one below the orders of the
+ * message-format {@link ArrayFormatter} and {@link IterableFormatter}, so it is selected first and delegates to the
+ * next formatter, which formats the elements. The result of that formatter is enclosed as is: a {@code char[]}
+ * formatted as text by the string formatter of a
  * {@link de.sayayi.lib.message.formatter.DefaultFormatterService DefaultFormatterService}, for example, is logged as
  * {@code [ab]}. Maps are enclosed in braces by {@link WrapMapFormatter}.
  * <p>
@@ -68,28 +72,36 @@ public final class WrapIterableOrArrayFormatter extends AbstractParameterFormatt
 
   /**
    * Returns the wrapped types: arrays of all primitive types, object arrays, the atomic array types and
-   * {@link Iterable}. Each type is registered with an order one below the default order of its kind, so this formatter
-   * precedes the list formatters.
+   * {@link Iterable}. Each type is registered with an order one below the order the {@link ArrayFormatter} or
+   * {@link IterableFormatter} registers for it, or one below its default order if neither registers it, so this
+   * formatter precedes the list formatters.
    *
    * @return  formattable types, never {@code null}
    */
   @Override
   public @NotNull Set<FormattableType> getFormattableTypes()
   {
-    return Set.of(
-        new FormattableType(boolean[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(byte[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(char[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(short[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(int[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(long[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(float[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(double[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(Object[].class, DEFAULT_PRIMITIVE_OR_ARRAY_ORDER - 1),
-        new FormattableType(AtomicIntegerArray.class, DEFAULT_ORDER - 1),
-        new FormattableType(AtomicLongArray.class, DEFAULT_ORDER - 1),
-        new FormattableType(AtomicReferenceArray.class, DEFAULT_ORDER - 1),
-        new FormattableType(Iterable.class, DEFAULT_ORDER - 1)
-    );
+    final var minFormatterOrderMap = Stream
+        .of(new ArrayFormatter(), new IterableFormatter())
+        .flatMap(formatter -> formatter.getFormattableTypes().stream())
+        .collect(toMap(FormattableType::getType, FormattableType::getOrder, Math::min));
+
+    return Stream
+        .of(boolean[].class,
+            byte[].class,
+            char[].class,
+            short[].class,
+            int[].class,
+            long[].class,
+            float[].class,
+            double[].class,
+            Object[].class,
+            AtomicIntegerArray.class,
+            AtomicLongArray.class,
+            AtomicReferenceArray.class,
+            Iterable.class)
+        .map(type -> new FormattableType(type,
+            minFormatterOrderMap.getOrDefault(type, new FormattableType(type).getOrder()) - 1))
+        .collect(toUnmodifiableSet());
   }
 }

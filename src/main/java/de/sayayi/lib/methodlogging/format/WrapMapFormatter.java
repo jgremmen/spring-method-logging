@@ -18,6 +18,7 @@ package de.sayayi.lib.methodlogging.format;
 import de.sayayi.lib.message.formatter.FormattableType;
 import de.sayayi.lib.message.formatter.parameter.AbstractParameterFormatter;
 import de.sayayi.lib.message.formatter.parameter.ParameterFormatterContext;
+import de.sayayi.lib.message.formatter.parameter.runtime.MapFormatter;
 import de.sayayi.lib.message.part.MessagePart.Text;
 import de.sayayi.lib.message.part.TextJoiner;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 import java.util.Set;
 
-import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 
 /**
@@ -33,9 +34,8 @@ import static de.sayayi.lib.message.formatter.FormattableType.DEFAULT_ORDER;
  * logged parameter can be told apart from the other parameters of the method entry message.
  * <p>
  * The formatter does not format the entries itself. It is registered with an order one below the order of the
- * message-format map formatter ({@code DEFAULT_ORDER - 5}), so it is selected first and delegates to the next
- * formatter, which formats the entries. Iterables and arrays are enclosed in square brackets by
- * {@link WrapIterableOrArrayFormatter}.
+ * message-format {@link MapFormatter}, so it is selected first and delegates to the next formatter, which formats the
+ * entries. Iterables and arrays are enclosed in square brackets by {@link WrapIterableOrArrayFormatter}.
  * <p>
  * Instances are stateless and may be shared by multiple formatter services.
  *
@@ -62,13 +62,18 @@ public final class WrapMapFormatter extends AbstractParameterFormatter<Map<?,?>>
 
 
   /**
-   * Returns the wrapped type {@link Map}, registered with an order one below the order of the map formatter, so this
-   * formatter precedes it.
+   * Returns the types of the {@link MapFormatter}, each with an order one below the order the {@code MapFormatter}
+   * registers for it, so this formatter precedes it.
    *
    * @return  formattable types, never {@code null}
    */
   @Override
-  public @NotNull Set<FormattableType> getFormattableTypes() {
-    return Set.of(new FormattableType(Map.class, DEFAULT_ORDER - 6));
+  public @NotNull Set<FormattableType> getFormattableTypes()
+  {
+    return new MapFormatter()
+        .getFormattableTypes()
+        .stream()
+        .map(formattableType -> new FormattableType(formattableType.getType(), formattableType.getOrder() - 1))
+        .collect(toUnmodifiableSet());
   }
 }
